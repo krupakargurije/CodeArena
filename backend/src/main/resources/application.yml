@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: codearena-backend
+  
+  datasource:
+    url: jdbc:h2:mem:codearena
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  h2:
+    console:
+      enabled: true
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# JWT Configuration
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000 # 24 hours in milliseconds
+
+# CORS Configuration
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# Code Execution Configuration
+code-execution:
+  timeout: 5000 # 5 seconds
+  memory-limit: 256 # MB

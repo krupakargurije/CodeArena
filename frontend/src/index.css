@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  /* Theme-aware body styles */
+  body {
+    @apply font-sans antialiased transition-colors duration-200;
+    @apply bg-dark-bg-primary text-dark-text-primary;
+  }
+
+  body.dark {
+    @apply bg-dark-bg-primary text-dark-text-primary;
+  }
+
+  body:not(.dark) {
+    @apply bg-light-bg-primary text-light-text-primary;
+  }
+}
+
+@layer components {
+
+  /* Button Styles - LeetCode Style */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply bg-brand-orange text-white hover:bg-brand-orange/90;
+    @apply active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply border dark:border-dark-border-primary dark:bg-dark-bg-secondary dark:text-dark-text-primary;
+    @apply border-light-border-primary bg-light-bg-secondary text-light-text-primary;
+    @apply dark:hover:bg-dark-bg-tertiary hover:bg-light-bg-tertiary;
+    @apply active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply dark:text-dark-text-secondary text-light-text-secondary;
+    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
+  }
+
+  /* Card Styles - Flat LeetCode Design */
+  .card {
+    @apply rounded-lg p-4 transition-all duration-200;
+    @apply dark:bg-dark-bg-secondary dark:border-dark-border-primary;
+    @apply bg-light-bg-secondary border-light-border-primary border;
+    @apply dark:hover:border-dark-border-secondary hover:border-light-border-secondary;
+  }
+
+  .card-elevated {
+    @apply rounded-lg p-6 transition-all duration-200;
+    @apply dark:bg-dark-bg-elevated dark:border-dark-border-primary;
+    @apply bg-white border-light-border-primary border;
+  }
+
+  /* Input Styles */
+  .input {
+    @apply w-full px-3 py-2 rounded-lg transition-all duration-200;
+    @apply dark:bg-dark-bg-tertiary dark:border-dark-border-primary dark:text-dark-text-primary;
+    @apply bg-light-bg-tertiary border-light-border-primary text-light-text-primary border;
+    @apply dark:placeholder-dark-text-tertiary placeholder-light-text-tertiary;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-orange/50;
+    @apply dark:focus:border-brand-orange focus:border-brand-orange;
+  }
+
+  /* Difficulty Badges - LeetCode Style */
+  .badge-easy {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply text-difficulty-easy;
+  }
+
+  .badge-medium {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply text-difficulty-medium;
+  }
+
+  .badge-hard {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply text-difficulty-hard;
+  }
+
+  /* Navigation Link */
+  .nav-link {
+    @apply px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200;
+    @apply dark:text-dark-text-secondary text-light-text-secondary;
+    @apply dark:hover:text-dark-text-primary hover:text-light-text-primary;
+    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
+  }
+
+  .nav-link-active {
+    @apply dark:text-dark-text-primary text-light-text-primary;
+    @apply dark:bg-dark-bg-secondary bg-light-bg-secondary;
+  }
+
+  /* Table Styles */
+  .table-row {
+    @apply transition-colors duration-150;
+    @apply dark:border-dark-border-primary border-light-border-primary border-b;
+    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
+  }
+
+  /* Divider */
+  .divider {
+    @apply dark:border-dark-border-primary border-light-border-primary;
+  }
+
+  /* Panel/Container */
+  .panel {
+    @apply rounded-lg;
+    @apply dark:bg-dark-bg-secondary dark:border-dark-border-primary;
+    @apply bg-white border-light-border-primary border;
+  }
+
+  /* Text Styles */
+  .text-primary {
+    @apply dark:text-dark-text-primary text-light-text-primary;
+  }
+
+  .text-secondary {
+    @apply dark:text-dark-text-secondary text-light-text-secondary;
+  }
+
+  .text-tertiary {
+    @apply dark:text-dark-text-tertiary text-light-text-tertiary;
+  }
+
+  /* Loading Skeleton */
+  .skeleton {
+    @apply animate-pulse rounded;
+    @apply dark:bg-dark-bg-tertiary bg-light-bg-tertiary;
+  }
+}

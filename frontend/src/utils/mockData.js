@@ -1,0 +1,111 @@
+// Mock data for demo mode
+export const mockProblems = [
+    {
+        id: 1,
+        title: "Two Sum",
+        description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+        difficulty: "EASY",
+        tags: ["Array", "Hash Table"],
+        acceptanceRate: 49.2,
+        sampleInput: "nums = [2,7,11,15], target = 9",
+        sampleOutput: "[0,1]",
+        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
+    },
+    {
+        id: 2,
+        title: "Add Two Numbers",
+        description: "You are given two non-empty linked lists representing two non-negative integers. Add the two numbers and return the sum as a linked list.",
+        difficulty: "MEDIUM",
+        tags: ["Linked List", "Math", "Recursion"],
+        acceptanceRate: 38.5,
+        sampleInput: "l1 = [2,4,3], l2 = [5,6,4]",
+        sampleOutput: "[7,0,8]",
+        explanation: "342 + 465 = 807",
+    },
+    {
+        id: 3,
+        title: "Longest Substring Without Repeating Characters",
+        description: "Given a string s, find the length of the longest substring without repeating characters.",
+        difficulty: "MEDIUM",
+        tags: ["String", "Sliding Window", "Hash Table"],
+        acceptanceRate: 33.8,
+        sampleInput: 's = "abcabcbb"',
+        sampleOutput: "3",
+        explanation: 'The answer is "abc", with the length of 3.',
+    },
+    {
+        id: 4,
+        title: "Median of Two Sorted Arrays",
+        description: "Given two sorted arrays nums1 and nums2, return the median of the two sorted arrays.",
+        difficulty: "HARD",
+        tags: ["Array", "Binary Search", "Divide and Conquer"],
+        acceptanceRate: 35.2,
+        sampleInput: "nums1 = [1,3], nums2 = [2]",
+        sampleOutput: "2.0",
+        explanation: "merged array = [1,2,3] and median is 2.",
+    },
+    {
+        id: 5,
+        title: "Longest Palindromic Substring",
+        description: "Given a string s, return the longest palindromic substring in s.",
+        difficulty: "MEDIUM",
+        tags: ["String", "Dynamic Programming"],
+        acceptanceRate: 32.1,
+        sampleInput: 's = "babad"',
+        sampleOutput: '"bab"',
+        explanation: '"aba" is also a valid answer.',
+    },
+    {
+        id: 6,
+        title: "Reverse Integer",
+        description: "Given a signed 32-bit integer x, return x with its digits reversed.",
+        difficulty: "EASY",
+        tags: ["Math"],
+        acceptanceRate: 27.3,
+        sampleInput: "x = 123",
+        sampleOutput: "321",
+    },
+];
+
+export const mockLeaderboard = [
+    { id: 1, username: "CodeMaster", email: "master@code.com", rating: 2850, problemsSolved: 450, country: "USA", organization: "Google" },
+    { id: 2, username: "AlgoExpert", email: "expert@algo.com", rating: 2720, problemsSolved: 398, country: "India", organization: "Microsoft" },
+    { id: 3, username: "DevNinja", email: "ninja@dev.com", rating: 2650, problemsSolved: 375, country: "China", organization: "ByteDance" },
+    { id: 4, username: "CodeWarrior", email: "warrior@code.com", rating: 2580, problemsSolved: 342, country: "UK" },
+    { id: 5, username: "BugHunter", email: "hunter@bug.com", rating: 2490, problemsSolved: 318, country: "Canada", organization: "Amazon" },
+];
+
+export const mockUser = {
+    id: 1,
+    username: "DemoUser",
+    email: "demo@codearena.com",
+    rating: 1500,
+    problemsSolved: 42,
+    bio: "Passionate competitive programmer",
+    country: "Demo Land",
+};
+
+export const mockSubmissions = [
+    {
+        id: 1,
+        problemTitle: "Two Sum",
+        status: "ACCEPTED",
+        executionTime: 245,
+        memoryUsed: 15360,
+        submittedAt: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+        id: 2,
+        problemTitle: "Add Two Numbers",
+        status: "WRONG_ANSWER",
+        submittedAt: new Date(Date.now() - 7200000).toISOString(),
+    },
+    {
+        id: 3,
+        problemTitle: "Longest Substring",
+        status: "ACCEPTED",
+        executionTime: 189,
+        memoryUsed: 18240,
+        submittedAt: new Date(Date.now() - 10800000).toISOString(),
+    },
+];
