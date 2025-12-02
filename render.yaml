@@ -4,6 +4,7 @@ services:
     name: codearena-backend
     env: docker
     dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     envVars:
       - key: PORT
@@ -19,6 +20,7 @@ services:
     name: codearena-frontend
     env: docker
     dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     plan: free
     envVars:
       - key: BACKEND_URL
