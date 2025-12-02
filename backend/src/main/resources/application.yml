@@ -27,7 +27,8 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8080}   # Render sets PORT automatically
+  address: 0.0.0.0     # REQUIRED for Render – binds to all network interfaces
   error:
     include-message: always
     include-binding-errors: always
