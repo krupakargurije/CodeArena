@@ -140,9 +140,34 @@ const Profile = () => {
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        dispatch(logout());
-        navigate('/login');
+        try {
+            console.log('Logging out...');
+
+            // Sign out from Supabase
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                console.error('Supabase signOut error:', error);
+                throw error;
+            }
+
+            console.log('Supabase signOut successful');
+
+            // Clear Redux state and localStorage
+            dispatch(logout());
+
+            console.log('Redux logout dispatched');
+
+            // Navigate to login page
+            navigate('/login', { replace: true });
+
+            console.log('Navigated to login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Even if there's an error, try to clear local state
+            dispatch(logout());
+            navigate('/login', { replace: true });
+        }
     };
 
     const getInitials = (name) => {

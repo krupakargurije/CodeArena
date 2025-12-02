@@ -23,6 +23,8 @@ const authSlice = createSlice({
             state.token = null;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            // Also clear Supabase auth token
+            localStorage.removeItem('supabase.auth.token');
         },
         loadUser: (state) => {
             const token = localStorage.getItem('token');
