@@ -7,14 +7,13 @@
   /* Theme-aware body styles */
   body {
     @apply font-sans antialiased transition-colors duration-200;
+  }
+
+  html.dark body {
     @apply bg-dark-bg-primary text-dark-text-primary;
   }
 
-  body.dark {
-    @apply bg-dark-bg-primary text-dark-text-primary;
-  }
-
-  body:not(.dark) {
+  html:not(.dark) body {
     @apply bg-light-bg-primary text-light-text-primary;
   }
 }
