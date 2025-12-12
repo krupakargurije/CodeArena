@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createRoom } from '../services/roomService';
 import { supabase } from '../services/supabaseClient';
 
@@ -9,22 +9,65 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
     const [problems, setProblems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
         fetchProblems();
     }, []);
 
-    const fetchProblems = async () => {
-        const { data } = await supabase
-            .from('problems')
-            .select('id, title, difficulty')
-            .order('title');
-
-        if (data) {
-            setProblems(data);
-            if (data.length > 0) {
-                setSelectedProblemId(data[0].id);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
             }
+        };
+
+        if (dropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownOpen]);
+
+    const fetchProblems = async () => {
+        try {
+            console.log('Fetching problems for room creation...');
+
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            // Try direct REST API first (like other successful queries in the app)
+            const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/problems?select=id,title,difficulty&order=title`, {
+                headers: {
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`
+                }
+            });
+
+            if (fetchResponse.ok) {
+                const data = await fetchResponse.json();
+                console.log('Direct fetch SUCCESS - Fetched problems:', data);
+                console.log('Number of problems:', data?.length || 0);
+
+                if (data && data.length > 0) {
+                    setProblems(data);
+                    setSelectedProblemId(data[0].id);
+                } else {
+                    console.warn('No problems found in database');
+                    setProblems([]);
+                }
+            } else {
+                const errorText = await fetchResponse.text();
+                console.error('Direct fetch FAILED:', fetchResponse.status, errorText);
+                setError('Failed to load problems. Please try again.');
+            }
+        } catch (err) {
+            console.error('Exception fetching problems:', err);
+            setError('Failed to load problems. Please try again.');
         }
     };
 
@@ -51,7 +94,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
+            <div className="glass rounded-2xl p-8 max-w-md w-full border dark:border-dark-border-primary border-light-border-primary relative overflow-visible">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold gradient-text">Create Room</h2>
                     <button
@@ -67,7 +110,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Max Participants */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                        <label className="block text-sm font-medium text-secondary mb-3">
                             Number of Players
                         </label>
                         <div className="grid grid-cols-4 gap-3">
@@ -77,8 +120,8 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                     type="button"
                                     onClick={() => setMaxParticipants(num)}
                                     className={`py-3 rounded-lg font-semibold transition-all ${maxParticipants === num
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-dark-tertiary text-gray-400 hover:bg-dark-tertiary/80'
+                                        ? 'dark:bg-dark-bg-elevated bg-light-bg-elevated dark:text-dark-text-primary text-light-text-primary ring-2 dark:ring-dark-border-secondary ring-light-border-secondary'
+                                        : 'dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-secondary text-light-text-secondary dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80'
                                         }`}
                                 >
                                     {num}
@@ -89,65 +132,104 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
                     {/* Problem Selection Mode */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                        <label className="block text-sm font-medium text-secondary mb-3">
                             Problem Selection
                         </label>
                         <div className="space-y-3">
-                            <label className="flex items-center gap-3 p-4 bg-dark-tertiary rounded-lg cursor-pointer hover:bg-dark-tertiary/80 transition-colors">
+                            <label className="flex items-center gap-3 p-4 dark:bg-dark-bg-tertiary bg-light-bg-tertiary rounded-lg cursor-pointer dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80 transition-colors">
                                 <input
                                     type="radio"
                                     name="problemMode"
                                     value="random"
                                     checked={problemSelectionMode === 'random'}
                                     onChange={(e) => setProblemSelectionMode(e.target.value)}
-                                    className="w-4 h-4 text-primary-600"
+                                    className="w-4 h-4 dark:accent-dark-text-primary accent-light-text-primary"
                                 />
                                 <div>
-                                    <div className="font-semibold text-gray-100">Random Problem</div>
-                                    <div className="text-sm text-gray-400">System picks a random problem</div>
+                                    <div className="font-semibold text-primary">Random Problem</div>
+                                    <div className="text-sm text-secondary">System picks a random problem</div>
                                 </div>
                             </label>
 
-                            <label className="flex items-center gap-3 p-4 bg-dark-tertiary rounded-lg cursor-pointer hover:bg-dark-tertiary/80 transition-colors">
+                            <label className="flex items-center gap-3 p-4 dark:bg-dark-bg-tertiary bg-light-bg-tertiary rounded-lg cursor-pointer dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80 transition-colors">
                                 <input
                                     type="radio"
                                     name="problemMode"
                                     value="single"
                                     checked={problemSelectionMode === 'single'}
                                     onChange={(e) => setProblemSelectionMode(e.target.value)}
-                                    className="w-4 h-4 text-primary-600"
+                                    className="w-4 h-4 dark:accent-dark-text-primary accent-light-text-primary"
                                 />
                                 <div>
-                                    <div className="font-semibold text-gray-100">Choose Problem</div>
-                                    <div className="text-sm text-gray-400">Select a specific problem</div>
+                                    <div className="font-semibold text-primary">Choose Problem</div>
+                                    <div className="text-sm text-secondary">Select a specific problem</div>
                                 </div>
                             </label>
                         </div>
                     </div>
 
+
                     {/* Problem Dropdown (if single mode) */}
                     {problemSelectionMode === 'single' && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Select Problem
+                        <div className="relative" ref={dropdownRef}>
+                            <label className="block text-sm font-medium text-secondary mb-2">
+                                Select Problem {problems.length > 0 && `(${problems.length} available)`}
                             </label>
-                            <select
-                                value={selectedProblemId || ''}
-                                onChange={(e) => setSelectedProblemId(parseInt(e.target.value))}
-                                className="w-full bg-dark-tertiary text-gray-100 px-4 py-3 rounded-lg border border-dark-tertiary focus:outline-none focus:ring-2 focus:ring-primary-500"
+
+                            {/* Custom Dropdown Button */}
+                            <button
+                                type="button"
+                                onClick={() => setDropdownOpen(!dropdownOpen)}
+                                className="input w-full text-left flex items-center justify-between"
                             >
-                                {problems.map((problem) => (
-                                    <option key={problem.id} value={problem.id}>
-                                        {problem.title} ({problem.difficulty})
-                                    </option>
-                                ))}
-                            </select>
+                                <span>
+                                    {selectedProblemId
+                                        ? problems.find(p => p.id === selectedProblemId)?.title || 'Select a problem'
+                                        : 'Select a problem'}
+                                </span>
+                                <svg
+                                    className={`w-5 h-5 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {dropdownOpen && (
+                                <div className="absolute z-[100] w-full mt-1 dark:bg-dark-bg-secondary bg-white border dark:border-dark-border-primary border-light-border-primary rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                    {problems.map((problem) => (
+                                        <button
+                                            key={problem.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedProblemId(problem.id);
+                                                setDropdownOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 transition-colors ${selectedProblemId === problem.id
+                                                ? 'dark:bg-dark-bg-elevated bg-light-bg-elevated'
+                                                : 'dark:hover:bg-dark-bg-tertiary hover:bg-light-bg-tertiary'
+                                                }`}
+                                        >
+                                            <div className="font-medium text-primary">{problem.title}</div>
+                                            <div className={`text-sm ${problem.difficulty === 'EASY' ? 'text-difficulty-easy' :
+                                                problem.difficulty === 'MEDIUM' ? 'text-difficulty-medium' :
+                                                    'text-difficulty-hard'
+                                                }`}>
+                                                {problem.difficulty}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
+                        <div className="bg-difficulty-hard/10 border border-difficulty-hard/50 text-difficulty-hard px-4 py-3 rounded-lg">
                             {error}
                         </div>
                     )}

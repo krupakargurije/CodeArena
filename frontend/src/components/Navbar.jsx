@@ -50,6 +50,9 @@ const Navbar = () => {
                         <Link to="/problems" className="nav-link">
                             Problems
                         </Link>
+                        <Link to="/rooms" className="nav-link">
+                            My Rooms
+                        </Link>
                         <Link to="/leaderboard" className="nav-link">
                             Leaderboard
                         </Link>

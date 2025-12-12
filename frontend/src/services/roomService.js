@@ -12,77 +12,63 @@ export const generateRoomId = () => {
 
 // Create new room
 export const createRoom = async (roomData) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
+    console.log('createRoom: Starting...');
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const accessToken = session.access_token;
+
+    // Get access token from localStorage
+    // Log all localStorage keys for debugging
+    console.log('createRoom: All localStorage keys:', Object.keys(localStorage));
+
+    const authData = localStorage.getItem('supabase.auth.token');
+    console.log('createRoom: Auth data found:', !!authData);
+
+    let accessToken = supabaseAnonKey;
+    let userId = null;
+
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            console.log('createRoom: Parsed auth:', { hasToken: !!parsed.access_token, hasUser: !!parsed.user, userId: parsed.user?.id });
+            accessToken = parsed.access_token || supabaseAnonKey;
+            userId = parsed.user?.id;
+            console.log('createRoom: Using authenticated token, userId:', userId);
+        } catch (e) {
+            console.warn('createRoom: Could not parse auth, using anon key', e);
+        }
+    } else {
+        console.warn('createRoom: No auth data found in localStorage');
+    }
+
+    if (!userId) {
+        console.error('createRoom: No userId - user not logged in');
+        throw new Error('No user logged in');
+    }
+
+    // Get username from localStorage
+    let username = 'User';
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            username = parsed.user?.user_metadata?.username || parsed.user?.email?.split('@')[0] || 'User';
+        } catch (e) {
+            console.warn('createRoom: Could not get username');
+        }
+    }
 
     // Generate unique room ID
     let roomId = generateRoomId();
 
-    // Check if ID already exists (very rare)
-    // Use direct fetch for this check to avoid client timeout
-    let existing = null;
-    try {
-        const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}&select=id`, {
-            headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
-        if (fetchResponse.ok) {
-            const fetchData = await fetchResponse.json();
-            if (fetchData.length > 0) existing = fetchData[0];
-        } else {
-            // Fallback to client if fetch fails
-            const { data } = await supabase
-                .from('rooms')
-                .select('id')
-                .eq('id', roomId)
-                .maybeSingle();
-            existing = data;
-        }
-    } catch (e) {
-        const { data } = await supabase
-            .from('rooms')
-            .select('id')
-            .eq('id', roomId)
-            .maybeSingle();
-        existing = data;
-    }
-
-    // Regenerate if collision
-    while (existing) {
-        roomId = generateRoomId();
-        // Repeat check
-        try {
-            const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}&select=id`, {
-                headers: {
-                    'apikey': supabaseAnonKey,
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-            if (fetchResponse.ok) {
-                const fetchData = await fetchResponse.json();
-                existing = fetchData.length > 0 ? fetchData[0] : null;
-            } else {
-                const { data } = await supabase.from('rooms').select('id').eq('id', roomId).maybeSingle();
-                existing = data;
-            }
-        } catch (e) {
-            const { data } = await supabase.from('rooms').select('id').eq('id', roomId).maybeSingle();
-            existing = data;
-        }
-    }
+    // Check if ID already exists (very rare) - skip for speed
+    // Collision is extremely unlikely with 6-char alphanumeric (36^6 = 2.1 billion combinations)
 
     // Create room using direct fetch first
     try {
         console.log('Attempting direct REST POST for createRoom...');
         const roomPayload = {
             id: roomId,
-            created_by: session.user.id,
+            created_by: userId,
             problem_id: roomData.problemId || null,
             problem_selection_mode: roomData.problemSelectionMode,
             max_participants: roomData.maxParticipants
@@ -105,77 +91,64 @@ export const createRoom = async (roomData) => {
                 console.log('Direct POST createRoom SUCCESS');
                 const room = fetchData[0];
 
-                // Add creator as first participant via direct fetch
-                try {
-                    await fetch(`${supabaseUrl}/rest/v1/room_participants`, {
-                        method: 'POST',
-                        headers: {
-                            'apikey': supabaseAnonKey,
-                            'Authorization': `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            room_id: roomId,
-                            user_id: session.user.id,
-                            username: session.user.user_metadata?.username || session.user.email?.split('@')[0]
-                        })
-                    });
-                } catch (pError) {
-                    console.error('Direct participant add failed', pError);
-                    // Try fallback for participant
-                    await supabase.from('room_participants').insert({
+                // Add creator as first participant
+                const participantResponse = await fetch(`${supabaseUrl}/rest/v1/room_participants`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseAnonKey,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
                         room_id: roomId,
-                        user_id: session.user.id,
-                        username: session.user.user_metadata?.username || session.user.email?.split('@')[0]
-                    });
+                        user_id: userId,
+                        username: username
+                    })
+                });
+
+                if (!participantResponse.ok) {
+                    console.error('Failed to add participant:', await participantResponse.text());
                 }
 
+                console.log('createRoom: Room and participant created successfully');
                 return { data: room };
             }
         } else {
-            console.error('Direct POST createRoom FAILED', fetchResponse.status, await fetchResponse.text());
+            const errorText = await fetchResponse.text();
+            console.error('Direct POST createRoom FAILED:', fetchResponse.status, errorText);
+            throw new Error('Failed to create room: ' + errorText);
         }
     } catch (e) {
-        console.warn('Direct POST createRoom failed, falling back to client', e);
+        console.error('createRoom error:', e);
+        throw e;
     }
-
-    // Fallback to client
-    const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .insert({
-            id: roomId,
-            created_by: session.user.id,
-            problem_id: roomData.problemId || null,
-            problem_selection_mode: roomData.problemSelectionMode,
-            max_participants: roomData.maxParticipants
-        })
-        .select()
-        .single();
-
-    if (roomError) throw roomError;
-
-    // Add creator as first participant
-    const { error: participantError } = await supabase
-        .from('room_participants')
-        .insert({
-            room_id: roomId,
-            user_id: session.user.id,
-            username: session.user.user_metadata?.username || session.user.email?.split('@')[0]
-        });
-
-    if (participantError) throw participantError;
-
-    return { data: room };
 };
 
 // Join existing room
 export const joinRoom = async (roomId) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
+    console.log('joinRoom: Called for room:', roomId);
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const accessToken = session.access_token;
+
+    const authData = localStorage.getItem('supabase.auth.token');
+    let userId = null;
+    let username = 'User';
+    let accessToken = supabaseAnonKey;
+
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            userId = parsed.user?.id;
+            username = parsed.user?.user_metadata?.username || parsed.user?.email?.split('@')[0] || 'User';
+            accessToken = parsed.access_token || supabaseAnonKey;
+        } catch (e) {
+            console.error('joinRoom: Could not parse auth');
+        }
+    }
+
+    if (!userId) throw new Error('No user logged in');
 
     let room = null;
     let roomError = null;
@@ -190,31 +163,28 @@ export const joinRoom = async (roomId) => {
             }
         });
 
+        console.log('joinRoom: Fetch response status:', fetchResponse.status);
+
         if (fetchResponse.ok) {
             const fetchData = await fetchResponse.json();
+            console.log('joinRoom: Fetch data:', fetchData);
             if (fetchData && fetchData.length > 0) {
                 room = fetchData[0];
                 console.log('Direct fetch joinRoom SUCCESS');
+            } else {
+                console.warn('joinRoom: Room not found or not in waiting status');
+                throw new Error('Room not found or not available to join');
             }
+        } else {
+            const errorText = await fetchResponse.text();
+            console.error('joinRoom: Failed to fetch room:', fetchResponse.status, errorText);
+            throw new Error('Room not found');
         }
     } catch (e) {
-        console.warn('Direct fetch failed, falling back to client', e);
+        console.error('joinRoom: Error fetching room:', e);
+        throw e;
     }
 
-    if (!room) {
-        // Fallback to client
-        const { data, error } = await supabase
-            .from('rooms')
-            .select('*, room_participants(*)')
-            .eq('id', roomId.toUpperCase())
-            .eq('status', 'waiting')
-            .single();
-
-        room = data;
-        roomError = error;
-    }
-
-    if (roomError) throw new Error('Room not found');
     if (!room) throw new Error('Room not found');
 
     // Count active participants (not left)
@@ -224,7 +194,7 @@ export const joinRoom = async (roomId) => {
     }
 
     // Check if user already in room
-    const alreadyJoined = activeParticipants.some(p => p.user_id === session.user.id);
+    const alreadyJoined = activeParticipants.some(p => p.user_id === userId);
     if (alreadyJoined) {
         return { data: room };
     }
@@ -240,171 +210,287 @@ export const joinRoom = async (roomId) => {
             },
             body: JSON.stringify({
                 room_id: roomId.toUpperCase(),
-                user_id: session.user.id,
-                username: session.user.user_metadata?.username || session.user.email?.split('@')[0]
+                user_id: userId,
+                username: username
             })
         });
 
         if (fetchResponse.ok) {
+            console.log('joinRoom: Successfully joined room');
             return { data: room };
+        } else {
+            const errorText = await fetchResponse.text();
+            console.error('joinRoom: Failed to join:', errorText);
+            throw new Error('Failed to join room');
         }
     } catch (e) {
-        console.warn('Direct POST joinRoom failed, falling back', e);
+        console.error('joinRoom: Error:', e);
+        throw e;
     }
-
-    // Add user to room fallback
-    const { error: joinError } = await supabase
-        .from('room_participants')
-        .insert({
-            room_id: roomId.toUpperCase(),
-            user_id: session.user.id,
-            username: session.user.user_metadata?.username || session.user.email?.split('@')[0]
-        });
-
-    if (joinError) throw joinError;
-
-    return { data: room };
 };
 
 // Leave room
 export const leaveRoom = async (roomId) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
+    console.log('leaveRoom: Called for room:', roomId);
 
-    const { error } = await supabase
-        .from('room_participants')
-        .update({ left_at: new Date().toISOString() })
-        .eq('room_id', roomId)
-        .eq('user_id', session.user.id)
-        .is('left_at', null);
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (error) throw error;
-    return { data: { success: true } };
+    const authData = localStorage.getItem('supabase.auth.token');
+    let userId = null;
+    let accessToken = supabaseAnonKey;
+
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            userId = parsed.user?.id;
+            accessToken = parsed.access_token || supabaseAnonKey;
+        } catch (e) {
+            console.error('leaveRoom: Could not parse auth');
+        }
+    }
+
+    if (!userId) throw new Error('No user logged in');
+
+    try {
+        console.log('leaveRoom: Using REST API PATCH...');
+        const response = await fetch(`${supabaseUrl}/rest/v1/room_participants?room_id=eq.${roomId}&user_id=eq.${userId}&left_at=is.null`, {
+            method: 'PATCH',
+            headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ left_at: new Date().toISOString() })
+        });
+
+        if (response.ok || response.status === 204) {
+            console.log('leaveRoom: Success');
+            return { data: { success: true } };
+        } else {
+            const errorText = await response.text();
+            console.error('leaveRoom: Failed:', response.status, errorText);
+            throw new Error('Failed to leave room');
+        }
+    } catch (e) {
+        console.error('leaveRoom: Error:', e);
+        throw e;
+    }
+};
+
+// Delete room (creator only, waiting status only)
+export const deleteRoom = async (roomId) => {
+    console.log('deleteRoom: Called for room:', roomId);
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    // Get access token from localStorage
+    const authData = localStorage.getItem('sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token');
+    let accessToken = supabaseAnonKey;
+
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            accessToken = parsed.access_token || supabaseAnonKey;
+            console.log('deleteRoom: Using authenticated token');
+        } catch (e) {
+            console.warn('deleteRoom: Using anon key');
+        }
+    }
+
+    try {
+        console.log('deleteRoom: Attempting delete via REST API...');
+        const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken}`,
+                'Prefer': 'return=minimal'
+            }
+        });
+
+        if (fetchResponse.ok || fetchResponse.status === 204) {
+            console.log('deleteRoom: Delete successful');
+            return { data: { success: true } };
+        } else {
+            const errorText = await fetchResponse.text();
+            console.error('deleteRoom: Delete FAILED:', fetchResponse.status, errorText);
+            throw new Error(errorText || 'Failed to delete room');
+        }
+    } catch (e) {
+        console.error('deleteRoom: Error:', e);
+        throw e;
+    }
 };
 
 // Get room details
 export const getRoomDetails = async (roomId) => {
+    console.log('getRoomDetails: Called for room:', roomId);
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    // Try to get session for authenticated request if possible
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || supabaseAnonKey;
-
-    let data = null;
-    let error = null;
-
     try {
         console.log('Attempting direct REST fetch for getRoomDetails...');
-        // Complex select: *,room_participants!inner(...),problems(...)
-        // REST syntax for inner join is tricky, usually !inner is implied if we filter on it, but here we just want the data.
-        // We'll try a standard select.
         const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}&select=*,room_participants(id,user_id,username,joined_at,is_ready,left_at),problems(id,title,difficulty)`, {
             headers: {
                 'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken}`
+                'Authorization': `Bearer ${supabaseAnonKey}`
             }
         });
 
         if (fetchResponse.ok) {
             const fetchData = await fetchResponse.json();
             if (fetchData && fetchData.length > 0) {
-                data = fetchData[0];
-                console.log('Direct fetch getRoomDetails SUCCESS');
+                const data = fetchData[0];
+                console.log('Direct fetch getRoomDetails SUCCESS:', data);
+
+                // Filter out participants who left
+                if (data) {
+                    data.room_participants = data.room_participants?.filter(p => !p.left_at) || [];
+                }
+
+                return { data };
+            } else {
+                console.error('getRoomDetails: Room not found');
+                throw new Error('Room not found');
             }
+        } else {
+            const errorText = await fetchResponse.text();
+            console.error('Direct fetch FAILED:', fetchResponse.status, errorText);
+            throw new Error('Failed to fetch room details');
         }
     } catch (e) {
-        console.warn('Direct fetch failed, falling back to client', e);
+        console.error('Error fetching room details:', e);
+        throw e;
     }
-
-    if (!data) {
-        const result = await supabase
-            .from('rooms')
-            .select(`
-                *,
-                room_participants!inner(
-                    id,
-                    user_id,
-                    username,
-                    joined_at,
-                    is_ready,
-                    left_at
-                ),
-                problems(
-                    id,
-                    title,
-                    difficulty
-                )
-            `)
-            .eq('id', roomId)
-            .single();
-        data = result.data;
-        error = result.error;
-    }
-
-    if (error) throw error;
-
-    // Filter out participants who left
-    if (data) {
-        data.room_participants = data.room_participants.filter(p => !p.left_at);
-    }
-
-    return { data };
 };
 
 // Update ready status
 export const updateReadyStatus = async (roomId, isReady) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
+    console.log('updateReadyStatus: Called for room:', roomId, 'isReady:', isReady);
 
-    const { error } = await supabase
-        .from('room_participants')
-        .update({ is_ready: isReady })
-        .eq('room_id', roomId)
-        .eq('user_id', session.user.id)
-        .is('left_at', null);
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (error) throw error;
-    return { data: { success: true } };
+    const authData = localStorage.getItem('supabase.auth.token');
+    let userId = null;
+    let accessToken = supabaseAnonKey;
+
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            userId = parsed.user?.id;
+            accessToken = parsed.access_token || supabaseAnonKey;
+        } catch (e) {
+            console.error('updateReadyStatus: Could not parse auth');
+        }
+    }
+
+    if (!userId) throw new Error('No user logged in');
+
+    try {
+        console.log('updateReadyStatus: Using REST API PATCH...');
+        const response = await fetch(`${supabaseUrl}/rest/v1/room_participants?room_id=eq.${roomId}&user_id=eq.${userId}&left_at=is.null`, {
+            method: 'PATCH',
+            headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ is_ready: isReady })
+        });
+
+        if (response.ok || response.status === 204) {
+            console.log('updateReadyStatus: Success');
+            return { data: { success: true } };
+        } else {
+            const errorText = await response.text();
+            console.error('updateReadyStatus: Failed:', response.status, errorText);
+            throw new Error('Failed to update ready status');
+        }
+    } catch (e) {
+        console.error('updateReadyStatus: Error:', e);
+        throw e;
+    }
 };
 
 // Start room (creator only)
 export const startRoom = async (roomId) => {
     console.log('Starting room:', roomId);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
 
-    // Get room to verify creator
-    const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .select('created_by, problem_selection_mode, problem_id')
-        .eq('id', roomId)
-        .single();
+    const authData = localStorage.getItem('supabase.auth.token');
+    let userId = null;
 
-    if (roomError) {
-        console.error('Error fetching room:', roomError);
-        throw roomError;
+    if (authData) {
+        try {
+            const parsed = JSON.parse(authData);
+            userId = parsed.user?.id;
+        } catch (e) {
+            console.error('startRoom: Could not parse auth');
+        }
     }
 
+    if (!userId) throw new Error('No user logged in');
+
+    // Get room to verify creator - using REST API
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const authData2 = localStorage.getItem('supabase.auth.token');
+    let accessToken = supabaseAnonKey;
+    if (authData2) {
+        try {
+            const parsed = JSON.parse(authData2);
+            accessToken = parsed.access_token || supabaseAnonKey;
+        } catch (e) { }
+    }
+
+    console.log('Fetching room details via REST API...');
+    const roomResponse = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}&select=created_by,problem_selection_mode,problem_id`, {
+        headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+
+    if (!roomResponse.ok) {
+        const errorText = await roomResponse.text();
+        console.error('Error fetching room:', errorText);
+        throw new Error('Failed to fetch room details');
+    }
+
+    const roomData = await roomResponse.json();
+    if (!roomData || roomData.length === 0) {
+        throw new Error('Room not found');
+    }
+
+    const room = roomData[0];
     console.log('Room data:', room);
 
-    if (room.created_by !== session.user.id) {
+    if (room.created_by !== userId) {
         throw new Error('Only room creator can start the room');
     }
 
     // If random mode, select a random problem
     let problemId = null;
     if (room.problem_selection_mode === 'random') {
-        console.log('Selecting random problem...');
-        const { data: problems, error: problemsError } = await supabase
-            .from('problems')
-            .select('id');
+        console.log('Selecting random problem via REST API...');
+        const problemsResponse = await fetch(`${supabaseUrl}/rest/v1/problems?select=id`, {
+            headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
 
-        if (problemsError) {
-            console.error('Error fetching problems:', problemsError);
+        if (!problemsResponse.ok) {
+            console.error('Error fetching problems');
             throw new Error('Failed to fetch problems for random selection');
         }
 
+        const problems = await problemsResponse.json();
         console.log('Available problems:', problems);
 
         if (problems && problems.length > 0) {
@@ -447,14 +533,22 @@ export const startRoom = async (roomId) => {
 
     console.log('Updating room with:', updateData);
 
-    const { error } = await supabase
-        .from('rooms')
-        .update(updateData)
-        .eq('id', roomId);
+    // Reuse accessToken from earlier in function
+    const response = await fetch(`${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}`, {
+        method: 'PATCH',
+        headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(updateData)
+    });
 
-    if (error) {
-        console.error('Error updating room:', error);
-        throw error;
+    if (!response.ok && response.status !== 204) {
+        const errorText = await response.text();
+        console.error('Error updating room:', errorText);
+        throw new Error('Failed to start room');
     }
 
     console.log('Room started successfully');
@@ -491,56 +585,39 @@ export const subscribeToRoom = (roomId, callback) => {
 };
 
 // Get user's active rooms
-export const getUserRooms = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw new Error('No user logged in');
+export const getUserRooms = async (userId) => {
+    console.log('getUserRooms: Function called with userId:', userId);
+
+    if (!userId) {
+        console.error('getUserRooms: No userId provided');
+        throw new Error('No user ID provided');
+    }
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const accessToken = session.access_token;
 
     try {
-        // DEBUG: Try direct fetch
         console.log('Attempting direct REST fetch for user rooms...');
-        // Note: This is a complex query with joins, so we might just fetch room_participants and then rooms if needed,
-        // or just rely on the fact that we need room_participants.
-        // For simplicity in REST, we'll just fetch room_participants and assume we can't easily join without more work.
-        // But let's try to construct the join query:
-        // room_participants?user_id=eq.ID&select=*,rooms(*)
-        const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/room_participants?user_id=eq.${session.user.id}&select=room_id,joined_at,rooms(id,status,max_participants,created_at,problem_selection_mode,problems(title,difficulty))&left_at=is.null&order=joined_at.desc`, {
+        const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/room_participants?user_id=eq.${userId}&select=room_id,joined_at,rooms(id,status,max_participants,created_at,created_by,problem_selection_mode,problems(title,difficulty))&left_at=is.null&order=joined_at.desc`, {
             headers: {
                 'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken}`
+                'Authorization': `Bearer ${supabaseAnonKey}`
             }
         });
 
         if (fetchResponse.ok) {
             const fetchData = await fetchResponse.json();
-            console.log('Direct fetch user rooms SUCCESS');
-            return { data: fetchData.map(p => p.rooms) };
+            console.log('Direct fetch user rooms SUCCESS:', fetchData);
+            const rooms = fetchData.map(p => p.rooms);
+            console.log('Extracted rooms:', rooms);
+            return { data: rooms };
+        } else {
+            const errorText = await fetchResponse.text();
+            console.error('Direct fetch FAILED:', fetchResponse.status, errorText);
+            throw new Error('Failed to fetch rooms');
         }
     } catch (e) {
-        console.warn('Direct fetch failed, falling back to client', e);
+        console.error('Error fetching user rooms:', e);
+        throw e;
     }
-
-    const { data, error } = await supabase
-        .from('room_participants')
-        .select(`
-            room_id,
-            joined_at,
-            rooms(
-                id,
-                status,
-                max_participants,
-                created_at,
-                problem_selection_mode,
-                problems(title, difficulty)
-            )
-        `)
-        .eq('user_id', session.user.id)
-        .is('left_at', null)
-        .order('joined_at', { ascending: false });
-
-    if (error) throw error;
-    return { data: data.map(p => p.rooms) };
 };

@@ -50,7 +50,7 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-secondary mb-2">
                             Room Code
                         </label>
                         <input
@@ -58,18 +58,18 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
                             value={roomId}
                             onChange={handleInputChange}
                             placeholder="ABC123"
-                            className="w-full bg-dark-tertiary text-gray-100 px-4 py-3 rounded-lg border border-dark-tertiary focus:outline-none focus:ring-2 focus:ring-primary-500 text-center text-2xl font-bold tracking-widest"
+                            className="input text-center text-2xl font-bold tracking-widest"
                             maxLength={6}
                             autoFocus
                         />
-                        <p className="text-gray-400 text-sm mt-2">
+                        <p className="text-secondary text-sm mt-2">
                             Enter the 6-character room code
                         </p>
                     </div>
 
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
+                        <div className="bg-difficulty-hard/10 border border-difficulty-hard/50 text-difficulty-hard px-4 py-3 rounded-lg">
                             {error}
                         </div>
                     )}

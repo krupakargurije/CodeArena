@@ -53,32 +53,41 @@ const RoomLobby = () => {
     };
 
     const handleToggleReady = async () => {
+        console.log('handleToggleReady: Clicked, current isReady:', isReady);
         try {
+            console.log('handleToggleReady: Calling updateReadyStatus...');
             await updateReadyStatus(roomId, !isReady);
+            console.log('handleToggleReady: Success');
             setIsReady(!isReady);
         } catch (error) {
-            console.error('Failed to update ready status:', error);
+            console.error('handleToggleReady: Failed:', error);
         }
     };
 
     const handleStart = async () => {
+        console.log('handleStart: Clicked');
         setStarting(true);
         try {
+            console.log('handleStart: Calling startRoom...');
             await startRoom(roomId);
+            console.log('handleStart: Success');
             // Will redirect via useEffect when room status changes
         } catch (error) {
-            console.error('Failed to start room:', error);
+            console.error('handleStart: Failed:', error);
             alert(error.message);
             setStarting(false);
         }
     };
 
     const handleLeave = async () => {
+        console.log('handleLeave: Clicked');
         try {
+            console.log('handleLeave: Calling leaveRoom...');
             await leaveRoom(roomId);
+            console.log('handleLeave: Success, navigating to /rooms');
             navigate('/rooms');
         } catch (error) {
-            console.error('Failed to leave room:', error);
+            console.error('handleLeave: Failed:', error);
         }
     };
 
@@ -144,8 +153,8 @@ const RoomLobby = () => {
                                     {room.problems.title}
                                 </div>
                                 <div className={`px-3 py-1 rounded-full text-sm font-semibold ${room.problems.difficulty === 'EASY' ? 'bg-accent-green/20 text-accent-green' :
-                                        room.problems.difficulty === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-accent-red/20 text-accent-red'
+                                    room.problems.difficulty === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                                        'bg-accent-red/20 text-accent-red'
                                     }`}>
                                     {room.problems.difficulty}
                                 </div>
@@ -208,8 +217,8 @@ const RoomLobby = () => {
                     <button
                         onClick={handleToggleReady}
                         className={`px-8 py-3 rounded-lg font-semibold transition-all ${isReady
-                                ? 'bg-gray-600 hover:bg-gray-700 text-white'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
                             }`}
                     >
                         {isReady ? 'Not Ready' : 'Ready'}
