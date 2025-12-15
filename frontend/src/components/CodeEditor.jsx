@@ -9,11 +9,23 @@ const CodeEditor = ({ code, onChange, language }) => {
         roundedSelection: false,
         scrollBeyondLastLine: false,
         automaticLayout: true,
-        theme: 'vs-dark',
+        readOnly: false,
+        // Force color scheme
+        'semanticHighlighting.enabled': true,
+    };
+
+    const handleEditorDidMount = (editor, monaco) => {
+        // Force dark theme after mount
+        monaco.editor.setTheme('vs-dark');
+
+        // Ensure editor updates with dark theme
+        editor.updateOptions({
+            theme: 'vs-dark'
+        });
     };
 
     return (
-        <div className="h-full border border-dark-tertiary rounded-lg overflow-hidden">
+        <div className="h-full border border-dark-tertiary rounded-lg overflow-hidden bg-[#1e1e1e]">
             <Editor
                 height="100%"
                 language={language}
@@ -21,6 +33,11 @@ const CodeEditor = ({ code, onChange, language }) => {
                 onChange={onChange}
                 theme="vs-dark"
                 options={editorOptions}
+                beforeMount={(monaco) => {
+                    // Ensure dark theme is set before mounting
+                    monaco.editor.setTheme('vs-dark');
+                }}
+                onMount={handleEditorDidMount}
             />
         </div>
     );

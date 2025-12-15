@@ -14,7 +14,7 @@ const ProblemCard = ({ problem }) => {
         <Link to={`/problems/${problem.id}`}>
             <div className="card group cursor-pointer">
                 <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-semibold text-gray-100 group-hover:text-primary-400 transition-colors">
+                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary group-hover:text-brand-orange transition-colors">
                         {problem.title}
                     </h3>
                     <span className={getDifficultyBadge(problem.difficulty)}>
@@ -22,7 +22,7 @@ const ProblemCard = ({ problem }) => {
                     </span>
                 </div>
 
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                <p className="dark:text-dark-text-secondary text-light-text-secondary text-sm mb-4 line-clamp-2">
                     {problem.description}
                 </p>
 
@@ -31,14 +31,14 @@ const ProblemCard = ({ problem }) => {
                         {problem.tags?.slice(0, 3).map((tag, index) => (
                             <span
                                 key={index}
-                                className="px-2 py-1 text-xs rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20"
+                                className="px-2 py-1 text-xs rounded-md bg-brand-orange/10 text-brand-orange border border-brand-orange/20"
                             >
                                 {tag}
                             </span>
                         ))}
                     </div>
 
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm dark:text-dark-text-tertiary text-light-text-tertiary">
                         {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}%` : '0%'}
                     </div>
                 </div>

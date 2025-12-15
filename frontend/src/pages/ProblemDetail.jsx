@@ -5,6 +5,35 @@ import { getProblem } from '../services/problemService';
 import { submitCodeThunk, runCodeThunk } from '../store/submissionSlice';
 import CodeEditor from '../components/CodeEditor';
 
+// Default code templates for each language
+const CODE_TEMPLATES = {
+    javascript: `// JavaScript Solution
+// Write your code here
+`,
+    python: `# Python Solution
+# Write your code here
+`,
+    java: `// Java Solution
+import java.util.*;
+import java.io.*;
+
+public class Solution {
+    public static void main(String[] args){
+        // Write your code here
+    }
+}
+`,
+    cpp: `// C++ Solution
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    // Write your code here
+    return 0;
+}
+`
+};
+
 const ProblemDetail = ({ problemIdProp }) => {
     const { id: paramId } = useParams();
     const id = problemIdProp || paramId;
@@ -13,12 +42,15 @@ const ProblemDetail = ({ problemIdProp }) => {
 
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [code, setCode] = useState('// Write your code here\n');
     const [language, setLanguage] = useState('javascript');
+    const [code, setCode] = useState(CODE_TEMPLATES['javascript']);
     const [activeTab, setActiveTab] = useState('testcase');
     const [consoleHeight, setConsoleHeight] = useState(256);
     const [isResizing, setIsResizing] = useState(false);
+    const [leftPanelWidth, setLeftPanelWidth] = useState(50);
+    const [isResizingHorizontal, setIsResizingHorizontal] = useState(false);
     const containerRef = useRef(null);
+    const mainContainerRef = useRef(null);
 
     useEffect(() => {
         if (!id) return;
@@ -36,6 +68,11 @@ const ProblemDetail = ({ problemIdProp }) => {
 
         fetchProblem();
     }, [id]);
+
+    // Update code template when language changes
+    useEffect(() => {
+        setCode(CODE_TEMPLATES[language]);
+    }, [language]);
 
     const handleSubmit = () => {
         setActiveTab('result');
@@ -58,6 +95,11 @@ const ProblemDetail = ({ problemIdProp }) => {
     const startResize = (e) => {
         e.preventDefault();
         setIsResizing(true);
+    };
+
+    const startHorizontalResize = (e) => {
+        e.preventDefault();
+        setIsResizingHorizontal(true);
     };
 
     useEffect(() => {
@@ -90,6 +132,36 @@ const ProblemDetail = ({ problemIdProp }) => {
         };
     }, [isResizing]);
 
+    useEffect(() => {
+        const handleHorizontalMouseMove = (e) => {
+            if (!isResizingHorizontal || !mainContainerRef.current) return;
+
+            const containerRect = mainContainerRef.current.getBoundingClientRect();
+            const newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+
+            const minWidth = 30;
+            const maxWidth = 70;
+
+            if (newWidthPercent >= minWidth && newWidthPercent <= maxWidth) {
+                setLeftPanelWidth(newWidthPercent);
+            }
+        };
+
+        const handleHorizontalMouseUp = () => {
+            setIsResizingHorizontal(false);
+        };
+
+        if (isResizingHorizontal) {
+            document.addEventListener('mousemove', handleHorizontalMouseMove);
+            document.addEventListener('mouseup', handleHorizontalMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleHorizontalMouseMove);
+            document.removeEventListener('mouseup', handleHorizontalMouseUp);
+        };
+    }, [isResizingHorizontal]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-dark-primary flex items-center justify-center">
@@ -116,14 +188,14 @@ const ProblemDetail = ({ problemIdProp }) => {
     };
 
     return (
-        <div className="h-screen bg-dark-primary flex flex-col">
-            <div className="flex-1 flex overflow-hidden">
+        <div className="h-screen dark:bg-dark-bg-primary bg-light-bg-primary flex flex-col">
+            <div ref={mainContainerRef} className="flex-1 flex overflow-hidden">
                 {/* Left Panel - Problem Description */}
-                <div className="w-1/2 border-r border-dark-tertiary overflow-y-auto">
+                <div style={{ width: `${leftPanelWidth}%` }} className="border-r dark:border-dark-border-primary border-light-border-primary overflow-y-auto">
                     <div className="p-8">
                         <div className="mb-6">
                             <div className="flex items-center gap-4 mb-4">
-                                <h1 className="text-3xl font-bold text-gray-100">
+                                <h1 className="text-3xl font-bold dark:text-dark-text-primary text-light-text-primary">
                                     {problem.title}
                                 </h1>
                                 <span className={getDifficultyBadge(problem.difficulty)}>
@@ -135,7 +207,7 @@ const ProblemDetail = ({ problemIdProp }) => {
                                 {problem.tags?.map((tag, index) => (
                                     <span
                                         key={index}
-                                        className="px-3 py-1 text-sm rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20"
+                                        className="px-3 py-1 text-sm rounded-md bg-brand-orange/10 text-brand-orange border border-brand-orange/20"
                                     >
                                         {tag}
                                     </span>
@@ -143,35 +215,35 @@ const ProblemDetail = ({ problemIdProp }) => {
                             </div>
                         </div>
 
-                        <div className="prose prose-invert max-w-none">
-                            <h3 className="text-xl font-semibold text-gray-200 mb-3">Description</h3>
-                            <p className="text-gray-400 whitespace-pre-wrap">{problem.description}</p>
+                        <div className="max-w-none">
+                            <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Description</h3>
+                            <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.description}</p>
 
                             {problem.inputFormat && (
                                 <>
-                                    <h3 className="text-xl font-semibold text-gray-200 mt-6 mb-3">Input Format</h3>
-                                    <p className="text-gray-400 whitespace-pre-wrap">{problem.inputFormat}</p>
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Input Format</h3>
+                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.inputFormat}</p>
                                 </>
                             )}
 
                             {problem.outputFormat && (
                                 <>
-                                    <h3 className="text-xl font-semibold text-gray-200 mt-6 mb-3">Output Format</h3>
-                                    <p className="text-gray-400 whitespace-pre-wrap">{problem.outputFormat}</p>
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Output Format</h3>
+                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.outputFormat}</p>
                                 </>
                             )}
 
                             {problem.constraints && (
                                 <>
-                                    <h3 className="text-xl font-semibold text-gray-200 mt-6 mb-3">Constraints</h3>
-                                    <p className="text-gray-400 whitespace-pre-wrap">{problem.constraints}</p>
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Constraints</h3>
+                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.constraints}</p>
                                 </>
                             )}
 
                             {problem.sampleInput && (
                                 <div className="mt-6">
-                                    <h3 className="text-xl font-semibold text-gray-200 mb-3">Sample Input</h3>
-                                    <pre className="bg-dark-tertiary p-4 rounded-lg text-gray-300 overflow-x-auto">
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Sample Input</h3>
+                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-4 rounded-lg dark:text-dark-text-primary text-light-text-primary overflow-x-auto">
                                         {problem.sampleInput}
                                     </pre>
                                 </div>
@@ -179,8 +251,8 @@ const ProblemDetail = ({ problemIdProp }) => {
 
                             {problem.sampleOutput && (
                                 <div className="mt-4">
-                                    <h3 className="text-xl font-semibold text-gray-200 mb-3">Sample Output</h3>
-                                    <pre className="bg-dark-tertiary p-4 rounded-lg text-gray-300 overflow-x-auto">
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Sample Output</h3>
+                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-4 rounded-lg dark:text-dark-text-primary text-light-text-primary overflow-x-auto">
                                         {problem.sampleOutput}
                                     </pre>
                                 </div>
@@ -188,49 +260,61 @@ const ProblemDetail = ({ problemIdProp }) => {
 
                             {problem.explanation && (
                                 <>
-                                    <h3 className="text-xl font-semibold text-gray-200 mt-6 mb-3">Explanation</h3>
-                                    <p className="text-gray-400 whitespace-pre-wrap">{problem.explanation}</p>
+                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Explanation</h3>
+                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.explanation}</p>
                                 </>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Right Panel - Code Editor + Console */}
-                <div ref={containerRef} className="w-1/2 flex flex-col">
-                    {/* Editor Header */}
-                    <div className="bg-dark-secondary border-b border-dark-tertiary p-3 flex items-center justify-between">
-                        <select
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
-                            className="bg-dark-tertiary text-gray-300 px-3 py-1.5 text-sm rounded border border-dark-tertiary focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        >
-                            <option value="javascript">JavaScript</option>
-                            <option value="python">Python</option>
-                            <option value="java">Java</option>
-                            <option value="cpp">C++</option>
-                        </select>
+                {/* Vertical Resize Handle */}
+                <div
+                    onMouseDown={startHorizontalResize}
+                    className={`w-1 dark:bg-dark-border-primary bg-light-border-primary hover:bg-brand-orange cursor-ew-resize transition-colors flex-shrink-0 ${isResizingHorizontal ? 'bg-brand-orange' : ''
+                        }`}
+                    style={{ userSelect: 'none' }}
+                />
 
-                        <div className="flex gap-2">
+                {/* Right Panel - Code Editor + Console */}
+                <div ref={containerRef} style={{ width: `${100 - leftPanelWidth}%` }} className="flex flex-col overflow-hidden">
+                    {/* Editor Header */}
+                    <div className="dark:bg-dark-bg-secondary bg-light-bg-secondary border-b dark:border-dark-border-primary border-light-border-primary py-4 px-3 flex items-center justify-between shadow-lg">
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-semibold dark:text-dark-text-secondary text-light-text-secondary uppercase tracking-wider">Language:</span>
+                            <select
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                                className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-primary text-light-text-primary px-4 py-2 text-sm rounded-lg border dark:border-dark-border-primary border-light-border-primary focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent hover:border-brand-orange/50 transition-all duration-200 cursor-pointer font-medium shadow-sm"
+                            >
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="java">Java</option>
+                                <option value="cpp">C++</option>
+                            </select>
+                        </div>
+
+                        <div className="flex gap-3">
                             <button
                                 onClick={handleRun}
                                 disabled={submitting}
-                                className="px-4 py-1.5 text-sm bg-dark-tertiary text-gray-300 rounded hover:bg-dark-tertiary/80 disabled:opacity-50 transition-colors"
+                                className="px-5 py-2 text-sm font-medium dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-primary text-light-text-primary rounded-lg hover:bg-brand-orange/10 border dark:border-dark-border-primary border-light-border-primary hover:border-brand-orange/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                             >
-                                {submitting ? 'Running...' : 'Run Code'}
+                                {submitting ? '⏳ Running...' : '▶ Run Code'}
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="px-4 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                                className="px-5 py-2 text-sm font-medium bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] transform"
                             >
-                                {submitting ? 'Submitting...' : 'Submit'}
+                                {submitting ? '⏳ Submitting...' : '✓ Submit'}
                             </button>
                         </div>
                     </div>
 
                     {/* Code Editor */}
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div className="relative pt-1 pr-1" style={{ flex: 1, overflow: 'hidden' }}>
+                        <div className="absolute inset-0 bg-gradient-to-br from-dark-primary/50 to-dark-secondary/30 pointer-events-none" />
                         <CodeEditor
                             code={code}
                             onChange={(value) => setCode(value || '')}
@@ -241,20 +325,20 @@ const ProblemDetail = ({ problemIdProp }) => {
                     {/* Resize Handle */}
                     <div
                         onMouseDown={startResize}
-                        className={`h-1 bg-dark-tertiary hover:bg-primary-500 cursor-ns-resize transition-colors ${isResizing ? 'bg-primary-500' : ''
+                        className={`h-1 dark:bg-dark-border-primary bg-light-border-primary hover:bg-brand-orange cursor-ns-resize transition-colors ${isResizing ? 'bg-brand-orange' : ''
                             }`}
                         style={{ userSelect: 'none' }}
                     />
 
                     {/* Console Panel - Resizable */}
-                    <div style={{ height: `${consoleHeight}px` }} className="border-t border-dark-tertiary bg-dark-secondary flex flex-col">
+                    <div style={{ height: `${consoleHeight}px` }} className="border-t dark:border-dark-border-primary border-light-border-primary dark:bg-dark-bg-secondary bg-light-bg-secondary flex flex-col">
                         {/* Console Tabs */}
-                        <div className="flex border-b border-dark-tertiary">
+                        <div className="flex border-b dark:border-dark-border-primary border-light-border-primary">
                             <button
                                 onClick={() => setActiveTab('testcase')}
                                 className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'testcase'
-                                    ? 'text-primary-400 border-b-2 border-primary-400 bg-dark-tertiary/50'
-                                    : 'text-gray-400 hover:text-gray-300'
+                                    ? 'text-brand-orange border-b-2 border-brand-orange dark:bg-dark-bg-tertiary/50 bg-light-bg-tertiary/50'
+                                    : 'dark:text-dark-text-secondary text-light-text-secondary dark:hover:text-dark-text-primary hover:text-light-text-primary'
                                     }`}
                             >
                                 Testcase
@@ -262,8 +346,8 @@ const ProblemDetail = ({ problemIdProp }) => {
                             <button
                                 onClick={() => setActiveTab('result')}
                                 className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'result'
-                                    ? 'text-primary-400 border-b-2 border-primary-400 bg-dark-tertiary/50'
-                                    : 'text-gray-400 hover:text-gray-300'
+                                    ? 'text-brand-orange border-b-2 border-brand-orange dark:bg-dark-bg-tertiary/50 bg-light-bg-tertiary/50'
+                                    : 'dark:text-dark-text-secondary text-light-text-secondary dark:hover:text-dark-text-primary hover:text-light-text-primary'
                                     }`}
                             >
                                 Test Result
@@ -273,13 +357,13 @@ const ProblemDetail = ({ problemIdProp }) => {
                         {/* Console Content */}
                         <div className="flex-1 overflow-y-auto p-4">
                             {activeTab === 'testcase' && (
-                                <div className="text-gray-400 text-sm">
-                                    <div className="mb-2 font-semibold text-gray-300">Input:</div>
-                                    <pre className="bg-dark-tertiary p-3 rounded text-gray-300 mb-4">
+                                <div className="dark:text-dark-text-secondary text-light-text-secondary text-sm">
+                                    <div className="mb-2 font-semibold dark:text-dark-text-primary text-light-text-primary">Input:</div>
+                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded dark:text-dark-text-primary text-light-text-primary mb-4">
                                         {problem.sampleInput || 'No test case available'}
                                     </pre>
-                                    <div className="mb-2 font-semibold text-gray-300">Expected Output:</div>
-                                    <pre className="bg-dark-tertiary p-3 rounded text-gray-300">
+                                    <div className="mb-2 font-semibold dark:text-dark-text-primary text-light-text-primary">Expected Output:</div>
+                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded dark:text-dark-text-primary text-light-text-primary">
                                         {problem.sampleOutput || 'No expected output available'}
                                     </pre>
                                 </div>
@@ -289,7 +373,7 @@ const ProblemDetail = ({ problemIdProp }) => {
                                 <div>
                                     {submitting ? (
                                         <div className="flex items-center justify-center h-32">
-                                            <div className="text-primary-400">Running code...</div>
+                                            <div className="text-brand-orange">Running code...</div>
                                         </div>
                                     ) : submissionResult ? (
                                         <div className="space-y-3">
@@ -307,7 +391,7 @@ const ProblemDetail = ({ problemIdProp }) => {
                                             {submissionResult.compile_error && (
                                                 <div>
                                                     <div className="text-red-400 font-semibold mb-2 text-sm">Compilation Error:</div>
-                                                    <pre className="bg-dark-tertiary p-3 rounded text-red-300 text-xs font-mono overflow-x-auto">
+                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-red-400 text-xs font-mono overflow-x-auto">
                                                         {submissionResult.compile_error}
                                                     </pre>
                                                 </div>
@@ -316,7 +400,7 @@ const ProblemDetail = ({ problemIdProp }) => {
                                             {submissionResult.stdout && (
                                                 <div>
                                                     <div className="text-green-400 font-semibold mb-2 text-sm">Output:</div>
-                                                    <pre className="bg-dark-tertiary p-3 rounded text-green-300 text-xs font-mono overflow-x-auto">
+                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-green-600 dark:text-green-400 text-xs font-mono overflow-x-auto">
                                                         {submissionResult.stdout}
                                                     </pre>
                                                 </div>
@@ -325,21 +409,21 @@ const ProblemDetail = ({ problemIdProp }) => {
                                             {submissionResult.stderr && (
                                                 <div>
                                                     <div className="text-yellow-400 font-semibold mb-2 text-sm">Error:</div>
-                                                    <pre className="bg-dark-tertiary p-3 rounded text-yellow-300 text-xs font-mono overflow-x-auto">
+                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-yellow-600 dark:text-yellow-400 text-xs font-mono overflow-x-auto">
                                                         {submissionResult.stderr}
                                                     </pre>
                                                 </div>
                                             )}
 
                                             {submissionResult.status === 'ACCEPTED' && (
-                                                <div className="flex gap-4 text-sm text-gray-400">
-                                                    <div>Runtime: <span className="text-gray-300">{submissionResult.executionTime}ms</span></div>
-                                                    <div>Memory: <span className="text-gray-300">{(submissionResult.memoryUsed / 1024).toFixed(2)}MB</span></div>
+                                                <div className="flex gap-4 text-sm dark:text-dark-text-secondary text-light-text-secondary">
+                                                    <div>Runtime: <span className="dark:text-dark-text-primary text-light-text-primary">{submissionResult.executionTime}ms</span></div>
+                                                    <div>Memory: <span className="dark:text-dark-text-primary text-light-text-primary">{(submissionResult.memoryUsed / 1024).toFixed(2)}MB</span></div>
                                                 </div>
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="text-gray-500 text-sm text-center py-8">
+                                        <div className="dark:text-dark-text-tertiary text-light-text-tertiary text-sm text-center py-8">
                                             Click "Run Code" to see the output here
                                         </div>
                                     )}
