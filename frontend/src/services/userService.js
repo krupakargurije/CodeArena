@@ -75,29 +75,56 @@ export const getUserProfile = async (userId) => {
 };
 
 export const updateProfile = async (profileData) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-        console.error('No active session found');
-        throw new Error('No user logged in');
-    }
+    try {
+        console.log('updateProfile: Starting update with data:', profileData);
 
-    console.log('Updating profile for user:', session.user.id);
-    console.log('Profile data:', profileData);
+        // Get current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', session.user.id)
-        .select()
-        .single();
+        if (sessionError) {
+            console.error('updateProfile: Session error:', sessionError);
+            throw new Error('Failed to get session: ' + sessionError.message);
+        }
 
-    if (error) {
-        console.error('Supabase update error:', error);
+        if (!session?.user) {
+            console.error('updateProfile: No active session found');
+            throw new Error('No user logged in. Please log in again.');
+        }
+
+        console.log('updateProfile: Session found for user:', session.user.id);
+
+        // Update the profile
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(profileData)
+            .eq('id', session.user.id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('updateProfile: Supabase update error:', error);
+
+            // Provide more specific error messages
+            if (error.code === 'PGRST116') {
+                throw new Error('Profile not found. Please try logging out and back in.');
+            } else if (error.code === '42501') {
+                throw new Error('Permission denied. Please check your account permissions.');
+            } else {
+                throw new Error(`Failed to update profile: ${error.message}`);
+            }
+        }
+
+        if (!data) {
+            console.error('updateProfile: No data returned after update');
+            throw new Error('Profile update returned no data');
+        }
+
+        console.log('updateProfile: Profile updated successfully:', data);
+        return { data: mapProfile(data) };
+    } catch (error) {
+        console.error('updateProfile: Fatal error:', error);
         throw error;
     }
-
-    console.log('Profile updated successfully:', data);
-    return { data: mapProfile(data) };
 };
 
 export const uploadProfilePicture = async (file) => {

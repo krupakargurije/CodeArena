@@ -20,6 +20,7 @@ const Profile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [saveMessage, setSaveMessage] = useState({ type: '', text: '' });
 
     const [editForm, setEditForm] = useState({
         name: '',
@@ -109,14 +110,21 @@ const Profile = () => {
 
     const handleSave = async () => {
         setIsSaving(true);
+        setSaveMessage({ type: '', text: '' });
+
         try {
+            console.log('handleSave: Starting profile save...');
+
             let avatarUrl = profile?.avatarUrl || null;
             if (selectedFile) {
                 setIsUploading(true);
+                console.log('handleSave: Uploading profile picture...');
                 const uploadResult = await uploadProfilePicture(selectedFile);
                 avatarUrl = uploadResult.data.url;
                 setIsUploading(false);
+                console.log('handleSave: Profile picture uploaded successfully');
             }
+
             const updateData = {
                 name: editForm.name || null,
                 bio: editForm.bio || null,
@@ -125,14 +133,25 @@ const Profile = () => {
                 organization: editForm.organization || null,
                 avatar_url: avatarUrl
             };
+
+            console.log('handleSave: Updating profile with data:', updateData);
             const result = await updateProfile(updateData);
+
+            console.log('handleSave: Profile updated successfully:', result.data);
             setProfile(result.data);
             setIsEditing(false);
             setPreviewImage(null);
             setSelectedFile(null);
+
+            // Show success message
+            setSaveMessage({ type: 'success', text: 'Profile updated successfully!' });
+            setTimeout(() => setSaveMessage({ type: '', text: '' }), 5000);
         } catch (error) {
-            console.error('Failed to update profile:', error);
-            alert(`Failed to update profile: ${error.message}`);
+            console.error('handleSave: Failed to update profile:', error);
+            setSaveMessage({
+                type: 'error',
+                text: error.message || 'Failed to update profile. Please try again.'
+            });
         } finally {
             setIsSaving(false);
             setIsUploading(false);
@@ -141,32 +160,44 @@ const Profile = () => {
 
     const handleLogout = async () => {
         try {
-            console.log('Logging out...');
+            console.log('handleLogout: Starting logout process...');
 
-            // Sign out from Supabase
+            // Sign out from Supabase first
+            console.log('handleLogout: Calling supabase.auth.signOut()...');
             const { error } = await supabase.auth.signOut();
 
             if (error) {
-                console.error('Supabase signOut error:', error);
-                throw error;
+                console.error('handleLogout: Supabase signOut error:', error);
+                // Don't throw - continue with local cleanup
+            } else {
+                console.log('handleLogout: Supabase signOut successful');
             }
-
-            console.log('Supabase signOut successful');
-
-            // Clear Redux state and localStorage
-            dispatch(logout());
-
-            console.log('Redux logout dispatched');
-
-            // Navigate to login page
-            navigate('/login', { replace: true });
-
-            console.log('Navigated to login');
         } catch (error) {
-            console.error('Logout failed:', error);
-            // Even if there's an error, try to clear local state
+            console.error('handleLogout: Exception during signOut:', error);
+            // Continue with cleanup even if Supabase fails
+        }
+
+        // Always clear local state, regardless of Supabase result
+        try {
+            console.log('handleLogout: Clearing Redux state...');
             dispatch(logout());
+
+            console.log('handleLogout: Clearing additional localStorage items...');
+            // Clear any remaining auth-related items
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('auth') || key === 'token' || key === 'user') {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            console.log('handleLogout: Navigating to login page...');
             navigate('/login', { replace: true });
+
+            console.log('handleLogout: Logout complete');
+        } catch (error) {
+            console.error('handleLogout: Error during cleanup:', error);
+            // Force navigation even if cleanup fails
+            window.location.href = '/login';
         }
     };
 
@@ -231,6 +262,16 @@ const Profile = () => {
                                     {isEditing && <button onClick={handleSave} className="btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>}
                                 </div>
                             </div>
+
+                            {/* Save Message */}
+                            {saveMessage.text && (
+                                <div className={`mb-4 p-3 rounded-lg text-sm ${saveMessage.type === 'success'
+                                        ? 'bg-green-500/10 border border-green-500/50 text-green-400'
+                                        : 'bg-red-500/10 border border-red-500/50 text-red-400'
+                                    }`}>
+                                    {saveMessage.text}
+                                </div>
+                            )}
 
                             <div className="flex gap-6 mb-4">
                                 <div>
