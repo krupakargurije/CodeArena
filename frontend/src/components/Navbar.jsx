@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getUserProfile } from '../services/userService';
 
 const Navbar = () => {
-    const { isAuthenticated, user } = useSelector((state) => state.auth);
+    const { isAuthenticated, user, isAdmin } = useSelector((state) => state.auth);
     const [profile, setProfile] = useState(null);
     const navigate = useNavigate();
 
@@ -56,6 +56,13 @@ const Navbar = () => {
                         <Link to="/leaderboard" className="nav-link">
                             Leaderboard
                         </Link>
+
+                        {/* Admin Link */}
+                        {isAdmin && (
+                            <Link to="/admin" className="nav-link text-brand-orange">
+                                Admin
+                            </Link>
+                        )}
 
                         {isAuthenticated ? (
                             <Link to="/profile" className="nav-link flex items-center gap-2">

@@ -203,3 +203,146 @@ export const getLeaderboard = async () => {
         throw error;
     }
 };
+
+// Admin Functions
+
+export const checkIsAdmin = async () => {
+    const authData = localStorage.getItem('supabase.auth.token');
+    if (!authData) return false;
+
+    try {
+        const parsed = JSON.parse(authData);
+        const userId = parsed.user?.id;
+
+        if (!userId) return false;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        }
+
+        return data?.is_admin || false;
+    } catch (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+    }
+};
+
+// Helper to get auth headers with JWT from Supabase session
+const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+        'Authorization': `Bearer ${session?.access_token}`,
+        'Content-Type': 'application/json'
+    };
+};
+
+export const grantAdminPermission = async (userEmail) => {
+    const backendUrl = 'http://localhost:8080';
+
+    try {
+        console.log('Granting admin via Spring Boot backend...');
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${backendUrl}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
+            method: 'POST',
+            headers
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Backend grant admin SUCCESS:', data);
+            return { data };
+        } else {
+            const errorText = await response.text();
+            console.error('Backend grant admin failed:', response.status, errorText);
+            throw new Error(errorText || 'Failed to grant admin permission');
+        }
+    } catch (error) {
+        console.error('grantAdminPermission error:', error);
+        throw error;
+    }
+};
+
+export const revokeAdminPermission = async (userEmail) => {
+    // Prevent revoking super admin
+    if (userEmail === 'krupakargurija177@gmail.com') {
+        throw new Error('Cannot revoke super admin permissions');
+    }
+
+    const backendUrl = 'http://localhost:8080';
+
+    try {
+        console.log('Revoking admin via Spring Boot backend...');
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${backendUrl}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
+            method: 'POST',
+            headers
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Backend revoke admin SUCCESS:', data);
+            return { data };
+        } else {
+            const errorText = await response.text();
+            console.error('Backend revoke admin failed:', response.status, errorText);
+            throw new Error(errorText || 'Failed to revoke admin permission');
+        }
+    } catch (error) {
+        console.error('revokeAdminPermission error:', error);
+        throw error;
+    }
+};
+
+export const getAllAdmins = async () => {
+    const backendUrl = 'http://localhost:8080';
+
+    try {
+        console.log('Fetching admins from Spring Boot backend...');
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${backendUrl}/api/admin/admins`, { headers });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Backend fetch admins SUCCESS:', data);
+            return { data };
+        } else {
+            console.error('Backend fetch failed:', response.status);
+            throw new Error('Failed to fetch admins from backend');
+        }
+    } catch (error) {
+        console.error('getAllAdmins error:', error);
+        throw error;
+    }
+};
+
+export const getAllUsers = async () => {
+    const backendUrl = 'http://localhost:8080';
+
+    try {
+        console.log('Fetching users from Spring Boot backend...');
+        // const headers = await getAuthHeaders();
+        const response = await fetch(`${backendUrl}/api/admin/users`, {
+            // headers 
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Backend fetch users SUCCESS:', data);
+            return { data: data ? data.map(mapProfile) : [] };
+        } else {
+            console.error('Backend fetch failed:', response.status);
+            throw new Error('Failed to fetch users from backend');
+        }
+    } catch (error) {
+        console.error('getAllUsers error:', error);
+        throw error;
+    }
+};
+

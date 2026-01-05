@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { supabase } from './services/supabaseClient';
 import { getCurrentUser } from './services/authService';
-import { loadUser, loginSuccess, logout } from './store/authSlice';
+import { checkIsAdmin } from './services/userService';
+import { loadUser, loginSuccess, logout, setAdminStatus } from './store/authSlice';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -16,6 +17,7 @@ import Profile from './pages/Profile';
 import Rooms from './pages/Rooms';
 import RoomLobby from './pages/RoomLobby';
 import RoomProblem from './pages/RoomProblem';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
     const dispatch = useDispatch();
@@ -33,10 +35,14 @@ function App() {
                     // Get mapped user data
                     const { data: user } = await getCurrentUser();
 
+                    // Check if user is admin
+                    const isAdmin = await checkIsAdmin();
+
                     if (user) {
                         dispatch(loginSuccess({
                             token: session.access_token,
-                            user: user
+                            user: user,
+                            isAdmin: isAdmin
                         }));
                     }
                 } catch (error) {
@@ -99,6 +105,16 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <RoomProblem />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Admin Route */}
+                    <Route
+                        path="/admin"
+                        element={
+                            <ProtectedRoute requireAdmin>
+                                <AdminDashboard />
                             </ProtectedRoute>
                         }
                     />

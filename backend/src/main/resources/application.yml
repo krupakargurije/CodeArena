@@ -49,3 +49,10 @@ cors:
 code-execution:
   timeout: 5000 # 5 seconds
   memory-limit: 256 # MB
+
+# Supabase Configuration
+# IMPORTANT: Replace these with your actual Supabase credentials
+supabase:
+  url: https://qlwrjoknqjwurgnoogjd.supabase.co
+  key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsd3Jqb2tucWp3dXJnbm9vZ2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MDc4OTksImV4cCI6MjA4MDA4Mzg5OX0.Op15_6I6tuhMFwZzk1wSfHyJJ-oGVws62FcFfbRF6OQ
+
