@@ -84,6 +84,11 @@
   }
 
   /* Difficulty Badges - LeetCode Style */
+  .badge-cakewalk {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply text-green-400;
+  }
+
   .badge-easy {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
     @apply text-difficulty-easy;

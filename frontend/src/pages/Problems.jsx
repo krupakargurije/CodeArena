@@ -50,13 +50,13 @@ const Problems = () => {
                         />
 
                         <div className="flex gap-2">
-                            {['ALL', 'EASY', 'MEDIUM', 'HARD'].map((difficulty) => (
+                            {['ALL', 'CAKEWALK', 'EASY', 'MEDIUM', 'HARD'].map((difficulty) => (
                                 <button
                                     key={difficulty}
                                     onClick={() => setFilter(difficulty)}
                                     className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${filter === difficulty
-                                            ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/30'
-                                            : 'dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-secondary text-light-text-secondary dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80'
+                                        ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/30'
+                                        : 'dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-secondary text-light-text-secondary dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80'
                                         }`}
                                 >
                                     {difficulty}

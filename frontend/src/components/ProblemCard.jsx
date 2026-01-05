@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 const ProblemCard = ({ problem }) => {
     const getDifficultyBadge = (difficulty) => {
         const badges = {
+            CAKEWALK: 'badge-cakewalk',
             EASY: 'badge-easy',
             MEDIUM: 'badge-medium',
             HARD: 'badge-hard',
