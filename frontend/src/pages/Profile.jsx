@@ -159,25 +159,23 @@ const Profile = () => {
     };
 
     const handleLogout = async () => {
+        console.log('handleLogout: Starting logout process...');
+
         try {
-            console.log('handleLogout: Starting logout process...');
+            // Attempt Supabase signout but don't wait for it to prevent hanging
+            // if the client is unresponsive.
+            supabase.auth.signOut().then(({ error }) => {
+                if (error) console.error('handleLogout: Supabase signOut error:', error);
+                else console.log('handleLogout: Supabase signOut successful');
+            }).catch(err => {
+                console.error('handleLogout: Exception during Supabase signOut:', err);
+            });
 
-            // Sign out from Supabase first
-            console.log('handleLogout: Calling supabase.auth.signOut()...');
-            const { error } = await supabase.auth.signOut();
-
-            if (error) {
-                console.error('handleLogout: Supabase signOut error:', error);
-                // Don't throw - continue with local cleanup
-            } else {
-                console.log('handleLogout: Supabase signOut successful');
-            }
         } catch (error) {
-            console.error('handleLogout: Exception during signOut:', error);
-            // Continue with cleanup even if Supabase fails
+            console.error('handleLogout: Exception triggering signOut:', error);
         }
 
-        // Always clear local state, regardless of Supabase result
+        // Always clear local state immediately
         try {
             console.log('handleLogout: Clearing Redux state...');
             dispatch(logout());
@@ -195,7 +193,7 @@ const Profile = () => {
 
             console.log('handleLogout: Logout complete');
         } catch (error) {
-            console.error('handleLogout: Error during cleanup:', error);
+            console.error('handleLogout: Error during local cleanup:', error);
             // Force navigation even if cleanup fails
             window.location.href = '/login';
         }
@@ -266,8 +264,8 @@ const Profile = () => {
                             {/* Save Message */}
                             {saveMessage.text && (
                                 <div className={`mb-4 p-3 rounded-lg text-sm ${saveMessage.type === 'success'
-                                        ? 'bg-green-500/10 border border-green-500/50 text-green-400'
-                                        : 'bg-red-500/10 border border-red-500/50 text-red-400'
+                                    ? 'bg-green-500/10 border border-green-500/50 text-green-400'
+                                    : 'bg-red-500/10 border border-red-500/50 text-red-400'
                                     }`}>
                                     {saveMessage.text}
                                 </div>
