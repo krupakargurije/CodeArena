@@ -1,5 +1,8 @@
 import { supabase } from './supabaseClient';
 
+// Backend URL - use environment variable for production, localhost for development
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+
 const mapProfile = (profile) => ({
     ...profile,
     problemsSolved: profile.problems_solved,
@@ -248,12 +251,10 @@ const getAuthHeaders = async () => {
 };
 
 export const grantAdminPermission = async (userEmail) => {
-    const backendUrl = 'http://localhost:8080';
-
     try {
         console.log('Granting admin via Spring Boot backend...');
         // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetch(`${backendUrl}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
+        const response = await fetch(`${BACKEND_URL}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -281,12 +282,10 @@ export const revokeAdminPermission = async (userEmail) => {
         throw new Error('Cannot revoke super admin permissions');
     }
 
-    const backendUrl = 'http://localhost:8080';
-
     try {
         console.log('Revoking admin via Spring Boot backend...');
         // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetch(`${backendUrl}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
+        const response = await fetch(`${BACKEND_URL}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -309,12 +308,10 @@ export const revokeAdminPermission = async (userEmail) => {
 };
 
 export const getAllAdmins = async () => {
-    const backendUrl = 'http://localhost:8080';
-
     try {
         console.log('Fetching admins from Spring Boot backend...');
         const headers = await getAuthHeaders();
-        const response = await fetch(`${backendUrl}/api/admin/admins`, { headers });
+        const response = await fetch(`${BACKEND_URL}/api/admin/admins`, { headers });
 
         if (response.ok) {
             const data = await response.json();
@@ -331,12 +328,10 @@ export const getAllAdmins = async () => {
 };
 
 export const getAllUsers = async () => {
-    const backendUrl = 'http://localhost:8080';
-
     try {
         console.log('Fetching users from Spring Boot backend...');
         // const headers = await getAuthHeaders();
-        const response = await fetch(`${backendUrl}/api/admin/users`, {
+        const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
             // headers 
         });
 
