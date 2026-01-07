@@ -16,6 +16,11 @@ const AdminDashboard = () => {
     const [problemsLoading, setProblemsLoading] = useState(true);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+    // Filter state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [difficultyFilter, setDifficultyFilter] = useState('ALL');
+    const [sortBy, setSortBy] = useState('newest');
+
     // Users state
     const [users, setUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(true);
@@ -23,6 +28,7 @@ const AdminDashboard = () => {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [revokeConfirm, setRevokeConfirm] = useState(null); // email of user to revoke
 
     useEffect(() => {
         if (!isAdmin) {
@@ -106,19 +112,26 @@ const AdminDashboard = () => {
     };
 
     const handleRevokeAdmin = async (userEmail) => {
-        if (!confirm(`Are you sure you want to revoke admin permissions from ${userEmail}?`)) {
-            return;
-        }
+        console.log('handleRevokeAdmin called for:', userEmail);
+        // Show custom confirmation modal
+        setRevokeConfirm(userEmail);
+    };
 
+    const confirmRevokeAdmin = async () => {
+        const userEmail = revokeConfirm;
+        console.log('User confirmed, proceeding with revoke for:', userEmail);
+        setRevokeConfirm(null);
         setProcessing(true);
         setError('');
         setSuccess('');
 
         try {
             await revokeAdminPermission(userEmail);
+            console.log('Revoke admin successful');
             setSuccess(`Admin permission revoked from ${userEmail}`);
             fetchUsers();
         } catch (err) {
+            console.error('Revoke admin error:', err);
             setError(err.message || 'Failed to revoke admin permission');
         } finally {
             setProcessing(false);
@@ -126,6 +139,35 @@ const AdminDashboard = () => {
     };
 
     const admins = users.filter(u => u.is_admin);
+
+    // Filtered and sorted problems
+    const filteredProblems = problems
+        .filter(p => {
+            // Search filter
+            if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+                return false;
+            }
+            // Difficulty filter
+            if (difficultyFilter !== 'ALL' && p.difficulty !== difficultyFilter) {
+                return false;
+            }
+            return true;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case 'newest':
+                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+                case 'oldest':
+                    return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+                case 'title':
+                    return (a.title || '').localeCompare(b.title || '');
+                case 'difficulty':
+                    const order = { 'CAKEWALK': 1, 'EASY': 2, 'MEDIUM': 3, 'HARD': 4 };
+                    return (order[a.difficulty] || 0) - (order[b.difficulty] || 0);
+                default:
+                    return 0;
+            }
+        });
 
     if (problemsLoading && activeTab === 'problems') {
         return (
@@ -194,7 +236,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
                             <div className="card">
                                 <div className="text-secondary text-sm mb-1">Total Problems</div>
                                 <div className="text-2xl font-bold text-primary">{problems.length}</div>
@@ -217,6 +259,81 @@ const AdminDashboard = () => {
                                     {problems.filter(p => p.difficulty === 'MEDIUM').length}
                                 </div>
                             </div>
+                            <div className="card">
+                                <div className="text-secondary text-sm mb-1">Hard</div>
+                                <div className="text-2xl font-bold text-difficulty-hard">
+                                    {problems.filter(p => p.difficulty === 'HARD').length}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Filter Bar */}
+                        <div className="panel p-4 mb-6">
+                            <div className="flex flex-wrap gap-4 items-center">
+                                {/* Search */}
+                                <div className="flex-1 min-w-[200px]">
+                                    <input
+                                        type="text"
+                                        placeholder="Search problems..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="input w-full"
+                                    />
+                                </div>
+
+                                {/* Difficulty Filter */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-secondary text-sm">Difficulty:</span>
+                                    <select
+                                        value={difficultyFilter}
+                                        onChange={(e) => setDifficultyFilter(e.target.value)}
+                                        className="input py-2"
+                                    >
+                                        <option value="ALL">All</option>
+                                        <option value="CAKEWALK">Cakewalk</option>
+                                        <option value="EASY">Easy</option>
+                                        <option value="MEDIUM">Medium</option>
+                                        <option value="HARD">Hard</option>
+                                    </select>
+                                </div>
+
+                                {/* Sort By */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-secondary text-sm">Sort:</span>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="input py-2"
+                                    >
+                                        <option value="newest">Newest First</option>
+                                        <option value="oldest">Oldest First</option>
+                                        <option value="title">Title (A-Z)</option>
+                                        <option value="difficulty">Difficulty</option>
+                                    </select>
+                                </div>
+
+                                {/* Clear Filters */}
+                                {(searchQuery || difficultyFilter !== 'ALL' || sortBy !== 'newest') && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setDifficultyFilter('ALL');
+                                            setSortBy('newest');
+                                        }}
+                                        className="text-brand-orange hover:text-brand-orange/80 text-sm flex items-center gap-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Results count */}
+                            <div className="text-secondary text-sm mt-3">
+                                Showing {filteredProblems.length} of {problems.length} problems
+                            </div>
                         </div>
 
                         {/* Problems Table */}
@@ -234,7 +351,7 @@ const AdminDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {problems.map((problem) => (
+                                        {filteredProblems.map((problem) => (
                                             <tr
                                                 key={problem.id}
                                                 className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
@@ -465,6 +582,32 @@ const AdminDashboard = () => {
                                 className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Revoke Admin Confirmation Modal */}
+            {revokeConfirm && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
+                        <h3 className="text-xl font-bold text-primary mb-4">Revoke Admin?</h3>
+                        <p className="text-secondary mb-6">
+                            Are you sure you want to revoke admin permissions from <span className="text-brand-orange">{revokeConfirm}</span>?
+                        </p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setRevokeConfirm(null)}
+                                className="btn-secondary flex-1"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmRevokeAdmin}
+                                className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
+                            >
+                                Revoke Admin
                             </button>
                         </div>
                     </div>
