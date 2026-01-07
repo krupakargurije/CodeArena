@@ -2,6 +2,7 @@ package com.codearena.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,13 +19,19 @@ public class AdminService {
     @Value("${supabase.key}")
     private String supabaseKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // Use HttpComponentsClientHttpRequestFactory to support PATCH method
+    private final RestTemplate restTemplate;
+
+    public AdminService() {
+        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+    }
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("apikey", supabaseKey);
         headers.set("Authorization", "Bearer " + supabaseKey);
+        headers.set("Prefer", "return=representation");
         return headers;
     }
 

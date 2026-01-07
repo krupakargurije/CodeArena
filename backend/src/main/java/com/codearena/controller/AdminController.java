@@ -30,9 +30,17 @@ public class AdminController {
     }
 
     @PostMapping("/users/grant-admin")
-    public ResponseEntity<Map<String, Object>> grantAdminPermission(@RequestParam String email) {
-        Map<String, Object> user = adminService.grantAdminPermission(email);
-        return ResponseEntity.ok(user);
+    public ResponseEntity<?> grantAdminPermission(@RequestParam String email) {
+        try {
+            System.out.println("Grant admin request received for: " + email);
+            Map<String, Object> user = adminService.grantAdminPermission(email);
+            System.out.println("Grant admin successful for: " + email);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            System.err.println("Grant admin failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 
     @PostMapping("/users/revoke-admin")

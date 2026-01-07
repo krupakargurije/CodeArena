@@ -51,8 +51,8 @@ code-execution:
   memory-limit: 256 # MB
 
 # Supabase Configuration
-# IMPORTANT: Replace these with your actual Supabase credentials
+# IMPORTANT: Using service_role key for admin operations (bypasses RLS)
+# WARNING: Never expose this key to the frontend
 supabase:
   url: https://qlwrjoknqjwurgnoogjd.supabase.co
-  key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsd3Jqb2tucWp3dXJnbm9vZ2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MDc4OTksImV4cCI6MjA4MDA4Mzg5OX0.Op15_6I6tuhMFwZzk1wSfHyJJ-oGVws62FcFfbRF6OQ
-
+  key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsd3Jqb2tucWp3dXJnbm9vZ2pkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUwNzg5OSwiZXhwIjoyMDgwMDgzODk5fQ.VDwp7I70sZFYH2ubslzCBI6nv0JJq41bmK4TPV0erKU

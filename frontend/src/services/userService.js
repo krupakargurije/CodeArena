@@ -252,10 +252,12 @@ export const grantAdminPermission = async (userEmail) => {
 
     try {
         console.log('Granting admin via Spring Boot backend...');
-        const headers = await getAuthHeaders();
+        // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
         const response = await fetch(`${backendUrl}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
-            headers
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if (response.ok) {
@@ -283,10 +285,12 @@ export const revokeAdminPermission = async (userEmail) => {
 
     try {
         console.log('Revoking admin via Spring Boot backend...');
-        const headers = await getAuthHeaders();
+        // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
         const response = await fetch(`${backendUrl}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
-            headers
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if (response.ok) {

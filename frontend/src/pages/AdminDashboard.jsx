@@ -125,7 +125,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const admins = users.filter(u => u.isAdmin);
+    const admins = users.filter(u => u.is_admin);
 
     if (problemsLoading && activeTab === 'problems') {
         return (
@@ -417,7 +417,7 @@ const AdminDashboard = () => {
                                                 <td className="py-3 px-4 text-secondary">{user.rating || 1200}</td>
                                                 <td className="py-3 px-4 text-secondary">{user.problemsSolved || 0}</td>
                                                 <td className="py-3 px-4">
-                                                    {user.isAdmin ? (
+                                                    {user.is_admin ? (
                                                         <span className="px-2 py-1 bg-brand-orange/10 text-brand-orange text-xs rounded">
                                                             Admin
                                                         </span>
