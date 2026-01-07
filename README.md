@@ -35,17 +35,88 @@ Live demo: https://codearena-of33.onrender.com
 - Notifications, achievements, and simple analytics
 
 ## Architecture & Tech Stack
+## 🖥 Frontend
 
-Replace or adjust these items to match your actual implementation.
+- **React 18**
+- **Vite** – Fast build and development tool
+- **JavaScript (ES6+)**
+- **Tailwind CSS** – Utility-first styling
+- **Redux** – State management
+- **React Router** – Client-side routing
+- **@supabase/supabase-js**
+  - Email/password authentication
+  - JWT session handling
+  - Real-time subscriptions (rooms, presence)
 
-- Frontend: React / Next.js, TypeScript, Tailwind CSS or Chakra UI
-- Backend: Node.js + Express or NestJS, TypeScript
-- API: REST or GraphQL
-- Database: PostgreSQL (recommended) or MongoDB
-- Auth: JWT (or OAuth with providers)
-- Code runner / sandbox: Docker-in-Docker sandbox or external judge service
-- CI/CD: GitHub Actions
-- Hosting: Vercel / Netlify (frontend), Render / Heroku / DigitalOcean (backend), AWS/GCP for judge or worker pools
+---
+
+## ⚙️ Backend
+
+- **Java 17**
+- **Spring Boot 3.2**
+- **Spring Security**
+  - JWT-based API security
+  - Role-based authorization
+- **Spring Data JPA** – ORM & database access
+- **RestTemplate + Apache HttpClient 5**
+  - Used for Supabase API communication
+- **Maven** – Dependency management
+
+---
+
+## 🗄 Database
+
+- **Supabase (PostgreSQL)**
+- **Row Level Security (RLS)**
+  - Authorization enforced at the database level
+- **Real-time subscriptions**
+  - Used for live rooms and data updates
+
+---
+
+## 🔐 Authentication & Authorization
+
+- **Supabase Auth**
+  - Email & password login
+- **JWT tokens**
+  - Issued by Supabase
+  - Sent with frontend requests
+  - Verified by Spring Security
+- **Admin permissions**
+  - Controlled via `profiles.is_admin` column
+
+---
+
+## 🔄 Application Flow
+
+1. User logs in via Supabase Auth
+2. Supabase issues a JWT token
+3. Frontend sends JWT with API requests
+4. Spring Boot validates the token
+5. Business logic is executed securely
+6. Database access is protected by RLS policies
+
+---
+
+## ✅ Key Features
+
+- Secure JWT-based authentication
+- Database-level authorization using RLS
+- Real-time updates with Supabase
+- Clean separation of frontend and backend
+- Production-ready architecture
+
+---
+
+
+- Frontend: React (Vite), JavaScript, Tailwind CSS
+- Backend: Java Spring Boot 3.2, Maven
+- API: REST
+- Database: Supabase (PostgreSQL)
+- Auth: Supabase Auth (JWT-based)
+- Code runner / sandbox: Not yet implemented (future: Docker sandbox or external judge service)
+- CI/CD: GitHub (manual push triggers Render auto-deploy)
+- Hosting: Render (Frontend: codearena-of33.onrender.com, Backend: codearena-backend-9bi1.onrender.com)
 
 ## Getting Started
 
