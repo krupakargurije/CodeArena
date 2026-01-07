@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { supabase } from '../services/supabaseClient';
 import * as loginService from '../services/authService';
+import { checkIsAdmin } from '../services/userService';
 import { loginSuccess } from '../store/authSlice';
 
 const Login = () => {
@@ -20,21 +22,42 @@ const Login = () => {
         setError('');
         setLoading(true);
 
-        try {
-            const response = await loginService.login(formData);
-            const { token, user } = response.data;
+        console.log('Triggering login for:', formData.username);
 
-            dispatch(loginSuccess({
-                token,
-                user
-            }));
-
-            navigate('/problems');
-        } catch (err) {
-            setError(err.message || 'Login failed. Please try again.');
-        } finally {
+        // Fire login - App.jsx onAuthStateChange will handle the state update
+        supabase.auth.signInWithPassword({
+            email: formData.username,
+            password: formData.password,
+        }).then(({ data, error }) => {
+            if (error) {
+                console.error('Login error:', error.message);
+                setError(error.message);
+                setLoading(false);
+            } else {
+                console.log('Login success, redirecting...');
+                setLoading(false);
+                navigate('/problems');
+            }
+        }).catch(err => {
+            console.error('Login exception:', err.message);
+            setError(err.message);
             setLoading(false);
-        }
+        });
+
+        // Also listen for auth state change as backup redirect
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                console.log('Auth state changed to SIGNED_IN, redirecting...');
+                setLoading(false);
+                navigate('/problems');
+                subscription.unsubscribe();
+            }
+        });
+
+        // Cleanup subscription after 5 seconds if no redirect happened
+        setTimeout(() => {
+            subscription.unsubscribe();
+        }, 5000);
     };
 
     return (

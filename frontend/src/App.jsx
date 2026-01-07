@@ -32,19 +32,40 @@ function App() {
 
             if (event === 'SIGNED_IN' && session) {
                 try {
-                    // Get mapped user data
-                    const { data: user } = await getCurrentUser();
+                    // Extract user data directly from session to avoid hanging Supabase calls
+                    const supabaseUser = session.user;
+                    const user = {
+                        id: supabaseUser.id,
+                        email: supabaseUser.email,
+                        username: supabaseUser.user_metadata?.username || supabaseUser.email?.split('@')[0],
+                        rating: supabaseUser.user_metadata?.rating || 1200,
+                        problemsSolved: supabaseUser.user_metadata?.problemsSolved || 0,
+                        roles: ['ROLE_USER'],
+                    };
 
-                    // Check if user is admin
-                    const isAdmin = await checkIsAdmin();
+                    console.log('User from session:', user);
 
-                    if (user) {
-                        dispatch(loginSuccess({
-                            token: session.access_token,
-                            user: user,
-                            isAdmin: isAdmin
-                        }));
-                    }
+                    // Dispatch login immediately with default isAdmin=false
+                    dispatch(loginSuccess({
+                        token: session.access_token,
+                        user: user,
+                        isAdmin: false
+                    }));
+
+                    // Check admin status in background (non-blocking)
+                    checkIsAdmin().then(isAdmin => {
+                        console.log('Admin check result:', isAdmin);
+                        if (isAdmin) {
+                            dispatch(loginSuccess({
+                                token: session.access_token,
+                                user: user,
+                                isAdmin: true
+                            }));
+                        }
+                    }).catch(err => {
+                        console.warn('Admin check failed:', err.message);
+                    });
+
                 } catch (error) {
                     console.error('Error syncing auth state:', error);
                 }

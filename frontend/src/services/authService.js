@@ -36,18 +36,37 @@ export const signup = async (userData) => {
 };
 
 export const login = async (credentials) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.username, // Assuming username field contains email for Supabase
-        password: credentials.password,
-    });
+    console.log('Login attempt for:', credentials.username);
 
-    if (error) throw error;
-    return {
-        data: {
-            token: data.session?.access_token,
-            user: mapUser(data.user),
-        }
-    };
+    try {
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Login timed out. Please check your connection and try again.')), 10000)
+        );
+
+        const result = await Promise.race([
+            supabase.auth.signInWithPassword({
+                email: credentials.username,
+                password: credentials.password,
+            }),
+            timeoutPromise
+        ]);
+
+        const { data, error } = result;
+
+        if (error) throw error;
+
+        console.log('Login successful');
+        return {
+            data: {
+                token: data.session?.access_token,
+                user: mapUser(data.user),
+            }
+        };
+    } catch (err) {
+        console.error('Login failed:', err.message);
+        throw err;
+    }
 };
 
 export const logout = async () => {
