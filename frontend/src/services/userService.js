@@ -207,14 +207,17 @@ export const getLeaderboard = async () => {
 // Admin Functions
 
 export const checkIsAdmin = async () => {
-    const authData = localStorage.getItem('supabase.auth.token');
-    if (!authData) return false;
-
     try {
-        const parsed = JSON.parse(authData);
-        const userId = parsed.user?.id;
+        // Use modern Supabase auth API to get current user
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (!userId) return false;
+        if (!session?.user?.id) {
+            console.log('checkIsAdmin: No session found');
+            return false;
+        }
+
+        const userId = session.user.id;
+        console.log('checkIsAdmin: Checking admin status for user:', userId);
 
         const { data, error } = await supabase
             .from('profiles')
@@ -223,13 +226,14 @@ export const checkIsAdmin = async () => {
             .single();
 
         if (error) {
-            console.error('Error checking admin status:', error);
+            console.error('checkIsAdmin: Error querying profiles:', error);
             return false;
         }
 
+        console.log('checkIsAdmin: Result:', data?.is_admin);
         return data?.is_admin || false;
     } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('checkIsAdmin: Exception:', error);
         return false;
     }
 };
