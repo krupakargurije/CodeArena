@@ -22,7 +22,7 @@ CodeArena is a web-based competitive programming and coding-practice platform th
 
 ## Demo
 
-Live demo: (add your deployed URL here)
+Live demo: https://codearena-of33.onrender.com/problems
 
 ## Features
 
