@@ -10,6 +10,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [problemSearch, setProblemSearch] = useState('');
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -197,31 +198,55 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                 </svg>
                             </button>
 
-                            {/* Dropdown Menu */}
+                            {/* Dropdown Menu - Opens upward to prevent bottom overflow */}
                             {dropdownOpen && (
-                                <div className="absolute z-[100] w-full mt-1 dark:bg-dark-bg-secondary bg-white border dark:border-dark-border-primary border-light-border-primary rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                    {problems.map((problem) => (
-                                        <button
-                                            key={problem.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedProblemId(problem.id);
-                                                setDropdownOpen(false);
-                                            }}
-                                            className={`w-full text-left px-4 py-3 transition-colors ${selectedProblemId === problem.id
-                                                ? 'dark:bg-dark-bg-elevated bg-light-bg-elevated'
-                                                : 'dark:hover:bg-dark-bg-tertiary hover:bg-light-bg-tertiary'
-                                                }`}
-                                        >
-                                            <div className="font-medium text-primary">{problem.title}</div>
-                                            <div className={`text-sm ${problem.difficulty === 'EASY' ? 'text-difficulty-easy' :
-                                                problem.difficulty === 'MEDIUM' ? 'text-difficulty-medium' :
-                                                    'text-difficulty-hard'
-                                                }`}>
-                                                {problem.difficulty}
+                                <div className="absolute z-[100] w-full bottom-full mb-1 dark:bg-dark-bg-secondary bg-white border dark:border-dark-border-primary border-light-border-primary rounded-lg shadow-xl max-h-72 overflow-hidden flex flex-col">
+                                    {/* Search Input */}
+                                    <div className="p-2 border-b dark:border-dark-border-primary border-light-border-primary">
+                                        <input
+                                            type="text"
+                                            placeholder="Search problems..."
+                                            value={problemSearch}
+                                            onChange={(e) => setProblemSearch(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="input w-full py-2 text-sm"
+                                            autoFocus
+                                        />
+                                    </div>
+
+                                    {/* Problem List */}
+                                    <div className="overflow-y-auto flex-1">
+                                        {problems
+                                            .filter(p => p.title.toLowerCase().includes(problemSearch.toLowerCase()))
+                                            .map((problem) => (
+                                                <button
+                                                    key={problem.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedProblemId(problem.id);
+                                                        setDropdownOpen(false);
+                                                        setProblemSearch('');
+                                                    }}
+                                                    className={`w-full text-left px-4 py-3 transition-colors ${selectedProblemId === problem.id
+                                                        ? 'dark:bg-dark-bg-elevated bg-light-bg-elevated'
+                                                        : 'dark:hover:bg-dark-bg-tertiary hover:bg-light-bg-tertiary'
+                                                        }`}
+                                                >
+                                                    <div className="font-medium text-primary">{problem.title}</div>
+                                                    <div className={`text-sm ${problem.difficulty === 'EASY' ? 'text-difficulty-easy' :
+                                                        problem.difficulty === 'MEDIUM' ? 'text-difficulty-medium' :
+                                                            'text-difficulty-hard'
+                                                        }`}>
+                                                        {problem.difficulty}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        {problems.filter(p => p.title.toLowerCase().includes(problemSearch.toLowerCase())).length === 0 && (
+                                            <div className="px-4 py-3 text-secondary text-sm">
+                                                No problems found
                                             </div>
-                                        </button>
-                                    ))}
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

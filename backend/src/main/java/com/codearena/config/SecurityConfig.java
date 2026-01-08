@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/problems/**").permitAll()
                         .requestMatchers("/api/leaderboard/**").permitAll()
+                        .requestMatchers("/api/health").permitAll() // Health check for keep-alive
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll() // TEMPORARY: Allow all for testing due to JWT
                                                                       // mismatch

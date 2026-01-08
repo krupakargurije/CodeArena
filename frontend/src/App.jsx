@@ -79,6 +79,32 @@ function App() {
         };
     }, [dispatch]);
 
+    // Backend heartbeat to keep Render free tier awake
+    useEffect(() => {
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+        const HEARTBEAT_INTERVAL = 14 * 60 * 1000; // 14 minutes
+
+        const pingBackend = async () => {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                if (response.ok) {
+                    console.log('Backend heartbeat: alive');
+                }
+            } catch (error) {
+                // Silently fail - backend might be waking up
+                console.log('Backend heartbeat: no response (may be waking up)');
+            }
+        };
+
+        // Ping immediately on app load
+        pingBackend();
+
+        // Then ping every 14 minutes
+        const intervalId = setInterval(pingBackend, HEARTBEAT_INTERVAL);
+
+        return () => clearInterval(intervalId);
+    }, []);
+
     return (
         <Router>
             <div className="min-h-screen bg-dark-primary">
