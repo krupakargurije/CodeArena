@@ -418,201 +418,216 @@ const AdminDashboard = () => {
                 {/* Users Tab */}
                 {activeTab === 'users' && (
                     <div>
-                        {/* Grant Admin Form */}
-                        <div className="panel p-6 mb-8">
-                            <h2 className="text-xl font-bold text-primary mb-4">Grant Admin Permission</h2>
-                            <form onSubmit={handleGrantAdmin} className="flex gap-4">
-                                <input
-                                    type="email"
-                                    value={newAdminEmail}
-                                    onChange={(e) => setNewAdminEmail(e.target.value)}
-                                    placeholder="Enter user email"
-                                    className="input flex-1"
-                                    required
-                                />
+                        {/* Loading State */}
+                        {usersLoading && (
+                            <div className="panel p-8 mb-8 text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto mb-4"></div>
+                                <p className="text-primary font-medium">Loading users...</p>
+                                <p className="text-secondary text-sm mt-2">
+                                    If this takes a while, the server may be waking up. Please wait...
+                                </p>
+                            </div>
+                        )}
+
+                        {!usersLoading && (
+                            <>
+                                {/* Grant Admin Form */}
+                                <div className="panel p-6 mb-8">
+                                    <h2 className="text-xl font-bold text-primary mb-4">Grant Admin Permission</h2>
+                                    <form onSubmit={handleGrantAdmin} className="flex gap-4">
+                                        <input
+                                            type="email"
+                                            value={newAdminEmail}
+                                            onChange={(e) => setNewAdminEmail(e.target.value)}
+                                            placeholder="Enter user email"
+                                            className="input flex-1"
+                                            required
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={processing}
+                                            className="btn-primary px-6"
+                                        >
+                                            {processing ? 'Processing...' : 'Grant Admin'}
+                                        </button>
+                                    </form>
+
+                                    {/* Messages */}
+                                    {error && (
+                                        <div className="mt-4 bg-difficulty-hard/10 border border-difficulty-hard/50 text-difficulty-hard px-4 py-3 rounded-lg">
+                                            {error}
+                                        </div>
+                                    )}
+                                    {success && (
+                                        <div className="mt-4 bg-difficulty-easy/10 border border-difficulty-easy/50 text-difficulty-easy px-4 py-3 rounded-lg">
+                                            {success}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Current Admins */}
+                                <div className="panel p-6 mb-8">
+                                    <h2 className="text-xl font-bold text-primary mb-4">
+                                        Current Admins ({admins.length})
+                                    </h2>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b dark:border-dark-border-primary border-light-border-primary">
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Username</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Email</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Rating</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Problems Solved</th>
+                                                    <th className="text-right py-3 px-4 text-secondary font-medium">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {admins.map((user) => (
+                                                    <tr
+                                                        key={user.id}
+                                                        className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
+                                                    >
+                                                        <td className="py-3 px-4 text-primary font-medium">
+                                                            {user.username || 'N/A'}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-secondary">
+                                                            {user.email}
+                                                            {user.email === 'krupakargurija177@gmail.com' && (
+                                                                <span className="ml-2 px-2 py-0.5 bg-brand-orange/20 text-brand-orange text-xs rounded">
+                                                                    Super Admin
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-secondary">{user.rating || 1200}</td>
+                                                        <td className="py-3 px-4 text-secondary">{user.problemsSolved || 0}</td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            {user.email !== 'krupakargurija177@gmail.com' && (
+                                                                <button
+                                                                    onClick={() => handleRevokeAdmin(user.email)}
+                                                                    disabled={processing}
+                                                                    className="text-difficulty-hard hover:text-difficulty-hard/80 disabled:opacity-50"
+                                                                >
+                                                                    Revoke Admin
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* All Users */}
+                                <div className="panel p-6">
+                                    <h2 className="text-xl font-bold text-primary mb-4">
+                                        All Users ({users.length})
+                                    </h2>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b dark:border-dark-border-primary border-light-border-primary">
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Username</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Email</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Rating</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Problems Solved</th>
+                                                    <th className="text-left py-3 px-4 text-secondary font-medium">Role</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {users.map((user) => (
+                                                    <tr
+                                                        key={user.id}
+                                                        className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
+                                                    >
+                                                        <td className="py-3 px-4 text-primary font-medium">
+                                                            {user.username || 'N/A'}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-secondary">{user.email}</td>
+                                                        <td className="py-3 px-4 text-secondary">{user.rating || 1200}</td>
+                                                        <td className="py-3 px-4 text-secondary">{user.problemsSolved || 0}</td>
+                                                        <td className="py-3 px-4">
+                                                            {user.is_admin ? (
+                                                                <span className="px-2 py-1 bg-brand-orange/10 text-brand-orange text-xs rounded">
+                                                                    Admin
+                                                                </span>
+                                                            ) : (
+                                                                <span className="px-2 py-1 bg-gray-500/10 text-gray-400 text-xs rounded">
+                                                                    User
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Create Problem Modal */}
+                {showCreateForm && (
+                    <CreateProblemForm
+                        onSuccess={handleCreateSuccess}
+                        onCancel={() => setShowCreateForm(false)}
+                    />
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {deleteConfirm && (
+                    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                        <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
+                            <h3 className="text-xl font-bold text-primary mb-4">Delete Problem?</h3>
+                            <p className="text-secondary mb-6">
+                                Are you sure you want to delete this problem? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
                                 <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="btn-primary px-6"
+                                    onClick={() => setDeleteConfirm(null)}
+                                    className="btn-secondary flex-1"
                                 >
-                                    {processing ? 'Processing...' : 'Grant Admin'}
+                                    Cancel
                                 </button>
-                            </form>
-
-                            {/* Messages */}
-                            {error && (
-                                <div className="mt-4 bg-difficulty-hard/10 border border-difficulty-hard/50 text-difficulty-hard px-4 py-3 rounded-lg">
-                                    {error}
-                                </div>
-                            )}
-                            {success && (
-                                <div className="mt-4 bg-difficulty-easy/10 border border-difficulty-easy/50 text-difficulty-easy px-4 py-3 rounded-lg">
-                                    {success}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Current Admins */}
-                        <div className="panel p-6 mb-8">
-                            <h2 className="text-xl font-bold text-primary mb-4">
-                                Current Admins ({admins.length})
-                            </h2>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b dark:border-dark-border-primary border-light-border-primary">
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Username</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Email</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Rating</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Problems Solved</th>
-                                            <th className="text-right py-3 px-4 text-secondary font-medium">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {admins.map((user) => (
-                                            <tr
-                                                key={user.id}
-                                                className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
-                                            >
-                                                <td className="py-3 px-4 text-primary font-medium">
-                                                    {user.username || 'N/A'}
-                                                </td>
-                                                <td className="py-3 px-4 text-secondary">
-                                                    {user.email}
-                                                    {user.email === 'krupakargurija177@gmail.com' && (
-                                                        <span className="ml-2 px-2 py-0.5 bg-brand-orange/20 text-brand-orange text-xs rounded">
-                                                            Super Admin
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="py-3 px-4 text-secondary">{user.rating || 1200}</td>
-                                                <td className="py-3 px-4 text-secondary">{user.problemsSolved || 0}</td>
-                                                <td className="py-3 px-4 text-right">
-                                                    {user.email !== 'krupakargurija177@gmail.com' && (
-                                                        <button
-                                                            onClick={() => handleRevokeAdmin(user.email)}
-                                                            disabled={processing}
-                                                            className="text-difficulty-hard hover:text-difficulty-hard/80 disabled:opacity-50"
-                                                        >
-                                                            Revoke Admin
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                <button
+                                    onClick={() => handleDelete(deleteConfirm)}
+                                    className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
+                                >
+                                    Delete
+                                </button>
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* All Users */}
-                        <div className="panel p-6">
-                            <h2 className="text-xl font-bold text-primary mb-4">
-                                All Users ({users.length})
-                            </h2>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b dark:border-dark-border-primary border-light-border-primary">
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Username</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Email</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Rating</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Problems Solved</th>
-                                            <th className="text-left py-3 px-4 text-secondary font-medium">Role</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map((user) => (
-                                            <tr
-                                                key={user.id}
-                                                className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
-                                            >
-                                                <td className="py-3 px-4 text-primary font-medium">
-                                                    {user.username || 'N/A'}
-                                                </td>
-                                                <td className="py-3 px-4 text-secondary">{user.email}</td>
-                                                <td className="py-3 px-4 text-secondary">{user.rating || 1200}</td>
-                                                <td className="py-3 px-4 text-secondary">{user.problemsSolved || 0}</td>
-                                                <td className="py-3 px-4">
-                                                    {user.is_admin ? (
-                                                        <span className="px-2 py-1 bg-brand-orange/10 text-brand-orange text-xs rounded">
-                                                            Admin
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-2 py-1 bg-gray-500/10 text-gray-400 text-xs rounded">
-                                                            User
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                {/* Revoke Admin Confirmation Modal */}
+                {revokeConfirm && (
+                    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                        <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
+                            <h3 className="text-xl font-bold text-primary mb-4">Revoke Admin?</h3>
+                            <p className="text-secondary mb-6">
+                                Are you sure you want to revoke admin permissions from <span className="text-brand-orange">{revokeConfirm}</span>?
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setRevokeConfirm(null)}
+                                    className="btn-secondary flex-1"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmRevokeAdmin}
+                                    className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
+                                >
+                                    Revoke Admin
+                                </button>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* Create Problem Modal */}
-            {showCreateForm && (
-                <CreateProblemForm
-                    onSuccess={handleCreateSuccess}
-                    onCancel={() => setShowCreateForm(false)}
-                />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                    <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
-                        <h3 className="text-xl font-bold text-primary mb-4">Delete Problem?</h3>
-                        <p className="text-secondary mb-6">
-                            Are you sure you want to delete this problem? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="btn-secondary flex-1"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => handleDelete(deleteConfirm)}
-                                className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Revoke Admin Confirmation Modal */}
-            {revokeConfirm && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                    <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
-                        <h3 className="text-xl font-bold text-primary mb-4">Revoke Admin?</h3>
-                        <p className="text-secondary mb-6">
-                            Are you sure you want to revoke admin permissions from <span className="text-brand-orange">{revokeConfirm}</span>?
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setRevokeConfirm(null)}
-                                className="btn-secondary flex-1"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmRevokeAdmin}
-                                className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
-                            >
-                                Revoke Admin
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

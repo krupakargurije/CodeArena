@@ -3,6 +3,40 @@ import { supabase } from './supabaseClient';
 // Backend URL - use environment variable for production, localhost for development
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
+// Retry configuration for handling Render free tier cold starts
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 5000; // 5 seconds between retries
+
+/**
+ * Fetch with automatic retry for handling backend cold starts (502 errors)
+ * @param {string} url - The URL to fetch
+ * @param {object} options - Fetch options
+ * @param {number} retryCount - Current retry count (internal use)
+ * @returns {Promise<Response>} - The fetch response
+ */
+const fetchWithRetry = async (url, options = {}, retryCount = 0) => {
+    try {
+        const response = await fetch(url, options);
+
+        // If we get a 502/503, backend might be waking up - retry
+        if ((response.status === 502 || response.status === 503) && retryCount < MAX_RETRIES) {
+            console.log(`Backend returned ${response.status}, retrying in ${RETRY_DELAY_MS / 1000}s... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            return fetchWithRetry(url, options, retryCount + 1);
+        }
+
+        return response;
+    } catch (error) {
+        // Network errors (backend completely down) - retry
+        if (retryCount < MAX_RETRIES && (error.name === 'TypeError' || error.message.includes('Failed to fetch'))) {
+            console.log(`Network error, backend may be waking up. Retrying in ${RETRY_DELAY_MS / 1000}s... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            return fetchWithRetry(url, options, retryCount + 1);
+        }
+        throw error;
+    }
+};
+
 const mapProfile = (profile) => ({
     ...profile,
     problemsSolved: profile.problems_solved,
@@ -254,7 +288,7 @@ export const grantAdminPermission = async (userEmail) => {
     try {
         console.log('Granting admin via Spring Boot backend...');
         // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetch(`${BACKEND_URL}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -285,7 +319,7 @@ export const revokeAdminPermission = async (userEmail) => {
     try {
         console.log('Revoking admin via Spring Boot backend...');
         // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetch(`${BACKEND_URL}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -311,7 +345,7 @@ export const getAllAdmins = async () => {
     try {
         console.log('Fetching admins from Spring Boot backend...');
         const headers = await getAuthHeaders();
-        const response = await fetch(`${BACKEND_URL}/api/admin/admins`, { headers });
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/admins`, { headers });
 
         if (response.ok) {
             const data = await response.json();
@@ -331,7 +365,7 @@ export const getAllUsers = async () => {
     try {
         console.log('Fetching users from Spring Boot backend...');
         // const headers = await getAuthHeaders();
-        const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users`, {
             // headers 
         });
 
