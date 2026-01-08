@@ -157,9 +157,29 @@
 
   /* Glassmorphism Effect */
   .glass {
-    @apply backdrop-blur-xl;
-    @apply dark:bg-dark-bg-secondary/80 bg-white/80;
-    @apply border dark:border-dark-border-primary border-light-border-primary;
+    @apply backdrop-blur-xl backdrop-saturate-150;
+    @apply dark:bg-dark-bg-secondary/70 bg-white/70;
+    @apply border dark:border-dark-border-primary/50 border-light-border-primary/50;
+    @apply shadow-xl dark:shadow-black/20 shadow-gray-200/50;
+  }
+
+  .glass-subtle {
+    @apply backdrop-blur-md;
+    @apply dark:bg-dark-bg-secondary/50 bg-white/50;
+    @apply border dark:border-dark-border-primary/30 border-light-border-primary/30;
+  }
+
+  /* Gradient border effect for cards */
+  .glass-gradient {
+    @apply relative overflow-hidden;
+    @apply backdrop-blur-xl backdrop-saturate-150;
+    @apply dark:bg-dark-bg-secondary/60 bg-white/60;
+  }
+
+  .glass-gradient::before {
+    @apply absolute inset-0 -z-10;
+    @apply bg-gradient-to-br from-brand-orange/10 via-transparent to-purple-500/10;
+    content: '';
   }
 
   /* Gradient Text */

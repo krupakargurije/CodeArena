@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProblem } from '../services/problemService';
+import { getUserSolvedProblemIds } from '../services/submissionService';
 import { submitCodeThunk, runCodeThunk } from '../store/submissionSlice';
 import CodeEditor from '../components/CodeEditor';
 
@@ -39,6 +40,8 @@ const ProblemDetail = ({ problemIdProp }) => {
     const id = problemIdProp || paramId;
     const dispatch = useDispatch();
     const { current: submissionResult, loading: submitting } = useSelector((state) => state.submissions);
+    const { user } = useSelector((state) => state.auth);
+    const [isSolved, setIsSolved] = useState(false);
 
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -74,6 +77,17 @@ const ProblemDetail = ({ problemIdProp }) => {
         setCode(CODE_TEMPLATES[language]);
     }, [language]);
 
+    // Check if user has solved this problem
+    useEffect(() => {
+        const checkIfSolved = async () => {
+            if (user?.id && id) {
+                const result = await getUserSolvedProblemIds(user.id);
+                setIsSolved(result.data.includes(parseInt(id)));
+            }
+        };
+        checkIfSolved();
+    }, [user, id, submissionResult]);
+
     const handleSubmit = () => {
         setActiveTab('result');
         dispatch(submitCodeThunk({
@@ -87,6 +101,7 @@ const ProblemDetail = ({ problemIdProp }) => {
     const handleRun = () => {
         setActiveTab('result');
         dispatch(runCodeThunk({
+            problemId: parseInt(id),
             code,
             language,
         }));
@@ -201,6 +216,14 @@ const ProblemDetail = ({ problemIdProp }) => {
                                 <span className={getDifficultyBadge(problem.difficulty)}>
                                     {problem.difficulty}
                                 </span>
+                                {isSolved && (
+                                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-500 text-white text-sm font-semibold shadow-lg shadow-green-500/30">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Solved
+                                    </span>
+                                )}
                             </div>
 
                             <div className="flex gap-2 flex-wrap">
@@ -378,12 +401,14 @@ const ProblemDetail = ({ problemIdProp }) => {
                                     ) : submissionResult ? (
                                         <div className="space-y-3">
                                             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold ${submissionResult.status === 'ACCEPTED' ? 'bg-green-500/20 text-green-400' :
-                                                submissionResult.status === 'COMPILATION_ERROR' ? 'bg-red-500/20 text-red-400' :
-                                                    submissionResult.status === 'RUNTIME_ERROR' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-gray-500/20 text-gray-400'
+                                                submissionResult.status === 'WRONG_ANSWER' ? 'bg-red-500/20 text-red-400' :
+                                                    submissionResult.status === 'COMPILATION_ERROR' ? 'bg-orange-500/20 text-orange-400' :
+                                                        submissionResult.status === 'RUNTIME_ERROR' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                            'bg-gray-500/20 text-gray-400'
                                                 }`}>
                                                 {submissionResult.status === 'ACCEPTED' && '✓'}
-                                                {submissionResult.status === 'COMPILATION_ERROR' && '✗'}
+                                                {submissionResult.status === 'WRONG_ANSWER' && '✗'}
+                                                {submissionResult.status === 'COMPILATION_ERROR' && '⚠'}
                                                 {submissionResult.status === 'RUNTIME_ERROR' && '⚠'}
                                                 {submissionResult.status.replace(/_/g, ' ')}
                                             </div>
@@ -421,6 +446,25 @@ const ProblemDetail = ({ problemIdProp }) => {
                                                     <div>Memory: <span className="dark:text-dark-text-primary text-light-text-primary">{(submissionResult.memoryUsed / 1024).toFixed(2)}MB</span></div>
                                                 </div>
                                             )}
+
+                                            {submissionResult.status === 'WRONG_ANSWER' && (
+                                                <div className="space-y-3">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <div className="text-green-400 font-semibold mb-2 text-sm">Expected Output:</div>
+                                                            <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-green-600 dark:text-green-400 text-xs font-mono overflow-x-auto">
+                                                                {submissionResult.expectedOutput || problem.sampleOutput}
+                                                            </pre>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-red-400 font-semibold mb-2 text-sm">Your Output:</div>
+                                                            <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-red-600 dark:text-red-400 text-xs font-mono overflow-x-auto">
+                                                                {submissionResult.actualOutput || submissionResult.stdout || '(empty)'}
+                                                            </pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="dark:text-dark-text-tertiary text-light-text-tertiary text-sm text-center py-8">
@@ -438,3 +482,4 @@ const ProblemDetail = ({ problemIdProp }) => {
 };
 
 export default ProblemDetail;
+

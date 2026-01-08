@@ -1,17 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProblems } from '../store/problemSlice';
+import { getUserSolvedProblemIds } from '../services/submissionService';
 import ProblemCard from '../components/ProblemCard';
 
 const Problems = () => {
     const dispatch = useDispatch();
     const { items: problems, loading, error } = useSelector((state) => state.problems);
+    const { user } = useSelector((state) => state.auth);
     const [filter, setFilter] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+    const [solvedProblemIds, setSolvedProblemIds] = useState([]);
 
     useEffect(() => {
         dispatch(fetchProblems());
     }, [dispatch]);
+
+    // Fetch user's solved problems
+    useEffect(() => {
+        const fetchSolvedProblems = async () => {
+            if (user?.id) {
+                const result = await getUserSolvedProblemIds(user.id);
+                setSolvedProblemIds(result.data);
+            }
+        };
+        fetchSolvedProblems();
+    }, [user]);
 
     console.log('Problems State:', { problems, loading, error });
 
@@ -82,7 +96,11 @@ const Problems = () => {
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredProblems.length > 0 ? (
                             filteredProblems.map((problem) => (
-                                <ProblemCard key={problem.id} problem={problem} />
+                                <ProblemCard
+                                    key={problem.id}
+                                    problem={problem}
+                                    isSolved={solvedProblemIds.includes(problem.id)}
+                                />
                             ))
                         ) : (
                             <div className="col-span-full text-center py-12">
