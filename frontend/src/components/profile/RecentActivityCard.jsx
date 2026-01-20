@@ -152,14 +152,19 @@ const RecentActivityCard = ({ submissions = [] }) => {
 
     return (
         <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary mb-6 flex items-center gap-2">
-                <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Recent Submissions
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Recent Submissions
+                </h3>
+                <span className="text-xs dark:text-gray-500 text-gray-400 px-3 py-1 rounded-full dark:bg-white/5 bg-gray-100">
+                    Last {recentSubmissions.length}
+                </span>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {recentSubmissions.map((submission, index) => {
                     const statusStyle = getStatusStyle(submission.status);
                     const langStyle = getLanguageStyle(submission.language);
@@ -167,56 +172,67 @@ const RecentActivityCard = ({ submissions = [] }) => {
                     return (
                         <div
                             key={submission.id || index}
-                            className={`group relative p-4 rounded-xl border ${statusStyle.border} ${statusStyle.bg} 
-                                       backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg`}
-                            style={{ animationDelay: `${index * 50}ms` }}
+                            className={`
+                                group relative flex items-center px-4 py-3 rounded-xl
+                                transition-all duration-300 ease-out
+                                
+                                /* Glass effect */
+                                backdrop-blur-sm
+                                
+                                /* Light theme */
+                                bg-white/60 hover:bg-white/80
+                                border border-gray-200/60 hover:border-gray-300/80
+                                shadow-sm hover:shadow-md
+                                
+                                /* Dark theme */
+                                dark:bg-white/5 dark:hover:bg-white/10
+                                dark:border-white/10 dark:hover:border-white/20
+                                
+                                /* Hover transform */
+                                hover:translate-x-1
+                            `}
                         >
-                            <div className="flex items-center justify-between gap-4">
-                                {/* Problem Info */}
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium dark:text-dark-text-primary text-light-text-primary truncate">
-                                        {submission.problemTitle || `Problem #${submission.problemId || submission.problem_id}`}
-                                    </h4>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        {/* Language Badge */}
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${langStyle.bg} ${langStyle.color}`}>
-                                            {submission.language}
-                                        </span>
-                                        {/* Time */}
-                                        <span className="text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
-                                            {formatTimeAgo(submission.submittedAt || submission.createdAt)}
-                                        </span>
-                                    </div>
-                                </div>
+                            {/* Status indicator line */}
+                            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${statusStyle.text === 'text-green-400' ? 'bg-green-500' :
+                                    statusStyle.text === 'text-red-400' ? 'bg-red-500' :
+                                        statusStyle.text === 'text-orange-400' ? 'bg-orange-500' :
+                                            statusStyle.text === 'text-yellow-400' ? 'bg-yellow-500' :
+                                                statusStyle.text === 'text-purple-400' ? 'bg-purple-500' :
+                                                    'bg-gray-500'
+                                }`} />
 
-                                {/* Status Badge */}
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${statusStyle.bg} ${statusStyle.text}`}>
-                                    {statusStyle.icon}
-                                    <span className="text-sm font-medium hidden sm:inline">
-                                        {statusStyle.label}
+                            {/* Status Icon */}
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${statusStyle.bg} ${statusStyle.text}`}>
+                                {statusStyle.icon}
+                            </div>
+
+                            {/* Problem Info */}
+                            <div className="flex-1 min-w-0 px-4">
+                                <h4 className="text-sm font-medium dark:text-white text-gray-800 truncate">
+                                    {submission.problemTitle || `Problem #${submission.problemId || submission.problem_id}`}
+                                </h4>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${langStyle.bg} ${langStyle.color}`}>
+                                        {submission.language}
+                                    </span>
+                                    <span className="text-xs dark:text-gray-500 text-gray-400">
+                                        {formatTimeAgo(submission.submittedAt || submission.createdAt)}
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Execution Stats */}
-                            {(submission.executionTime || submission.memoryUsed) && (
-                                <div className="flex gap-4 mt-3 pt-3 border-t dark:border-dark-border-primary/30 border-light-border-primary/30">
-                                    {submission.executionTime && (
-                                        <div className="flex items-center gap-1 text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                            </svg>
-                                            {submission.executionTime}ms
-                                        </div>
-                                    )}
-                                    {submission.memoryUsed && (
-                                        <div className="flex items-center gap-1 text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                            </svg>
-                                            {(submission.memoryUsed / 1024).toFixed(1)}MB
-                                        </div>
-                                    )}
+                            {/* Status Badge */}
+                            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+                                {statusStyle.label}
+                            </div>
+
+                            {/* Execution Stats - compact */}
+                            {submission.executionTime && (
+                                <div className="hidden md:flex items-center gap-1 ml-3 text-xs dark:text-gray-500 text-gray-400">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    {submission.executionTime}ms
                                 </div>
                             )}
                         </div>
