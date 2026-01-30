@@ -42,12 +42,21 @@
     @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
   }
 
-  /* Card Styles - Flat LeetCode Design */
+  /* Card Styles - Glass Design (Matching Problems Page) */
   .card {
-    @apply rounded-lg p-4 transition-all duration-200;
-    @apply dark:bg-dark-bg-secondary dark:border-dark-border-primary;
-    @apply bg-light-bg-secondary border-light-border-primary border;
-    @apply dark:hover:border-dark-border-secondary hover:border-light-border-secondary;
+    @apply rounded-xl p-5 transition-all duration-300 ease-out;
+    /* Glass Effect */
+    @apply backdrop-blur-sm;
+    /* Light theme - more transparent */
+    @apply bg-white/30 hover:bg-white/40;
+    @apply border border-gray-200/40 hover:border-gray-300/60;
+    @apply shadow-sm hover:shadow-md hover:shadow-gray-200/30;
+    /* Dark theme - very transparent */
+    @apply dark:bg-white/[0.02] dark:hover:bg-white/[0.05];
+    @apply dark:border-white/5 dark:hover:border-white/10;
+    @apply dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-black/10;
+    /* Hover transform */
+    @apply hover:translate-x-1 hover:-translate-y-0.5;
   }
 
   .card-elevated {
@@ -129,11 +138,13 @@
     @apply dark:border-dark-border-primary border-light-border-primary;
   }
 
-  /* Panel/Container */
+  /* Panel/Container - Transparent Glass Style */
   .panel {
-    @apply rounded-lg;
-    @apply dark:bg-dark-bg-secondary dark:border-dark-border-primary;
-    @apply bg-white border-light-border-primary border;
+    @apply rounded-xl backdrop-blur-sm;
+    /* Light theme - transparent */
+    @apply bg-white/30 border border-gray-200/40;
+    /* Dark theme - very transparent */
+    @apply dark:bg-white/[0.02] dark:border-white/5;
   }
 
   /* Text Styles */
@@ -155,18 +166,21 @@
     @apply dark:bg-dark-bg-tertiary bg-light-bg-tertiary;
   }
 
-  /* Glassmorphism Effect */
+  /* Glassmorphism Effect - Transparent */
   .glass {
-    @apply backdrop-blur-xl backdrop-saturate-150;
-    @apply dark:bg-dark-bg-secondary/70 bg-white/70;
-    @apply border dark:border-dark-border-primary/50 border-light-border-primary/50;
-    @apply shadow-xl dark:shadow-black/20 shadow-gray-200/50;
+    @apply backdrop-blur-sm;
+    /* Light theme - transparent */
+    @apply bg-white/30 border border-gray-200/40;
+    @apply shadow-lg shadow-gray-200/20;
+    /* Dark theme - very transparent */
+    @apply dark:bg-white/[0.02] dark:border-white/5;
+    @apply dark:shadow-lg dark:shadow-black/10;
   }
 
   .glass-subtle {
-    @apply backdrop-blur-md;
-    @apply dark:bg-dark-bg-secondary/50 bg-white/50;
-    @apply border dark:border-dark-border-primary/30 border-light-border-primary/30;
+    @apply backdrop-blur-sm;
+    @apply bg-white/20 border border-gray-200/30;
+    @apply dark:bg-white/[0.01] dark:border-white/[0.03];
   }
 
   /* Gradient border effect for cards */

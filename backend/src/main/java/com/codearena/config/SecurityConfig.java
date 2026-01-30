@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/problems/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll() // Room endpoints
                         .requestMatchers("/api/leaderboard/**").permitAll()
                         .requestMatchers("/api/health").permitAll() // Health check for keep-alive
                         .requestMatchers("/ws/**").permitAll()
@@ -64,7 +65,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "https://codearena-of33.onrender.com"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 

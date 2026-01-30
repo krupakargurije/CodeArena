@@ -268,7 +268,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Filter Bar */}
-                        <div className="panel p-4 mb-6">
+                        <div className="glass rounded-xl p-4 mb-6">
                             <div className="flex flex-wrap gap-4 items-center">
                                 {/* Search */}
                                 <div className="flex-1 min-w-[200px]">
@@ -337,7 +337,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Problems Table */}
-                        <div className="panel p-6">
+                        <div className="glass rounded-xl p-6">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
@@ -420,7 +420,7 @@ const AdminDashboard = () => {
                     <div>
                         {/* Loading State */}
                         {usersLoading && (
-                            <div className="panel p-8 mb-8 text-center">
+                            <div className="glass rounded-xl p-8 mb-8 text-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto mb-4"></div>
                                 <p className="text-primary font-medium">Loading users...</p>
                                 <p className="text-secondary text-sm mt-2">
@@ -432,7 +432,7 @@ const AdminDashboard = () => {
                         {!usersLoading && (
                             <>
                                 {/* Grant Admin Form */}
-                                <div className="panel p-6 mb-8">
+                                <div className="glass rounded-xl p-6 mb-8">
                                     <h2 className="text-xl font-bold text-primary mb-4">Grant Admin Permission</h2>
                                     <form onSubmit={handleGrantAdmin} className="flex gap-4">
                                         <input
@@ -466,7 +466,7 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {/* Current Admins */}
-                                <div className="panel p-6 mb-8">
+                                <div className="glass rounded-xl p-6 mb-8">
                                     <h2 className="text-xl font-bold text-primary mb-4">
                                         Current Admins ({admins.length})
                                     </h2>
@@ -519,7 +519,7 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {/* All Users */}
-                                <div className="panel p-6">
+                                <div className="glass rounded-xl p-6">
                                     <h2 className="text-xl font-bold text-primary mb-4">
                                         All Users ({users.length})
                                     </h2>

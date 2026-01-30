@@ -59,7 +59,7 @@ const Home = () => {
                     </div>
 
                     {/* Multiplayer Section */}
-                    <div className="panel p-8 max-w-4xl mx-auto">
+                    <div className="glass rounded-2xl p-8 max-w-4xl mx-auto">
                         <div className="flex items-center justify-center mb-6">
                             <span className="text-4xl mr-4">🎮</span>
                             <h2 className="text-3xl font-bold dark:text-dark-text-primary text-light-text-primary">Multiplayer Rooms</h2>
@@ -124,7 +124,7 @@ const Home = () => {
                 </div>
 
                 {/* Stats Section */}
-                <div className="mt-24 panel p-12">
+                <div className="mt-24 glass rounded-2xl p-12">
                     <div className="grid md:grid-cols-3 gap-8 text-center">
                         <div>
                             <div className="text-4xl font-bold text-brand-orange mb-2">500+</div>

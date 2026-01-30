@@ -116,7 +116,7 @@ const AdminProblems = () => {
                 </div>
 
                 {/* Problems Table */}
-                <div className="panel p-6">
+                <div className="glass rounded-xl p-6">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>

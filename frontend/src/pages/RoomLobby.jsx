@@ -17,13 +17,20 @@ const RoomLobby = () => {
     useEffect(() => {
         fetchRoomDetails();
 
-        // Subscribe to real-time updates
+        // Subscribe to real-time updates (Supabase)
         const channel = subscribeToRoom(roomId, () => {
             fetchRoomDetails();
         });
 
+        // POLLING: Fetch updates every 3 seconds to sync with backend (H2)
+        // This is necessary because Supabase Realtime doesn't see H2 updates
+        const pollInterval = setInterval(() => {
+            fetchRoomDetails();
+        }, 3000);
+
         return () => {
             channel.unsubscribe();
+            clearInterval(pollInterval);
         };
     }, [roomId]);
 
@@ -35,6 +42,7 @@ const RoomLobby = () => {
     }, [room?.status, roomId, navigate]);
 
     const fetchRoomDetails = async () => {
+        // ... existing code ...
         try {
             const response = await getRoomDetails(roomId);
             setRoom(response.data);
@@ -59,6 +67,8 @@ const RoomLobby = () => {
             await updateReadyStatus(roomId, !isReady);
             console.log('handleToggleReady: Success');
             setIsReady(!isReady);
+            // Refresh room data to update participants list
+            await fetchRoomDetails();
         } catch (error) {
             console.error('handleToggleReady: Failed:', error);
         }
@@ -69,9 +79,13 @@ const RoomLobby = () => {
         setStarting(true);
         try {
             console.log('handleStart: Calling startRoom...');
-            await startRoom(roomId);
-            console.log('handleStart: Success');
-            // Will redirect via useEffect when room status changes
+            const response = await startRoom(roomId);
+            console.log('handleStart: Success', response);
+
+            // Navigate immediately if successful
+            if (response.data && response.data.success) {
+                navigate(`/rooms/${roomId}/problem`);
+            }
         } catch (error) {
             console.error('handleStart: Failed:', error);
             alert(error.message);
