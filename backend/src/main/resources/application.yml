@@ -4,9 +4,9 @@ spring:
   
   datasource:
     # Supabase Direct Connection (Session Mode) - Required for DDL/Migrations
-    url: jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require
-    username: postgres
-    password: "Nobita@2004" # <--- PLEASE REPLACE WITH YOUR ACTUAL DATABASE PASSWORD
+    url: ${DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Nobita@2004}
     driver-class-name: org.postgresql.Driver
   
   jpa:
