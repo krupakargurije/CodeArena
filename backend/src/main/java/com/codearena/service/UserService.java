@@ -46,8 +46,8 @@ public class UserService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public User syncUser(String id, String email, String username) {
-        return userRepository.findById(id).orElseGet(() -> {
+    public User syncUser(String id, String email, String username, boolean isAdmin) {
+        User user = userRepository.findById(id).orElseGet(() -> {
             User newUser = new User();
             newUser.setId(id);
             newUser.setEmail(email);
@@ -55,8 +55,26 @@ public class UserService {
             newUser.setPassword(""); // No password for external auth
             newUser.setRating(1200);
             newUser.setProblemsSolved(0);
-            return userRepository.save(newUser);
+            return newUser; // Don't save yet
         });
+
+        // Always ensure email/username are up to date
+        user.setEmail(email);
+        if (username != null)
+            user.setUsername(username);
+
+        // Sync Roles
+        if (isAdmin) {
+            user.getRoles().add("ROLE_ADMIN");
+        } else {
+            // Optional: Remove admin if not in JWT? careful with this.
+            // For safety, let's only ADD admin if JWT says so, but not remove it
+            // automatically
+            // to prevent accidental lockouts if JWT is just a standard login.
+            // Actually, if using service_role, it's definitely admin.
+        }
+
+        return userRepository.save(user);
     }
 
     @org.springframework.transaction.annotation.Transactional

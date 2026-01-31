@@ -23,8 +23,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 User user = userRepository.findById(username)
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+                org.slf4j.LoggerFactory.getLogger(UserDetailsServiceImpl.class)
+                                .info("Loading user: {} | Roles found: {}", user.getUsername(), user.getRoles());
+
                 return org.springframework.security.core.userdetails.User.builder()
-                                .username(user.getUsername())
+                                .username(user.getId()) // Must match JWT Subject (UUID) for validation
                                 .password(user.getPassword())
                                 .authorities(user.getRoles().stream()
                                                 .map(SimpleGrantedAuthority::new)

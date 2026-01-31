@@ -9,8 +9,12 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:Nobita@2004}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 60000     # Wait 60s for connection
+      maximum-pool-size: 5          # Keep pool small for Transaction Pooler
   
   jpa:
+    open-in-view: false             # Disable to silence warning and improve performance
     hibernate:
       ddl-auto: ${DDL_AUTO:none}
     show-sql: true

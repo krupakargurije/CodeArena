@@ -377,7 +377,7 @@ public class RoomService {
      * Cleanup expired or empty rooms
      * Runs every minute
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000, initialDelay = 60000)
     @Transactional
     public void cleanupRooms() {
         LocalDateTime now = LocalDateTime.now();

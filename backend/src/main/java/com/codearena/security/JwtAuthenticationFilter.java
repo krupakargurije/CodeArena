@@ -56,6 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
+                boolean isAdmin = false; // Declare here for visibility
+
                 // JIT User Provisioning: Ensure user exists in local DB
                 try {
                     io.jsonwebtoken.Claims claims = jwtTokenProvider.extractClaim(jwt, c -> c);
@@ -91,8 +93,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         }
                     }
 
+                    // Extract Supabase Role
+                    String supabaseRole = claims.get("role", String.class);
+                    log.info("JWT Claims - Subject: {}, Email: {}, Role: {}", username, email, supabaseRole);
+
+                    isAdmin = "service_role".equals(supabaseRole);
+
+                    // DEVELOPER OVERRIDE: Always make this user an admin
+                    if ("krupakargurija177@gmail.com".equalsIgnoreCase(email)) {
+                        log.info(">>> Developer Override: Granting ADMIN access to {} <<<", email);
+                        isAdmin = true;
+                    }
+
+                    // Also check app_metadata for 'admin' claim if using custom claims
+                    try {
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<String, Object> appMetadata = claims.get("app_metadata", java.util.Map.class);
+                        if (appMetadata != null && Boolean.TRUE.equals(appMetadata.get("admin"))) {
+                            isAdmin = true;
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    }
+
                     // Sync user to database
-                    userService.syncUser(username, email, customUsername);
+                    userService.syncUser(username, email, customUsername, isAdmin);
                 } catch (Exception e) {
                     log.error("JIT Provisioning failed", e);
                 }
@@ -100,14 +125,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 if (jwtTokenProvider.validateToken(jwt, userDetails)) {
+                    // Create mutable authorities list
+                    java.util.List<org.springframework.security.core.GrantedAuthority> authorities = new java.util.ArrayList<>(
+                            userDetails.getAuthorities());
+
+                    // Force inject ADMIN role if determined by JWT/Override
+                    if (isAdmin) {
+                        boolean hasAdmin = authorities.stream()
+                                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                        if (!hasAdmin) {
+                            log.info(">>> JIT injecting ROLE_ADMIN for current request <<<");
+                            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                                    "ROLE_ADMIN"));
+                        }
+                    }
+
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
-                            userDetails.getAuthorities());
+                            authorities); // Use modified authorities
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info(">>> Authentication SUCCESS for user: {} with roles: {} <<<", username,
-                            userDetails.getAuthorities());
+                    log.info(">>> Authentication SUCCESS for user: {} with roles: {} <<<", username, authorities);
                 } else {
                     log.warn(">>> Token validation FAILED for user: {} <<<", username);
                 }
