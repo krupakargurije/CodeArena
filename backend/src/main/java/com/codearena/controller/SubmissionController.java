@@ -27,7 +27,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SubmissionResponse>> getUserSubmissions(@PathVariable Long userId) {
+    public ResponseEntity<List<SubmissionResponse>> getUserSubmissions(@PathVariable String userId) {
         return ResponseEntity.ok(submissionService.getUserSubmissions(userId));
     }
 

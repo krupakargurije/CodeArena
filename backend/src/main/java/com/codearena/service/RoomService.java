@@ -15,6 +15,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -116,6 +117,7 @@ public class RoomService {
         room.setProblemSelectionMode(
                 Room.ProblemSelectionMode.valueOf(request.getProblemSelectionMode().toUpperCase()));
         room.setMaxParticipants(request.getMaxParticipants() != null ? request.getMaxParticipants() : 4);
+        room.setIsPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false);
         room.setStatus(Room.RoomStatus.WAITING);
 
         room = roomRepository.save(room);
@@ -145,8 +147,8 @@ public class RoomService {
         Room room = roomRepository.findByIdWithParticipants(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        if (room.getStatus() != Room.RoomStatus.WAITING) {
-            throw new RuntimeException("Room is not available to join");
+        if (room.getStatus() == Room.RoomStatus.COMPLETED) {
+            throw new RuntimeException("Room has already ended");
         }
 
         // Check if already joined
@@ -172,6 +174,12 @@ public class RoomService {
         Room updatedRoom = roomRepository.findByIdWithParticipants(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
+        // Clear empty flag if it was set
+        if (updatedRoom.getLastEmptyAt() != null) {
+            updatedRoom.setLastEmptyAt(null);
+            updatedRoom = roomRepository.save(updatedRoom);
+        }
+
         return RoomResponse.fromEntity(updatedRoom);
     }
 
@@ -188,6 +196,14 @@ public class RoomService {
 
         participant.setLeftAt(LocalDateTime.now());
         participantRepository.save(participant);
+
+        // Check if room is empty
+        long activeCount = participantRepository.countByRoomIdAndLeftAtIsNull(roomId);
+        if (activeCount == 0) {
+            Room room = roomRepository.findById(roomId).orElseThrow();
+            room.setLastEmptyAt(LocalDateTime.now());
+            roomRepository.save(room);
+        }
     }
 
     /**
@@ -299,5 +315,114 @@ public class RoomService {
                 .distinct()
                 .map(RoomResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all available public rooms (Waiting or Active)
+     */
+    @Transactional(readOnly = true)
+    public List<RoomResponse> getPublicRooms() {
+        // Return both WAITING and ACTIVE public rooms
+        // We can reuse findAvailablePublicRooms for WAITING ones, but we need ACTIVE
+        // ones too.
+        List<Room> rooms = roomRepository.findAll().stream()
+                .filter(r -> !r.getIsPrivate())
+                .filter(r -> r.getStatus() == Room.RoomStatus.WAITING || r.getStatus() == Room.RoomStatus.ACTIVE)
+                .sorted((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt())) // Newest first
+                .collect(Collectors.toList());
+
+        return rooms.stream()
+                .map(RoomResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Random join room
+     */
+    @Transactional
+    public RoomResponse randomJoinRoom(String userId, String username, CreateRoomRequest preferences) {
+        // 1. Find candidate rooms
+        List<Room> availableRooms = roomRepository.findAvailablePublicRooms();
+
+        // 2. Try to join first available
+        for (Room room : availableRooms) {
+            try {
+                // Double check constraints
+                if (room.getParticipants().size() >= room.getMaxParticipants()) {
+                    continue;
+                }
+
+                return joinRoom(room.getId(), userId, username);
+            } catch (Exception e) {
+                // Optimistic locking or other failure, try next room
+                log.warn("Failed to random join room {}: {}", room.getId(), e.getMessage());
+            }
+        }
+
+        // 3. If no room found, create new one
+        if (preferences == null) {
+            preferences = new CreateRoomRequest();
+            preferences.setProblemSelectionMode("random");
+            preferences.setMaxParticipants(4);
+            preferences.setIsPrivate(false);
+        } else {
+            // Ensure forced public
+            preferences.setIsPrivate(false);
+        }
+
+        return createRoom(userId, username, preferences);
+    }
+
+    /**
+     * Cleanup expired or empty rooms
+     * Runs every minute
+     */
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void cleanupRooms() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Room> rooms = roomRepository.findAll();
+        int deletedCount = 0;
+
+        for (Room room : rooms) {
+            boolean shouldDelete = false;
+            String reason = "";
+
+            // Rule 1: Exceeds 30 minutes duration
+            if (room.getStatus() == Room.RoomStatus.ACTIVE && room.getStartedAt() != null) {
+                if (room.getStartedAt().plusMinutes(30).isBefore(now)) {
+                    shouldDelete = true;
+                    reason = "Exceeded 30 minutes duration";
+                }
+            }
+
+            // Rule 2: Empty for more than 5 minutes
+            // If lastEmptyAt is set, check if 5 mins have passed
+            if (!shouldDelete && room.getLastEmptyAt() != null) {
+                if (room.getLastEmptyAt().plusMinutes(5).isBefore(now)) {
+                    // Double check if actually empty to be safe (though lastEmptyAt should be
+                    // reliable)
+                    long activeCount = participantRepository.countByRoomIdAndLeftAtIsNull(room.getId());
+                    if (activeCount == 0) {
+                        shouldDelete = true;
+                        reason = "Empty for > 5 minutes";
+                    } else {
+                        // Inconsistency found, reset flag
+                        room.setLastEmptyAt(null);
+                        roomRepository.save(room);
+                    }
+                }
+            }
+
+            if (shouldDelete) {
+                log.info("Deleting room {} - Reason: {}", room.getId(), reason);
+                roomRepository.delete(room);
+                deletedCount++;
+            }
+        }
+
+        if (deletedCount > 0) {
+            log.info("Cleanup completed. Deleted {} rooms.", deletedCount);
+        }
     }
 }

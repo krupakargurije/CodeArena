@@ -11,4 +11,5 @@ public class CreateRoomRequest {
     private Long problemId;
     private String problemSelectionMode; // "single" or "random"
     private Integer maxParticipants;
+    private Boolean isPrivate;
 }

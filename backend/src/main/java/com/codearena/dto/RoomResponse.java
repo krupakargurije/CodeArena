@@ -18,7 +18,17 @@ public class RoomResponse {
     private Long problemId;
     private String problemSelectionMode;
     private Integer maxParticipants;
+    private Boolean isPrivate;
     private String status;
+
+    public void setIsPrivate(Boolean isPrivate) {
+        this.isPrivate = isPrivate;
+    }
+
+    public Boolean getIsPrivate() {
+        return isPrivate;
+    }
+
     private LocalDateTime startedAt;
     private LocalDateTime createdAt;
     private List<RoomParticipantResponse> roomParticipants;
@@ -40,6 +50,7 @@ public class RoomResponse {
         response.setProblemId(room.getProblemId());
         response.setProblemSelectionMode(room.getProblemSelectionMode().name().toLowerCase());
         response.setMaxParticipants(room.getMaxParticipants());
+        response.setIsPrivate(room.getIsPrivate());
         response.setStatus(room.getStatus().name().toLowerCase());
         response.setStartedAt(room.getStartedAt());
         response.setCreatedAt(room.getCreatedAt());

@@ -63,17 +63,14 @@ public class Problem {
     @Column(nullable = false)
     private Integer acceptedSubmissions = 0;
 
+    @Column(nullable = false)
+    private Double acceptanceRate = 0.0;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public enum Difficulty {
-        EASY, MEDIUM, HARD
-    }
-
-    public Double getAcceptanceRate() {
-        if (totalSubmissions == 0)
-            return 0.0;
-        return (acceptedSubmissions * 100.0) / totalSubmissions;
+        CAKEWALK, EASY, MEDIUM, HARD
     }
 }

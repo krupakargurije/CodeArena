@@ -50,6 +50,32 @@ public class RoomController {
     }
 
     /**
+     * Join a random room
+     * POST /api/rooms/random-join
+     */
+    @PostMapping("/random-join")
+    public ResponseEntity<RoomResponse> randomJoinRoom(
+            @RequestBody(required = false) CreateRoomRequest preferences,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
+            @RequestHeader(value = "X-Username", required = false) String headerUsername,
+            @RequestParam(value = "userId", required = false) String paramUserId,
+            @RequestParam(value = "username", required = false) String paramUsername) {
+
+        String userId = headerUserId != null ? headerUserId : paramUserId;
+        String username = headerUsername != null ? headerUsername : paramUsername;
+
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (username == null || username.isEmpty()) {
+            username = "User";
+        }
+
+        RoomResponse room = roomService.randomJoinRoom(userId, username, preferences);
+        return ResponseEntity.ok(room);
+    }
+
+    /**
      * Join an existing room
      * POST /api/rooms/{id}/join
      */
@@ -167,6 +193,16 @@ public class RoomController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<RoomResponse>> getUserRooms(@PathVariable String userId) {
         List<RoomResponse> rooms = roomService.getUserRooms(userId);
+        return ResponseEntity.ok(rooms);
+    }
+
+    /**
+     * Get all public rooms
+     * GET /api/rooms/public
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<RoomResponse>> getPublicRooms() {
+        List<RoomResponse> rooms = roomService.getPublicRooms();
         return ResponseEntity.ok(rooms);
     }
 }

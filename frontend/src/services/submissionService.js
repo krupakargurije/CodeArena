@@ -275,17 +275,21 @@ export const submitCode = async (submissionData) => {
         .from('submissions')
         .insert([{
             user_id: user.id,
-            problem_id: submissionData.problemId,
+            problem_id: parseInt(submissionData.problemId),
             code: submissionData.code,
             language: submissionData.language,
             status: status,
             execution_time: executionResult.execution_time,
-            memory_used: executionResult.memory_used
+            memory_used: executionResult.memory_used,
+            submitted_at: new Date().toISOString()
         }])
         .select()
         .single();
 
-    if (error) throw error;
+    if (error) {
+        console.error('Submit Code Supabase Insert Error:', error);
+        throw error;
+    }
 
     // If this is their first accepted submission for this problem, update count
     if (status === 'ACCEPTED' && !hadPreviouslySolved) {

@@ -37,7 +37,12 @@ public class Room {
     @Enumerated(EnumType.STRING)
     private RoomStatus status = RoomStatus.WAITING;
 
+    @Column(nullable = false)
+    private Boolean isPrivate = false;
+
     private LocalDateTime startedAt;
+
+    private LocalDateTime lastEmptyAt;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

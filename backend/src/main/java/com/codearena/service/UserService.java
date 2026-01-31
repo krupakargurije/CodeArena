@@ -16,14 +16,9 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserProfileResponse getUserProfile(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return toProfileResponse(user);
-    }
-
-    public UserProfileResponse getUserProfile(Long id) {
+    public UserProfileResponse getUserProfile(String id) {
         User user = userRepository.findById(id)
+                .or(() -> userRepository.findByUsername(id)) // Fallback search by username if ID lookup fails
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return toProfileResponse(user);
     }
@@ -50,7 +45,47 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public User syncUser(String id, String email, String username) {
+        return userRepository.findById(id).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setId(id);
+            newUser.setEmail(email);
+            newUser.setUsername(username);
+            newUser.setPassword(""); // No password for external auth
+            newUser.setRating(1200);
+            newUser.setProblemsSolved(0);
+            return userRepository.save(newUser);
+        });
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void grantAdmin(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        user.getRoles().add("ROLE_ADMIN");
+        userRepository.save(user);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void revokeAdmin(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        user.getRoles().remove("ROLE_ADMIN");
+        userRepository.save(user);
+    }
+
+    public List<UserProfileResponse> getAllUsers() {
+        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::toProfileResponse)
+                .collect(Collectors.toList());
+    }
+
     private UserProfileResponse toProfileResponse(User user) {
+        boolean isAdmin = user.getRoles().contains("ROLE_ADMIN");
         return new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
@@ -59,6 +94,11 @@ public class UserService {
                 user.getCountry(),
                 user.getOrganization(),
                 user.getRating(),
-                user.getProblemsSolved());
+                user.getProblemsSolved(),
+                isAdmin,
+                user.getCreatedAt(),
+                null // avatarUrl not stored in User entity currently, handled by Supabase storage
+                     // directly usually
+        );
     }
 }

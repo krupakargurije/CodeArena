@@ -26,10 +26,6 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
-
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -44,11 +40,28 @@ public class JwtTokenProvider {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            // Strategy 1: Base64 Decoded (Standard for Supabase secrets like '8OI/...')
+            byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secret);
+            return Jwts.parser()
+                    .verifyWith(Keys.hmacShaKeyFor(keyBytes))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (io.jsonwebtoken.security.SignatureException e1) {
+            try {
+                // Strategy 2: Raw UTF-8 Bytes (Fallback for plain passwords)
+                byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+                return Jwts.parser()
+                        .verifyWith(Keys.hmacShaKeyFor(keyBytes))
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+            } catch (Exception e2) {
+                // If both fail, throw the original error or a combined one
+                throw e1;
+            }
+        }
     }
 
     private Boolean isTokenExpired(String token) {
@@ -61,12 +74,14 @@ public class JwtTokenProvider {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        // Use Base64 for internal token creation (standard)
+        SecretKey key = Keys.hmacShaKeyFor(io.jsonwebtoken.io.Decoders.BASE64.decode(secret));
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 

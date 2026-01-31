@@ -245,30 +245,27 @@ export const getLeaderboard = async () => {
 
 export const checkIsAdmin = async () => {
     try {
-        // Use modern Supabase auth API to get current user
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('checkIsAdmin: Checking admin status via Supabase (Direct DB)...');
 
-        if (!session?.user?.id) {
-            console.log('checkIsAdmin: No session found');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+            console.warn('checkIsAdmin: No active session');
             return false;
         }
-
-        const userId = session.user.id;
-        console.log('checkIsAdmin: Checking admin status for user:', userId);
 
         const { data, error } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', userId)
+            .eq('id', session.user.id)
             .single();
 
         if (error) {
-            console.error('checkIsAdmin: Error querying profiles:', error);
+            console.error('checkIsAdmin: Supabase error:', error);
             return false;
         }
 
-        console.log('checkIsAdmin: Result:', data?.is_admin);
-        return data?.is_admin || false;
+        console.log('checkIsAdmin: Status:', data?.is_admin);
+        return data?.is_admin === true;
     } catch (error) {
         console.error('checkIsAdmin: Exception:', error);
         return false;
@@ -287,17 +284,18 @@ const getAuthHeaders = async () => {
 export const grantAdminPermission = async (userEmail) => {
     try {
         console.log('Granting admin via Spring Boot backend...');
-        // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/grant-admin?email=${encodeURIComponent(userEmail)}`, {
+        const headers = await getAuthHeaders();
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/grant`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers,
+            body: userEmail // Backend expects raw string body
         });
 
         if (response.ok) {
-            const data = await response.json();
-            console.log('Backend grant admin SUCCESS:', data);
+            // Check if response has content before parsing
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : {};
+            console.log('Backend grant admin SUCCESS');
             return { data };
         } else {
             const errorText = await response.text();
@@ -318,17 +316,17 @@ export const revokeAdminPermission = async (userEmail) => {
 
     try {
         console.log('Revoking admin via Spring Boot backend...');
-        // Don't send Authorization header - backend is permitAll and can't validate Supabase JWTs
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/revoke-admin?email=${encodeURIComponent(userEmail)}`, {
+        const headers = await getAuthHeaders();
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/revoke`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers,
+            body: userEmail // Backend expects raw string body
         });
 
         if (response.ok) {
-            const data = await response.json();
-            console.log('Backend revoke admin SUCCESS:', data);
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : {};
+            console.log('Backend revoke admin SUCCESS');
             return { data };
         } else {
             const errorText = await response.text();
@@ -342,31 +340,16 @@ export const revokeAdminPermission = async (userEmail) => {
 };
 
 export const getAllAdmins = async () => {
-    try {
-        console.log('Fetching admins from Spring Boot backend...');
-        const headers = await getAuthHeaders();
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/admins`, { headers });
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Backend fetch admins SUCCESS:', data);
-            return { data };
-        } else {
-            console.error('Backend fetch failed:', response.status);
-            throw new Error('Failed to fetch admins from backend');
-        }
-    } catch (error) {
-        console.error('getAllAdmins error:', error);
-        throw error;
-    }
+    // Not implemented in backend yet, using getAllUsers filter in frontend
+    return getAllUsers();
 };
 
 export const getAllUsers = async () => {
     try {
         console.log('Fetching users from Spring Boot backend...');
-        // const headers = await getAuthHeaders();
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users`, {
-            // headers 
+        const headers = await getAuthHeaders();
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/users`, {
+            headers
         });
 
         if (response.ok) {

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SubmissionResponse {
     private Long id;
-    private Long userId;
+    private String userId;
     private String username;
     private Long problemId;
     private String problemTitle;

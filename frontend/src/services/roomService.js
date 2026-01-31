@@ -49,7 +49,8 @@ export const createRoom = async (roomData) => {
             body: JSON.stringify({
                 problemId: roomData.problemId || null,
                 problemSelectionMode: roomData.problemSelectionMode,
-                maxParticipants: roomData.maxParticipants
+                maxParticipants: roomData.maxParticipants,
+                isPrivate: roomData.isPrivate
             })
         });
 
@@ -64,6 +65,39 @@ export const createRoom = async (roomData) => {
         }
     } catch (e) {
         console.error('createRoom error:', e);
+        throw e;
+    }
+};
+
+// Random join room
+export const randomJoinRoom = async (preferences = {}) => {
+    console.log('randomJoinRoom: Called', preferences);
+
+    const user = getCurrentUser();
+    if (!user?.id) {
+        throw new Error('No user logged in');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/random-join?userId=${user.id}&username=${encodeURIComponent(user.username)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(preferences)
+        });
+
+        if (response.ok) {
+            const room = await response.json();
+            console.log('randomJoinRoom: Success', room);
+            return { data: room };
+        } else {
+            const errorText = await response.text();
+            console.error('randomJoinRoom: Failed:', response.status, errorText);
+            throw new Error('Failed to join random room: ' + errorText);
+        }
+    } catch (e) {
+        console.error('randomJoinRoom error:', e);
         throw e;
     }
 };
@@ -335,6 +369,44 @@ export const getUserRooms = async (userId) => {
         }
     } catch (e) {
         console.error('getUserRooms error:', e);
+        throw e;
+    }
+};
+
+// Get all public rooms
+export const getPublicRooms = async () => {
+    console.log('getPublicRooms: Called');
+
+    const user = getCurrentUser();
+    if (!user?.id) {
+        throw new Error('No user logged in');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/public`);
+
+        if (response.ok) {
+            const rooms = await response.json();
+            console.log('getPublicRooms: Success', rooms);
+
+            // Transform to match expected format
+            const transformedRooms = rooms.map(room => ({
+                ...room,
+                created_by: room.createdBy,
+                problem_id: room.problemId,
+                max_participants: room.maxParticipants,
+                problem_selection_mode: room.problemSelectionMode,
+                is_private: room.isPrivate
+            }));
+
+            return { data: transformedRooms };
+        } else {
+            const errorText = await response.text();
+            console.error('getPublicRooms: Failed:', response.status, errorText);
+            throw new Error('Failed to fetch public rooms');
+        }
+    } catch (e) {
+        console.error('getPublicRooms error:', e);
         throw e;
     }
 };

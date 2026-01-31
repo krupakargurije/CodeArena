@@ -16,6 +16,9 @@ public interface RoomRepository extends JpaRepository<Room, String> {
 
     List<Room> findByStatus(Room.RoomStatus status);
 
+    @Query("SELECT r FROM Room r WHERE r.status = 'WAITING' AND r.isPrivate = false AND SIZE(r.participants) < r.maxParticipants ORDER BY SIZE(r.participants) ASC")
+    List<Room> findAvailablePublicRooms();
+
     @Query("SELECT r FROM Room r LEFT JOIN FETCH r.participants WHERE r.id = :id")
     Optional<Room> findByIdWithParticipants(@Param("id") String id);
 

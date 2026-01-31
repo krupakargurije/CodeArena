@@ -6,6 +6,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
     const [problemSelectionMode, setProblemSelectionMode] = useState('random');
     const [selectedProblemId, setSelectedProblemId] = useState(null);
     const [maxParticipants, setMaxParticipants] = useState(2);
+    const [isPrivate, setIsPrivate] = useState(false);
     const [problems, setProblems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -81,7 +82,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
             const roomData = {
                 problemSelectionMode,
                 maxParticipants,
-                problemId: problemSelectionMode === 'single' ? selectedProblemId : null
+                maxParticipants,
+                problemId: problemSelectionMode === 'single' ? selectedProblemId : null,
+                isPrivate
             };
 
             const response = await createRoom(roomData);
@@ -129,6 +132,30 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+
+                    {/* Room Privacy */}
+                    <div>
+                        <label className="flex items-center gap-3 p-4 dark:bg-dark-bg-tertiary bg-light-bg-tertiary rounded-lg cursor-pointer dark:hover:bg-dark-bg-tertiary/80 hover:bg-light-bg-tertiary/80 transition-colors">
+                            <input
+                                type="checkbox"
+                                checked={isPrivate}
+                                onChange={(e) => setIsPrivate(e.target.checked)}
+                                className="w-5 h-5 rounded dark:bg-dark-bg-elevated bg-light-bg-elevated border-gray-500 checked:bg-brand-orange checked:border-brand-orange focus:ring-brand-orange"
+                            />
+                            <div className="flex-1">
+                                <div className="font-semibold text-primary flex items-center gap-2">
+                                    Private Room
+                                    <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <div className="text-sm text-secondary">
+                                    Room won't be listed in public lobby or random matching
+                                </div>
+                            </div>
+                        </label>
                     </div>
 
                     {/* Problem Selection Mode */}
@@ -268,8 +295,8 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                         {loading ? 'Creating...' : 'Create Room'}
                     </button>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

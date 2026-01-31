@@ -3,22 +3,19 @@ spring:
     name: codearena-backend
   
   datasource:
-    url: jdbc:h2:mem:codearena
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
-  
-  h2:
-    console:
-      enabled: true
+    # Supabase Direct Connection (Session Mode) - Required for DDL/Migrations
+    url: jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require
+    username: postgres
+    password: "Nobita@2004" # <--- PLEASE REPLACE WITH YOUR ACTUAL DATABASE PASSWORD
+    driver-class-name: org.postgresql.Driver
   
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   
   servlet:
@@ -35,7 +32,7 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: "8OI/UlECnMWScADoBwzUaoAvloaK46/RJEIS5EBFUdnn8QjoGU4rcbSdMbiOlqsLsqk3xVi/ZzLQ1F9BP3k3xQ=="
   expiration: 86400000 # 24 hours in milliseconds
 
 # CORS Configuration

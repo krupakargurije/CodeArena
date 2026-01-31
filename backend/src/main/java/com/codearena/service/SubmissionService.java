@@ -81,7 +81,10 @@ public class SubmissionService {
 
             // Update user stats if first time solving
             List<Submission> previousAccepted = submissionRepository.findByUserIdAndProblemId(
-                    user.getId(), problem.getId()).stream().filter(s -> s.getStatus() == Submission.Status.ACCEPTED)
+                    user.getId(), problem.getId())
+                    .map(List::of)
+                    .orElse(List.of())
+                    .stream().filter(s -> s.getStatus() == Submission.Status.ACCEPTED)
                     .toList();
 
             if (previousAccepted.size() == 1) { // Only this submission
@@ -100,8 +103,8 @@ public class SubmissionService {
         return toResponse(submission);
     }
 
-    public List<SubmissionResponse> getUserSubmissions(Long userId) {
-        return submissionRepository.findByUserIdOrderBySubmittedAtDesc(userId)
+    public List<SubmissionResponse> getUserSubmissions(String userId) {
+        return submissionRepository.findByUserId(userId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -115,6 +118,7 @@ public class SubmissionService {
 
     private int getRatingIncrease(Problem.Difficulty difficulty) {
         return switch (difficulty) {
+            case CAKEWALK -> 5;
             case EASY -> 10;
             case MEDIUM -> 25;
             case HARD -> 50;
