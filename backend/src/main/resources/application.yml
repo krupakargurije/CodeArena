@@ -4,14 +4,15 @@ spring:
   
   datasource:
     # Supabase Direct Connection (Session Mode) - Required for DDL/Migrations
-    url: ${DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require}
+    # Defaulting to Transaction Pooler (6543) and DDL none for maximum compatibility (Works on Render & Local)
+    url: ${DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:6543/postgres?sslmode=require&prepareThreshold=0}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:Nobita@2004}
     driver-class-name: org.postgresql.Driver
   
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: ${DDL_AUTO:none}
     show-sql: true
     properties:
       hibernate:
