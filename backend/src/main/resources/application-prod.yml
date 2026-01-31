@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    # Use Supabase Transaction Pooler (Port 6543) for IPv4 compatibility on Render
+    # prepareThreshold=0 disables server-side prepared statements (better for poolers)
+    url: jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:6543/postgres?sslmode=require&prepareThreshold=0
+  
+  jpa:
+    hibernate:
+      # Disable schema updates in production to prevent startup timeouts/locks
+      ddl-auto: none
+    properties:
+      hibernate:
+        # Avoid accessing metadata defaults which can fail on poolers
+        temp:
+          use_jdbc_metadata_defaults: false
