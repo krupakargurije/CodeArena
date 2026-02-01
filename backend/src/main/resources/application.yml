@@ -4,14 +4,15 @@ spring:
   
   datasource:
     # Supabase Direct Connection (Session Mode) - Required for DDL/Migrations
-    # Defaulting to Transaction Pooler (6543) and DDL none for maximum compatibility (Works on Render & Local)
-    url: ${DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:6543/postgres?sslmode=require&prepareThreshold=0}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:Nobita@2004}
+    # Using Port 5432 (Direct) to avoid 'Network unreachable' issues with Pooler on Render
+    # Renamed env vars to APP_DB_* to bypass potentially incorrect Render settings
+    url: ${APP_DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require}
+    username: ${APP_DB_USERNAME:postgres}
+    password: ${APP_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 60000     # Wait 60s for connection
-      maximum-pool-size: 5          # Keep pool small for Transaction Pooler
+      maximum-pool-size: 10         # Safe size for Direct Connection
   
   jpa:
     open-in-view: false             # Disable to silence warning and improve performance
@@ -42,7 +43,7 @@ jwt:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://codearena-of33.onrender.com}
   allowed-methods: GET,POST,PUT,DELETE,OPTIONS
   allowed-headers: "*"
   allow-credentials: true

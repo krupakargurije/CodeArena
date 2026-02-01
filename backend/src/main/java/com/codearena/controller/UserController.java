@@ -52,18 +52,8 @@ public class UserController {
 
     @PostMapping("/admin/grant")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> grantAdmin(@RequestBody String email) {
-        // Simple string body might come with quotes if raw JSON, or just email.
-        // Better to use a DTO or @RequestParam, but frontend sends simple body?
-        // Let's assume frontend sends raw email or DTO.
-        // Frontend 'grantAdminPermission' in 'userService.js' usually sends JSON object
-        // { email: ... } or just string?
-        // Let's use a wrapper DTO or Map for safety, or check if frontend sends plain
-        // text.
-        // Checking AdminDashboard.jsx: await grantAdminPermission(newAdminEmail);
-        // Checking userService.js will confirm.
-        // For now, let's use a Map to be safe with JSON.
-        userService.grantAdmin(email);
+    public ResponseEntity<Void> grantAdmin(@RequestBody com.codearena.dto.GrantAdminRequest request) {
+        userService.grantAdmin(request);
         return ResponseEntity.ok().build();
     }
 

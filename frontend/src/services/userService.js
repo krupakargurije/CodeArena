@@ -285,18 +285,52 @@ export const grantAdminPermission = async (userEmail) => {
     try {
         console.log('Granting admin via Spring Boot backend...');
         const headers = await getAuthHeaders();
+
+        // 0. Lookup user in Supabase first to get ID/Username
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, username, email')
+            .eq('email', userEmail)
+            .single();
+
+        if (profileError || !profile) {
+            console.error('User lookup in Supabase failed:', profileError);
+            throw new Error(`User not found in Supabase: ${userEmail}`);
+        }
+
+        // 1. Backend Update (Source of Truth for API) - Send full profile for Provisioning
         const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/grant`, {
             method: 'POST',
             headers,
-            body: userEmail // Backend expects raw string body
+            body: JSON.stringify({
+                email: userEmail,
+                userId: profile.id,
+                username: profile.username || userEmail.split('@')[0]
+            })
         });
 
         if (response.ok) {
-            // Check if response has content before parsing
-            const text = await response.text();
-            const data = text ? JSON.parse(text) : {};
             console.log('Backend grant admin SUCCESS');
-            return { data };
+
+            // 2. Supabase Update (Source of Truth for Frontend UI Checks)
+            console.log('Syncing admin status to Supabase profiles...');
+            const { error: supabaseError } = await supabase
+                .from('profiles')
+                .update({ is_admin: true })
+                .eq('email', userEmail);
+
+            if (supabaseError) {
+                console.error('Failed to sync admin status to Supabase:', supabaseError);
+                return {
+                    data: {
+                        success: true,
+                        warning: 'Backend updated but Supabase sync failed. Please refresh the page.'
+                    }
+                };
+            } else {
+                console.log('Supabase profile synced successfully');
+                return { data: { success: true } };
+            }
         } else {
             const errorText = await response.text();
             console.error('Backend grant admin failed:', response.status, errorText);
@@ -317,6 +351,8 @@ export const revokeAdminPermission = async (userEmail) => {
     try {
         console.log('Revoking admin via Spring Boot backend...');
         const headers = await getAuthHeaders();
+
+        // 1. Backend Update
         const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/revoke`, {
             method: 'POST',
             headers,
@@ -327,7 +363,26 @@ export const revokeAdminPermission = async (userEmail) => {
             const text = await response.text();
             const data = text ? JSON.parse(text) : {};
             console.log('Backend revoke admin SUCCESS');
-            return { data };
+
+            // 2. Supabase Update
+            console.log('Syncing revoke status to Supabase profiles...');
+            const { error: supabaseError } = await supabase
+                .from('profiles')
+                .update({ is_admin: false })
+                .eq('email', userEmail);
+
+            if (supabaseError) {
+                console.error('Failed to sync revoke status to Supabase:', supabaseError);
+                return {
+                    data: {
+                        success: true,
+                        warning: 'Backend updated but Supabase sync failed. Please refresh the page.'
+                    }
+                };
+            } else {
+                console.log('Supabase profile synced successfully');
+                return { data: { success: true } };
+            }
         } else {
             const errorText = await response.text();
             console.error('Backend revoke admin failed:', response.status, errorText);

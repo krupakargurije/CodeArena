@@ -78,11 +78,37 @@ public class UserService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public void grantAdmin(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    public void grantAdmin(com.codearena.dto.GrantAdminRequest request) {
+        // Try to find user by ID first, then email
+        User user = null;
+        if (request.getUserId() != null) {
+            user = userRepository.findById(request.getUserId()).orElse(null);
+        }
 
-        user.getRoles().add("ROLE_ADMIN");
+        if (user == null && request.getEmail() != null) {
+            user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        }
+
+        // If still null, we need to provision the user (JIT via Admin)
+        if (user == null) {
+            if (request.getUserId() == null || request.getEmail() == null) {
+                throw new RuntimeException("User not found and insufficient details to provision (need ID and Email)");
+            }
+
+            user = new User();
+            user.setId(request.getUserId());
+            user.setEmail(request.getEmail());
+            user.setUsername(request.getUsername() != null ? request.getUsername() : request.getEmail().split("@")[0]);
+            user.setPassword("");
+            user.setRating(1200);
+            user.setProblemsSolved(0);
+        }
+
+        // Ensure Admin Role
+        if (!user.getRoles().contains("ROLE_ADMIN")) {
+            user.getRoles().add("ROLE_ADMIN");
+        }
+
         userRepository.save(user);
     }
 
