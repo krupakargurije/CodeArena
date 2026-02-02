@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,9 +32,7 @@ public class Problem {
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
 
-    @ElementCollection
-    @CollectionTable(name = "problem_tags", joinColumns = @JoinColumn(name = "problem_id"))
-    @Column(name = "tag")
+    @Transient
     private List<String> tags = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
@@ -54,6 +53,7 @@ public class Problem {
     @Column(columnDefinition = "TEXT")
     private String explanation;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TestCase> testCases = new ArrayList<>();
 

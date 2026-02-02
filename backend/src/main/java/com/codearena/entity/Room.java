@@ -24,6 +24,8 @@ public class Room {
     @Column(nullable = false)
     private String createdBy;
 
+    private String winnerId; // ID of the user who won the room
+
     private Long problemId;
 
     @Column(nullable = false, length = 20)

@@ -6,15 +6,15 @@ import ProblemDetail from './ProblemDetail';
 const RoomProblem = () => {
     const { roomId } = useParams();
     const [problemId, setProblemId] = useState(null);
+    const [roomData, setRoomData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchRoomProblem = async () => {
             try {
                 const { data } = await getRoomDetails(roomId);
-                if (data && data.problem_id) {
-                    setProblemId(data.problem_id);
-                }
+                setProblemId(data.problem_id);
+                setRoomData(data); // Store full room data
             } catch (error) {
                 console.error('Failed to fetch room details:', error);
             } finally {
@@ -41,7 +41,7 @@ const RoomProblem = () => {
         );
     }
 
-    return <ProblemDetail problemIdProp={problemId} />;
+    return <ProblemDetail problemIdProp={problemId} roomId={roomId} roomData={roomData} />;
 };
 
 export default RoomProblem;

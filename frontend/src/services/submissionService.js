@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+
 const mapSubmission = (submission) => ({
     ...submission,
     problemId: submission.problem_id,
@@ -250,63 +252,44 @@ export const runCode = async (codeData) => {
 };
 
 // Submit code and save to database (for "Submit" button)
+// Submit code to Backend API
 export const submitCode = async (submissionData) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No user logged in');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error('No user logged in');
 
-    // Fetch problem to get expected input/output
-    const problem = await getProblemDetails(submissionData.problemId);
-    const stdin = problem?.sample_input || '';
-    const expectedOutput = problem?.sample_output || '';
+    const token = session.access_token;
 
-    // Execute code using Piston API with sample input
-    const executionResult = await executeCode(submissionData.code, submissionData.language, stdin);
+    const payload = {
+        problemId: Number(submissionData.problemId), // Ensure ID is number if backend expects Long
+        code: submissionData.code,
+        language: submissionData.language
+    };
 
-    // Determine status by comparing output
-    const status = determineStatus(executionResult, expectedOutput);
+    const response = await fetch(`${BACKEND_URL}/api/submissions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+    });
 
-    console.log('Submission status:', status);
-
-    // Check if this is their first time solving this problem
-    const hadPreviouslySolved = await hasUserSolvedProblem(user.id, submissionData.problemId);
-
-    // Save submission to database
-    const { data, error } = await supabase
-        .from('submissions')
-        .insert([{
-            user_id: user.id,
-            problem_id: parseInt(submissionData.problemId),
-            code: submissionData.code,
-            language: submissionData.language,
-            status: status,
-            execution_time: executionResult.execution_time,
-            memory_used: executionResult.memory_used,
-            submitted_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-
-    if (error) {
-        console.error('Submit Code Supabase Insert Error:', error);
-        throw error;
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Submission failed: ${err}`);
     }
 
-    // If this is their first accepted submission for this problem, update count
-    if (status === 'ACCEPTED' && !hadPreviouslySolved) {
-        console.log('First time solving this problem! Updating problems_solved count...');
-        await updateUserProblemsSolved(user.id);
-    }
+    const result = await response.json();
 
-    // Return submission data with execution results
+    // Map backend response to frontend expected format
     return {
         data: {
-            ...mapSubmission(data),
-            stdout: executionResult.stdout,
-            stderr: executionResult.stderr,
-            compile_output: executionResult.compile_output,
-            compile_error: executionResult.compile_error,
-            expectedOutput: normalizeOutput(expectedOutput),
-            actualOutput: normalizeOutput(executionResult.stdout)
+            ...result,
+            // Add fields to prevent UI crashes if it expects them
+            stdout: result.errorMessage || '',
+            stderr: '',
+            expectedOutput: '', // Backend doesn't return this for hidden cases
+            actualOutput: result.errorMessage || ''
         }
     };
 };

@@ -10,5 +10,5 @@ import java.util.List;
 public interface ProblemRepository extends JpaRepository<Problem, Long> {
     List<Problem> findByDifficulty(Problem.Difficulty difficulty);
 
-    List<Problem> findByTagsContaining(String tag);
+    // List<Problem> findByTagsContaining(String tag);
 }

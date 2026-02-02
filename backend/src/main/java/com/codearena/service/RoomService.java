@@ -15,6 +15,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class RoomService {
     private final RoomParticipantRepository participantRepository;
     private final ProblemRepository problemRepository;
     private final RestTemplate restTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -45,10 +47,12 @@ public class RoomService {
 
     public RoomService(RoomRepository roomRepository,
             RoomParticipantRepository participantRepository,
-            ProblemRepository problemRepository) {
+            ProblemRepository problemRepository,
+            SimpMessagingTemplate messagingTemplate) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
         this.problemRepository = problemRepository;
+        this.messagingTemplate = messagingTemplate;
         this.restTemplate = new RestTemplate();
     }
 
@@ -135,6 +139,27 @@ public class RoomService {
                 .orElseThrow(() -> new RuntimeException("Room not found after creation"));
 
         return RoomResponse.fromEntity(savedRoom);
+    }
+
+    /**
+     * Complete a room
+     */
+    @Transactional
+    public void completeRoom(String roomId, String winnerId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() == Room.RoomStatus.COMPLETED) {
+            return; // Already completed
+        }
+
+        room.setStatus(Room.RoomStatus.COMPLETED);
+        room.setWinnerId(winnerId);
+        roomRepository.save(room);
+
+        // Notify participants
+        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/status",
+                Map.of("status", "COMPLETED", "winnerId", winnerId));
     }
 
     /**
@@ -388,18 +413,18 @@ public class RoomService {
             boolean shouldDelete = false;
             String reason = "";
 
-            // Rule 1: Exceeds 30 minutes duration
+            // Rule 1: Exceeds 3 hours duration (180 minutes)
             if (room.getStatus() == Room.RoomStatus.ACTIVE && room.getStartedAt() != null) {
-                if (room.getStartedAt().plusMinutes(30).isBefore(now)) {
+                if (room.getStartedAt().plusMinutes(180).isBefore(now)) {
                     shouldDelete = true;
-                    reason = "Exceeded 30 minutes duration";
+                    reason = "Exceeded 180 minutes duration";
                 }
             }
 
-            // Rule 2: Empty for more than 5 minutes
-            // If lastEmptyAt is set, check if 5 mins have passed
+            // Rule 2: Empty for more than 15 minutes
+            // If lastEmptyAt is set, check if 15 mins have passed
             if (!shouldDelete && room.getLastEmptyAt() != null) {
-                if (room.getLastEmptyAt().plusMinutes(5).isBefore(now)) {
+                if (room.getLastEmptyAt().plusMinutes(15).isBefore(now)) {
                     // Double check if actually empty to be safe (though lastEmptyAt should be
                     // reliable)
                     long activeCount = participantRepository.countByRoomIdAndLeftAtIsNull(room.getId());

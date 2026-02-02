@@ -22,8 +22,15 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponse> submitCode(
             @Valid @RequestBody SubmissionRequest request,
             Authentication authentication) {
+        System.out.println("Submission Endpoint HIT!");
         String username = authentication.getName();
         return ResponseEntity.ok(submissionService.submitCode(request, username));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        System.out.println("Submission Controller Ping!");
+        return ResponseEntity.ok("pong");
     }
 
     @GetMapping("/user/{userId}")

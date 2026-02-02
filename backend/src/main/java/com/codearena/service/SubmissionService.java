@@ -9,6 +9,7 @@ import com.codearena.entity.User;
 import com.codearena.repository.ProblemRepository;
 import com.codearena.repository.SubmissionRepository;
 import com.codearena.repository.UserRepository;
+import com.codearena.repository.RoomParticipantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,8 @@ public class SubmissionService {
     private final UserRepository userRepository;
     private final ProblemRepository problemRepository;
     private final CodeRunnerService codeRunnerService;
+    private final RoomService roomService;
+    private final RoomParticipantRepository roomParticipantRepository;
 
     @Transactional
     public SubmissionResponse submitCode(SubmissionRequest request, String username) {
@@ -87,11 +90,29 @@ public class SubmissionService {
                     .stream().filter(s -> s.getStatus() == Submission.Status.ACCEPTED)
                     .toList();
 
-            if (previousAccepted.size() == 1) { // Only this submission
+            if (previousAccepted.isEmpty()) { // Only this submission (it's the first one)
                 user.setProblemsSolved(user.getProblemsSolved() + 1);
-                user.setRating(user.getRating() + getRatingIncrease(problem.getDifficulty()));
+
+                // Calculate rating based on difficulty AND execution time
+                int ratingDetails = getRatingIncrease(problem.getDifficulty(), submission.getExecutionTime());
+                user.setRating(user.getRating() + ratingDetails);
                 userRepository.save(user);
+                System.out.println("Rating Updated: +" + ratingDetails + " for user " + user.getUsername());
             }
+
+            // CHECK FOR ROOM COMPLETION
+            // Find if this user is in an active room for this problem
+            // Use findActiveRoomsByUserId to ensure we only check currently joined rooms
+            System.out.println("Checking for active room for user: " + user.getId());
+            roomParticipantRepository.findActiveRoomsByUserId(user.getId()).stream()
+                    .map(participant -> participant.getRoom())
+                    .filter(room -> room.getStatus() == com.codearena.entity.Room.RoomStatus.ACTIVE)
+                    .filter(room -> String.valueOf(room.getProblemId()).equals(String.valueOf(problem.getId())))
+                    .findFirst()
+                    .ifPresent(room -> {
+                        System.out.println("Completing room: " + room.getId());
+                        roomService.completeRoom(room.getId(), user.getId());
+                    });
         } else if (submission.getStatus() == Submission.Status.RUNNING) {
             submission.setStatus(Submission.Status.WRONG_ANSWER);
             problem.setTotalSubmissions(problem.getTotalSubmissions() + 1);
@@ -116,13 +137,30 @@ public class SubmissionService {
         return toResponse(submission);
     }
 
-    private int getRatingIncrease(Problem.Difficulty difficulty) {
-        return switch (difficulty) {
+    private int getRatingIncrease(Problem.Difficulty difficulty, int executionTime) {
+        int basePoints = switch (difficulty) {
+            case CAKEWALK -> 10;
+            case EASY -> 20;
+            case MEDIUM -> 40;
+            case HARD -> 70;
+        };
+
+        int maxBonus = switch (difficulty) {
             case CAKEWALK -> 5;
             case EASY -> 10;
-            case MEDIUM -> 25;
-            case HARD -> 50;
+            case MEDIUM -> 20;
+            case HARD -> 30;
         };
+
+        double multiplier = 0.0;
+        if (executionTime < 20)
+            multiplier = 1.0; // Ultra fast
+        else if (executionTime < 50)
+            multiplier = 0.75; // Fast
+        else if (executionTime < 100)
+            multiplier = 0.5; // Good
+
+        return basePoints + (int) (maxBonus * multiplier);
     }
 
     private SubmissionResponse toResponse(Submission submission) {
