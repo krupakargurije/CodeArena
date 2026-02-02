@@ -34,23 +34,30 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="glass rounded-2xl p-8 max-w-md w-full border border-primary-500/20">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold gradient-text">Join Room</h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="glass-panel rounded-2xl p-8 max-w-md w-full border border-white/10 relative overflow-hidden shadow-2xl shadow-black/50">
+                {/* Decorative background */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-blue/10 rounded-full blur-2xl -ml-16 -mb-16 pointer-events-none" />
+
+                <div className="relative flex items-center justify-between mb-8">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-1">Join Room</h2>
+                        <p className="text-dark-text-secondary text-sm">Enter the code to join your friends</p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                        className="p-2 rounded-lg text-dark-text-secondary hover:text-white hover:bg-white/10 transition-colors"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="relative space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-secondary mb-2">
+                        <label className="block text-sm font-medium text-dark-text-secondary mb-2">
                             Room Code
                         </label>
                         <input
@@ -58,18 +65,18 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
                             value={roomId}
                             onChange={handleInputChange}
                             placeholder="ABC123"
-                            className="input text-center text-2xl font-bold tracking-widest"
+                            className="input text-center text-3xl font-bold tracking-[0.5em] uppercase h-16 bg-dark-bg-tertiary/50 focus:bg-dark-bg-tertiary focus:border-brand-blue/50 placeholder:tracking-normal placeholder:font-normal placeholder:text-dark-text-tertiary transition-all"
                             maxLength={6}
                             autoFocus
                         />
-                        <p className="text-secondary text-sm mt-2">
-                            Enter the 6-character room code
-                        </p>
                     </div>
 
                     {/* Error Message */}
                     {error && (
-                        <div className="bg-difficulty-hard/10 border border-difficulty-hard/50 text-difficulty-hard px-4 py-3 rounded-lg">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-slide-up">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                             {error}
                         </div>
                     )}
@@ -78,9 +85,9 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
                     <button
                         type="submit"
                         disabled={loading || roomId.length !== 6}
-                        className="w-full btn-primary py-3 disabled:opacity-50"
+                        className="w-full btn-primary py-3.5 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-blue/20"
                     >
-                        {loading ? 'Joining...' : 'Join Room'}
+                        {loading ? 'Joining Room...' : 'Join Room'}
                     </button>
                 </form>
             </div>

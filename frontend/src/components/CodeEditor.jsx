@@ -25,14 +25,17 @@ const CodeEditor = ({ code, onChange, language }) => {
     };
 
     return (
-        <div className="h-full border border-dark-tertiary rounded-lg overflow-hidden bg-[#1e1e1e]">
+        <div className="h-full border border-white/5 rounded-xl overflow-hidden bg-[#1e1e1e] shadow-inner shadow-black/50">
             <Editor
                 height="100%"
                 language={language}
                 value={code}
                 onChange={onChange}
                 theme="vs-dark"
-                options={editorOptions}
+                options={{
+                    ...editorOptions,
+                    padding: { top: 16, bottom: 16 },
+                }}
                 beforeMount={(monaco) => {
                     // Ensure dark theme is set before mounting
                     monaco.editor.setTheme('vs-dark');

@@ -10,21 +10,47 @@ const Rooms = () => {
     const { isAuthenticated, user } = useSelector((state) => state.auth);
     const [rooms, setRooms] = useState([]);
     const [publicRooms, setPublicRooms] = useState([]);
+    const [activeTab, setActiveTab] = useState('my');
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [deletingRoom, setDeletingRoom] = useState(null);
     const [roomToDelete, setRoomToDelete] = useState(null);
     const [joiningRandom, setJoiningRandom] = useState(false);
+    const [currentTime, setCurrentTime] = useState(Date.now());
+
+    useEffect(() => {
+        // Update time every second for live countdown
+        const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         if (!isAuthenticated) {
             navigate('/login');
             return;
         }
-
         fetchData();
     }, [isAuthenticated, user, navigate]);
+
+    const getExpiryTime = (createdAt) => {
+        if (!createdAt) return null;
+        const created = new Date(createdAt).getTime();
+        const expires = created + 75 * 60 * 1000; // 75 minutes
+        const diff = expires - currentTime;
+
+        if (diff <= 0) return 'Expired';
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        if (h > 0) {
+            return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -44,23 +70,13 @@ const Rooms = () => {
         }
     };
 
-
-
     const fetchUserRooms = async () => {
         try {
-            console.log('fetchUserRooms: Starting...');
-            console.log('fetchUserRooms: User from Redux:', user);
-            if (!user?.id) {
-                console.log('fetchUserRooms: No user ID yet, skipping fetch');
-                return;
-            }
+            if (!user?.id) return;
             const response = await getUserRooms(user?.id);
-            console.log('fetchUserRooms: Got response:', response);
             setRooms(response.data || []);
-            console.log('fetchUserRooms: Set rooms:', response.data);
         } catch (error) {
-            console.error('fetchUserRooms: Failed to fetch rooms:', error);
-            console.error('fetchUserRooms: Error details:', error.message);
+            console.error('Failed to fetch rooms:', error);
         }
     };
 
@@ -76,22 +92,16 @@ const Rooms = () => {
 
     const handleDeleteRoom = async (roomId, e) => {
         e.stopPropagation();
-        console.log('handleDeleteRoom: Called for room:', roomId);
         setRoomToDelete(roomId);
     };
 
     const confirmDelete = async () => {
         if (!roomToDelete) return;
-
-        console.log('confirmDelete: Deleting room:', roomToDelete);
         setDeletingRoom(roomToDelete);
         try {
             await deleteRoom(roomToDelete);
-            console.log('confirmDelete: Delete successful');
-            console.log('confirmDelete: Delete successful');
             await Promise.all([fetchUserRooms(), fetchPublicRooms()]);
         } catch (error) {
-            console.error('confirmDelete: Error:', error);
             alert(error.message || 'Failed to delete room');
         } finally {
             setDeletingRoom(null);
@@ -100,7 +110,6 @@ const Rooms = () => {
     };
 
     const cancelDelete = () => {
-        console.log('cancelDelete: User cancelled');
         setRoomToDelete(null);
     };
 
@@ -110,7 +119,6 @@ const Rooms = () => {
             const response = await randomJoinRoom();
             navigate(`/rooms/${response.data.id}/lobby`);
         } catch (error) {
-            console.error('Failed to random join:', error);
             alert('Failed to find a room. Please try again or create one.');
         } finally {
             setJoiningRandom(false);
@@ -122,269 +130,334 @@ const Rooms = () => {
             await joinRoom(roomId);
             navigate(`/rooms/${roomId}/lobby`);
         } catch (error) {
-            console.error('Failed to join room:', error);
             alert(error.message || 'Failed to join room');
         }
     };
 
-    // Separate rooms into created and joined
-    const createdRooms = rooms.filter(room => room.created_by === user?.id);
-    const joinedRooms = rooms.filter(room => room.created_by !== user?.id);
-
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-primary flex items-center justify-center">
-                <div className="text-primary-400 text-xl">Loading rooms...</div>
+            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-dark-primary">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="min-h-screen bg-dark-bg-primary">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-5xl font-bold gradient-text mb-4">
-                        Multiplayer Rooms
-                    </h1>
-                    <p className="text-gray-400 text-lg">
-                        Create or join a room to solve problems with friends
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold text-white mb-2">My Rooms</h1>
+                    <p className="text-dark-text-secondary">
+                        Private spaces for group practice and mini-contests (mock UI).
                     </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-6 justify-center mb-12">
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="btn-primary text-lg px-8 py-4 flex items-center gap-3"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Create Room
-                    </button>
-                    <button
-                        onClick={() => setShowJoinModal(true)}
-                        className="btn-secondary text-lg px-8 py-4 flex items-center gap-3"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                        </svg>
-                        Join Room
-                    </button>
-                    <button
-                        onClick={handleRandomJoin}
-                        disabled={joiningRandom}
-                        className="btn-secondary text-lg px-8 py-4 flex items-center gap-3 bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border-brand-orange/30 disabled:opacity-50"
-                    >
-                        {joiningRandom ? (
-                            <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                        )}
-                        Random Join
-                    </button>
+                {/* Main Content - Two Column Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Rooms List - 2 columns */}
+                    <div className="lg:col-span-2">
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-blue text-white font-medium hover:bg-blue-600 transition-all shadow-lg shadow-brand-blue/20"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Create Room
+                            </button>
+                            <button
+                                onClick={() => setShowJoinModal(true)}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-dark-bg-secondary border border-white/10 text-white font-medium hover:bg-dark-bg-tertiary transition-all"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                </svg>
+                                Join with Code
+                            </button>
+                            <button
+                                onClick={handleRandomJoin}
+                                disabled={joiningRandom}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 font-medium hover:from-purple-500/30 hover:to-pink-500/30 transition-all disabled:opacity-50"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                {joiningRandom ? 'Finding...' : 'Random Join'}
+                            </button>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex items-center gap-6 mb-6 border-b border-white/5">
+                            <button
+                                onClick={() => setActiveTab('my')}
+                                className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'my'
+                                    ? 'text-white'
+                                    : 'text-dark-text-tertiary hover:text-white'
+                                    }`}
+                            >
+                                My Rooms
+                                {activeTab === 'my' && (
+                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-blue rounded-t-full" />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('global')}
+                                className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'global'
+                                    ? 'text-white'
+                                    : 'text-dark-text-tertiary hover:text-white'
+                                    }`}
+                            >
+                                Global Rooms
+                                {activeTab === 'global' && (
+                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-blue rounded-t-full" />
+                                )}
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
+                            {activeTab === 'my' ? (
+                                /* MY ROOMS LIST */
+                                rooms.length > 0 ? (
+                                    rooms.map((room) => (
+                                        <div
+                                            key={room.id}
+                                            className="bg-[#0a0a0f]/50 rounded-xl border border-white/5 p-3 hover:border-white/10 transition-all group"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-dark-text-tertiary text-xs font-mono">
+                                                            R-{String(room.id).slice(0, 4).toUpperCase()}
+                                                        </span>
+                                                        <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.status === 'waiting'
+                                                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                                            : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                                            }`}>
+                                                            {room.problem_selection_mode === 'random' ? 'Practice' : 'Contest'}
+                                                        </span>
+                                                        <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.is_private
+                                                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                            : 'bg-[#0a0a0f] text-dark-text-tertiary border border-white/10'
+                                                            }`}>
+                                                            {room.is_private ? (
+                                                                <>
+                                                                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                                    </svg>
+                                                                    Private
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                    Public
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            {getExpiryTime(room.created_at) || 'Active'}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-white font-medium text-sm truncate pr-4">
+                                                        {room.problems?.title || 'Room ' + room.id.slice(0, 8)}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 text-dark-text-tertiary text-xs mt-1">
+                                                        <div className="flex items-center gap-1">
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                                            </svg>
+                                                            {room.participants?.length || 1}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    {String(room.created_by) === String(user?.id) && (
+                                                        <button
+                                                            onClick={(e) => handleDeleteRoom(room.id, e)}
+                                                            className="p-1.5 text-dark-text-tertiary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                            title="Delete Room"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => navigate(`/rooms/${room.id}/lobby`)}
+                                                        className="px-3 py-1.5 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white text-xs font-medium hover:bg-dark-bg-elevated transition-all"
+                                                    >
+                                                        Open
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12 bg-dark-bg-secondary/30 rounded-xl border border-white/5">
+                                        <div className="text-4xl mb-4">🚀</div>
+                                        <h3 className="text-white font-medium mb-1">No rooms yet</h3>
+                                        <p className="text-dark-text-tertiary text-sm">Create your first room to get started!</p>
+                                    </div>
+                                )
+                            ) : (
+                                /* GLOBAL ROOMS LIST */
+                                publicRooms.length > 0 ? (
+                                    publicRooms.map((room) => {
+                                        const isMyRoom = rooms.some(r => r.id === room.id);
+                                        // Find host username from participants list
+                                        const host = room.roomParticipants?.find(p => String(p.userId) === String(room.createdBy));
+                                        const hostName = host ? host.username : (room.createdBy === user?.id ? 'You' : 'Unknown');
+
+                                        return (
+                                            <div
+                                                key={room.id}
+                                                className="bg-[#0a0a0f]/50 rounded-xl border border-white/5 p-3 hover:border-white/10 transition-all"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-dark-text-tertiary text-xs font-mono">
+                                                                R-{String(room.id).slice(0, 4).toUpperCase()}
+                                                            </span>
+                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.status === 'waiting'
+                                                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                                                : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                                                }`}>
+                                                                {room.problem_selection_mode === 'random' ? 'Practice' : 'Contest'}
+                                                            </span>
+                                                            {isMyRoom && (
+                                                                <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                                                    Joined
+                                                                </span>
+                                                            )}
+                                                            <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.is_private
+                                                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                                : 'bg-[#0a0a0f] text-dark-text-tertiary border border-white/10'
+                                                                }`}>
+                                                                {room.is_private ? (
+                                                                    <>
+                                                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                                        </svg>
+                                                                        Private
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                        </svg>
+                                                                        Public
+                                                                    </>
+                                                                )}
+                                                            </span>
+                                                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                {getExpiryTime(room.created_at) || 'Active'}
+                                                            </span>
+                                                        </div>
+                                                        <h3 className="text-white font-medium text-sm truncate pr-4">
+                                                            {room.problems?.title || 'Room ' + room.id.slice(0, 8)}
+                                                        </h3>
+                                                        <div className="flex items-center gap-3 text-dark-text-tertiary text-xs mt-1">
+                                                            <div className="flex items-center gap-1">
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                                                </svg>
+                                                                {room.participants?.length || room.roomParticipants?.length || 1}
+                                                            </div>
+                                                            <span className="text-dark-text-tertiary/20">|</span>
+                                                            <span>
+                                                                Host: <span className="text-white/80">{hostName}</span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {isMyRoom ? (
+                                                        <button
+                                                            onClick={() => navigate(`/rooms/${room.id}/lobby`)}
+                                                            className="px-3 py-1.5 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white text-xs font-medium hover:bg-dark-bg-elevated transition-all"
+                                                        >
+                                                            Open
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleJoinPublicRoom(room.id)}
+                                                            className="px-3 py-1.5 rounded-lg bg-brand-blue text-white text-xs font-medium hover:bg-blue-600 transition-all shadow-lg shadow-brand-blue/20"
+                                                        >
+                                                            Join
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="text-center py-12 bg-dark-bg-secondary/30 rounded-xl border border-white/5">
+                                        <div className="text-4xl mb-4">🌍</div>
+                                        <h3 className="text-white font-medium mb-1">No global rooms</h3>
+                                        <p className="text-dark-text-tertiary text-sm">Create a public room to see it here!</p>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Room Tips Sidebar */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-dark-bg-secondary/50 rounded-xl border border-white/5 p-6 sticky top-24">
+                            <h3 className="text-white font-semibold mb-2">Room tips</h3>
+                            <p className="text-dark-text-tertiary text-sm mb-4">Keep it fast and focused.</p>
+
+                            <ul className="space-y-3 text-sm">
+                                <li className="flex items-start gap-2 text-dark-text-secondary">
+                                    <span className="text-dark-text-tertiary">•</span>
+                                    Use sprints (25m) for warmups.
+                                </li>
+                                <li className="flex items-start gap-2 text-dark-text-secondary">
+                                    <span className="text-dark-text-tertiary">•</span>
+                                    Share a single template per topic.
+                                </li>
+                                <li className="flex items-start gap-2 text-dark-text-secondary">
+                                    <span className="text-dark-text-tertiary">•</span>
+                                    Review wrong submissions together.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                {/* My Created Rooms */}
-                {createdRooms.length > 0 && (
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-primary mb-6">My Created Rooms ({createdRooms.length})</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {createdRooms.map((room) => (
-                                <div
-                                    key={room.id}
-                                    className="card relative"
-                                >
-                                    {/* Creator Badge */}
-                                    <div className="absolute top-4 right-4 px-2 py-1 rounded text-xs font-semibold bg-brand-orange/20 text-brand-orange">
-                                        Creator
-                                    </div>
-
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="text-2xl font-bold text-primary">
-                                            {room.id}
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${room.status === 'waiting' ? 'dark:text-dark-text-primary text-light-text-primary border dark:border-dark-border-primary border-light-border-primary' :
-                                            room.status === 'active' ? 'text-difficulty-easy border border-difficulty-easy' :
-                                                'dark:text-dark-text-secondary text-light-text-secondary border dark:border-dark-border-primary border-light-border-primary'
-                                            }`}>
-                                            {room.status.toUpperCase()}
-                                        </div>
-                                    </div>
-
-                                    {room.problems && (
-                                        <div className="mb-4">
-                                            <div className="font-semibold text-primary">{room.problems.title}</div>
-                                            <div className={`text-sm ${room.problems.difficulty === 'EASY' ? 'text-difficulty-easy' :
-                                                room.problems.difficulty === 'MEDIUM' ? 'text-difficulty-medium' :
-                                                    'text-difficulty-hard'
-                                                }`}>
-                                                {room.problems.difficulty}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-2 text-secondary text-sm mb-4">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                        <span>Max {room.max_participants} players</span>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                console.log('Rejoin button clicked for room:', room.id);
-                                                console.log('Navigating to:', `/rooms/${room.id}/lobby`);
-                                                try {
-                                                    navigate(`/rooms/${room.id}/lobby`);
-                                                    console.log('Navigate function called successfully');
-                                                } catch (error) {
-                                                    console.error('Navigation error:', error);
-                                                }
-                                            }}
-                                            className="btn-primary flex-1 py-2 text-sm"
-                                        >
-                                            {room.status === 'waiting' ? 'Enter Lobby' : 'Rejoin'}
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDeleteRoom(room.id, e)}
-                                            disabled={deletingRoom === room.id}
-                                            className="btn-secondary px-3 py-2 text-difficulty-hard hover:bg-difficulty-hard/10 disabled:opacity-50"
-                                            title="Delete room"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                {/* Footer */}
+                <footer className="mt-16 pt-8 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="CodeArena" className="w-6 h-6" />
+                            <div>
+                                <span className="text-white font-medium text-sm">CodeArena</span>
+                                <p className="text-dark-text-tertiary text-xs">Fast, minimal competitive coding.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-dark-text-tertiary text-sm">
+                            <a href="#" className="hover:text-white transition-colors">Docs</a>
+                            <a href="#" className="hover:text-white transition-colors">Status</a>
+                            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                            <a href="https://github.com/krupakargurije?tab=overview&from=2026-01-01&to=2026-01-31" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                                </svg>
+                                GitHub
+                            </a>
                         </div>
                     </div>
-                )}
-
-                {/* Joined Rooms */}
-                {joinedRooms.length > 0 && (
-                    <div>
-                        <h2 className="text-2xl font-bold text-primary mb-6">Joined Rooms ({joinedRooms.length})</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {joinedRooms.map((room) => (
-                                <div
-                                    key={room.id}
-                                    onClick={() => navigate(`/rooms/${room.id}/lobby`)}
-                                    className="card cursor-pointer hover:shadow-lg transition-all"
-                                >
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="text-2xl font-bold text-primary">
-                                            {room.id}
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${room.status === 'waiting' ? 'dark:text-dark-text-primary text-light-text-primary border dark:border-dark-border-primary border-light-border-primary' :
-                                            room.status === 'active' ? 'text-difficulty-easy border border-difficulty-easy' :
-                                                'dark:text-dark-text-secondary text-light-text-secondary border dark:border-dark-border-primary border-light-border-primary'
-                                            }`}>
-                                            {room.status.toUpperCase()}
-                                        </div>
-                                    </div>
-
-                                    {room.problems && (
-                                        <div className="mb-3">
-                                            <div className="font-semibold text-primary">{room.problems.title}</div>
-                                            <div className={`text-sm ${room.problems.difficulty === 'EASY' ? 'text-difficulty-easy' :
-                                                room.problems.difficulty === 'MEDIUM' ? 'text-difficulty-medium' :
-                                                    'text-difficulty-hard'
-                                                }`}>
-                                                {room.problems.difficulty}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-2 text-secondary text-sm">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                        <span>Max {room.max_participants} players</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {rooms.length === 0 && (
-                    <div className="text-center py-12">
-                        <div className="text-gray-400 text-lg mb-4">
-                            You haven't joined any rooms yet
-                        </div>
-                        <div className="text-gray-500">
-                            Create a new room or join an existing one to get started!
-                        </div>
-                    </div>
-                )}
-
-                {/* Public Lobby */}
-                <div className="mt-12 pt-12 border-t dark:border-dark-border-primary border-light-border-primary">
-                    <h2 className="text-3xl font-bold gradient-text mb-8 text-center">Public Lobby</h2>
-
-                    {publicRooms.filter(r => !rooms.find(ur => ur.id === r.id)).length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {publicRooms
-                                .filter(r => !rooms.find(ur => ur.id === r.id))
-                                .map((room) => (
-                                    <div
-                                        key={room.id}
-                                        onClick={() => handleJoinPublicRoom(room.id)}
-                                        className="card cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-brand-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                        <div className="flex items-center justify-between mb-4 relative z-10">
-                                            <div className="text-xl font-bold text-primary">
-                                                {room.id}
-                                            </div>
-                                            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${room.status === 'waiting'
-                                                ? 'bg-green-500/20 text-green-500 border border-green-500/30'
-                                                : room.status === 'active'
-                                                    ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30'
-                                                    : 'text-secondary'
-                                                }`}>
-                                                {room.status.toUpperCase()}
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-4 relative z-10">
-                                            <div className="text-sm font-medium text-secondary mb-1">Problem Mode</div>
-                                            <div className="text-primary font-semibold">
-                                                {room.problem_selection_mode === 'random' ? 'Random Problem' : 'Selected Problem'}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between text-sm relative z-10">
-                                            <div className="flex items-center gap-2 text-secondary">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                                </svg>
-                                                <span>
-                                                    {room.participants?.length || 0} / {room.max_participants}
-                                                </span>
-                                            </div>
-                                            <div className="text-brand-orange font-medium group-hover:underline">
-                                                Click to Join
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-secondary">
-                            No other public rooms available right now.
-                        </div>
-                    )}
-                </div>
+                </footer>
             </div>
 
             {/* Modals */}
@@ -405,22 +478,22 @@ const Rooms = () => {
             {/* Delete Confirmation Modal */}
             {roomToDelete && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="glass rounded-2xl p-8 max-w-md w-full border dark:border-dark-border-primary border-light-border-primary">
-                        <h2 className="text-2xl font-bold text-primary mb-4">Delete Room?</h2>
-                        <p className="text-secondary mb-6">
-                            Are you sure you want to delete room <span className="font-bold text-primary">{roomToDelete}</span>? This action cannot be undone.
+                    <div className="bg-dark-bg-secondary rounded-2xl p-8 max-w-md w-full border border-white/10">
+                        <h2 className="text-2xl font-bold text-white mb-4">Delete Room?</h2>
+                        <p className="text-dark-text-secondary mb-6">
+                            Are you sure you want to delete this room? This action cannot be undone.
                         </p>
                         <div className="flex gap-4">
                             <button
                                 onClick={cancelDelete}
-                                className="btn-secondary flex-1"
+                                className="flex-1 px-4 py-2 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white font-medium hover:bg-dark-bg-elevated transition-all"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmDelete}
                                 disabled={deletingRoom === roomToDelete}
-                                className="btn-primary flex-1 bg-difficulty-hard hover:bg-difficulty-hard/80"
+                                className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 transition-all disabled:opacity-50"
                             >
                                 {deletingRoom === roomToDelete ? 'Deleting...' : 'Delete'}
                             </button>

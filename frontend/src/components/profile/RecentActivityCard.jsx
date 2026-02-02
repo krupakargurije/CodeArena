@@ -126,8 +126,8 @@ const RecentActivityCard = ({ submissions = [] }) => {
 
     if (recentSubmissions.length === 0) {
         return (
-            <div className="glass rounded-2xl p-6">
-                <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary mb-6 flex items-center gap-2">
+            <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5">
+                <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
                     <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -139,10 +139,10 @@ const RecentActivityCard = ({ submissions = [] }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <p className="dark:text-dark-text-secondary text-light-text-secondary">
+                    <p className="text-dark-text-secondary">
                         No submissions yet
                     </p>
-                    <p className="text-sm dark:text-dark-text-tertiary text-light-text-tertiary mt-1">
+                    <p className="text-sm text-dark-text-tertiary mt-1">
                         Start solving problems to see your activity here!
                     </p>
                 </div>
@@ -151,20 +151,20 @@ const RecentActivityCard = ({ submissions = [] }) => {
     }
 
     return (
-        <div className="glass rounded-2xl p-6">
+        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary flex items-center gap-2">
-                    <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h3 className="text-base font-medium text-dark-text-secondary flex items-center gap-2 uppercase tracking-wider text-xs">
+                    <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Recent Submissions
+                    Recent Activity
                 </h3>
-                <span className="text-xs dark:text-gray-500 text-gray-400 px-3 py-1 rounded-full dark:bg-white/5 bg-gray-100">
+                <span className="text-[10px] font-medium text-dark-text-tertiary px-2 py-0.5 rounded border border-white/5 bg-white/[0.02]">
                     Last {recentSubmissions.length}
                 </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
                 {recentSubmissions.map((submission, index) => {
                     const statusStyle = getStatusStyle(submission.status);
                     const langStyle = getLanguageStyle(submission.language);
@@ -173,68 +173,46 @@ const RecentActivityCard = ({ submissions = [] }) => {
                         <div
                             key={submission.id || index}
                             className={`
-                                group relative flex items-center px-4 py-3 rounded-xl
-                                transition-all duration-300 ease-out
-                                
-                                /* Glass effect */
-                                backdrop-blur-sm
-                                
-                                /* Light theme */
-                                bg-white/60 hover:bg-white/80
-                                border border-gray-200/60 hover:border-gray-300/80
-                                shadow-sm hover:shadow-md
-                                
-                                /* Dark theme */
-                                dark:bg-white/5 dark:hover:bg-white/10
-                                dark:border-white/10 dark:hover:border-white/20
-                                
-                                /* Hover transform */
-                                hover:translate-x-1
+                                group relative flex items-center px-4 py-3 rounded-lg
+                                transition-all duration-200
+                                hover:bg-white/[0.03]
+                                border border-transparent hover:border-white/5
                             `}
                         >
-                            {/* Status indicator line */}
-                            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${statusStyle.text === 'text-green-400' ? 'bg-green-500' :
-                                    statusStyle.text === 'text-red-400' ? 'bg-red-500' :
-                                        statusStyle.text === 'text-orange-400' ? 'bg-orange-500' :
-                                            statusStyle.text === 'text-yellow-400' ? 'bg-yellow-500' :
-                                                statusStyle.text === 'text-purple-400' ? 'bg-purple-500' :
-                                                    'bg-gray-500'
-                                }`} />
-
-                            {/* Status Icon */}
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${statusStyle.bg} ${statusStyle.text}`}>
-                                {statusStyle.icon}
-                            </div>
+                            {/* Status Icon - Minimal */}
+                            <div className={`w-2 h-2 rounded-full mr-4 ${statusStyle.text.replace('text-', 'bg-')}`} />
 
                             {/* Problem Info */}
-                            <div className="flex-1 min-w-0 px-4">
-                                <h4 className="text-sm font-medium dark:text-white text-gray-800 truncate">
-                                    {submission.problemTitle || `Problem #${submission.problemId || submission.problem_id}`}
-                                </h4>
-                                <div className="flex items-center gap-3 mt-0.5">
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${langStyle.bg} ${langStyle.color}`}>
-                                        {submission.language}
-                                    </span>
-                                    <span className="text-xs dark:text-gray-500 text-gray-400">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                    <h4 className="text-sm font-medium text-gray-200 truncate group-hover:text-white transition-colors">
+                                        {submission.problemTitle || `Problem #${submission.problemId || submission.problem_id}`}
+                                    </h4>
+                                    <span className="text-xs text-dark-text-tertiary font-mono">
                                         {formatTimeAgo(submission.submittedAt || submission.createdAt)}
                                     </span>
                                 </div>
-                            </div>
-
-                            {/* Status Badge */}
-                            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-                                {statusStyle.label}
-                            </div>
-
-                            {/* Execution Stats - compact */}
-                            {submission.executionTime && (
-                                <div className="hidden md:flex items-center gap-1 ml-3 text-xs dark:text-gray-500 text-gray-400">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                    {submission.executionTime}ms
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-[10px] uppercase tracking-wide font-medium ${statusStyle.text}`}>
+                                        {statusStyle.label}
+                                    </span>
+                                    <span className="w-0.5 h-0.5 rounded-full bg-dark-text-tertiary/50" />
+                                    <span className={`text-[10px] font-medium text-dark-text-tertiary capitalize`}>
+                                        {submission.language}
+                                    </span>
+                                    {submission.executionTime && (
+                                        <>
+                                            <span className="w-0.5 h-0.5 rounded-full bg-dark-text-tertiary/50" />
+                                            <span className="text-[10px] text-dark-text-tertiary flex items-center gap-0.5">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                {submission.executionTime}ms
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     );
                 })}

@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/problems/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll() // Room endpoints
                         .requestMatchers("/api/leaderboard/**").permitAll()
+                        .requestMatchers("/api/stats/**").permitAll() // Global stats
                         .requestMatchers("/api/health").permitAll() // Health check for keep-alive
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll() // TEMPORARY: Allow all for testing due to JWT

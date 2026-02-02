@@ -26,4 +26,6 @@ public interface RoomRepository extends JpaRepository<Room, String> {
     // removed
 
     boolean existsById(String id);
+
+    long deleteByCreatedAtBefore(java.time.LocalDateTime timestamp);
 }

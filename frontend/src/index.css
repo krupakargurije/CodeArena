@@ -7,198 +7,186 @@
   /* Theme-aware body styles */
   body {
     @apply font-sans antialiased transition-colors duration-200;
-  }
-
-  html.dark body {
     @apply bg-dark-bg-primary text-dark-text-primary;
+    /* Force dark mode background by default for this redesign */
+    background-color: #121212;
   }
 
-  html:not(.dark) body {
-    @apply bg-light-bg-primary text-light-text-primary;
+  /* ... rest of file ... */
+  /* I need to be careful with replace_file_content. I should probably just rewrite the top and the bottom separately or rewrite the whole file if it's small enough. The file is ~150 lines. */
+
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-dark-bg-elevated hover:bg-dark-border-secondary transition-colors;
   }
 }
 
 @layer components {
 
-  /* Button Styles - LeetCode Style */
+  /* Premium Button Styles */
   .btn-primary {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
-    @apply dark:bg-white dark:text-gray-900 bg-gray-900 text-white;
-    @apply dark:hover:bg-gray-100 hover:bg-gray-800;
-    @apply active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-medium transition-all duration-300;
+    @apply overflow-hidden isolate;
+    /* Gradient Background */
+    background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
+    @apply text-white shadow-lg shadow-blue-500/20;
+    @apply hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0;
+  }
+
+  /* Shine effect for primary button */
+  .btn-primary::before {
+    content: '';
+    @apply absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    @apply translate-x-[-200%] transition-transform duration-700;
+  }
+
+  .btn-primary:hover::before {
+    @apply translate-x-[200%];
   }
 
   .btn-secondary {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
-    @apply border dark:border-dark-border-primary dark:bg-dark-bg-secondary dark:text-dark-text-primary;
-    @apply border-light-border-primary bg-light-bg-secondary text-light-text-primary;
-    @apply dark:hover:bg-dark-bg-tertiary hover:bg-light-bg-tertiary;
-    @apply active:scale-95;
+    @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200;
+    @apply bg-dark-bg-secondary text-dark-text-secondary border border-dark-border-primary;
+    @apply hover:bg-dark-bg-elevated hover:text-white hover:border-dark-border-secondary;
+    @apply active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
-    @apply dark:text-dark-text-secondary text-light-text-secondary;
-    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply text-dark-text-secondary hover:text-white;
+    @apply hover:bg-white/5;
   }
 
-  /* Card Styles - Glass Design (Matching Problems Page) */
+  /* Ultra-Premium Glass Cards */
   .card {
-    @apply rounded-xl p-5 transition-all duration-300 ease-out;
-    /* Glass Effect */
-    @apply backdrop-blur-sm;
-    /* Light theme - more transparent */
-    @apply bg-white/30 hover:bg-white/40;
-    @apply border border-gray-200/40 hover:border-gray-300/60;
-    @apply shadow-sm hover:shadow-md hover:shadow-gray-200/30;
-    /* Dark theme - very transparent */
-    @apply dark:bg-white/[0.02] dark:hover:bg-white/[0.05];
-    @apply dark:border-white/5 dark:hover:border-white/10;
-    @apply dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-black/10;
-    /* Hover transform */
-    @apply hover:translate-x-1 hover:-translate-y-0.5;
+    @apply rounded-xl p-6 transition-all duration-300;
+    /* Glass Background */
+    @apply bg-dark-bg-secondary/60 backdrop-blur-md;
+    @apply border border-white/5;
+    /* Shadow */
+    @apply shadow-xl shadow-black/20;
+    /* Hover Effect */
+    @apply hover:bg-dark-bg-secondary/80 hover:border-white/10 hover:shadow-2xl hover:shadow-black/30;
   }
 
   .card-elevated {
-    @apply rounded-lg p-6 transition-all duration-200;
-    @apply dark:bg-dark-bg-elevated dark:border-dark-border-primary;
-    @apply bg-white border-light-border-primary border;
+    @apply rounded-xl p-6 transition-all duration-200;
+    @apply bg-dark-bg-elevated border border-dark-border-primary;
+    @apply shadow-lg;
   }
 
-  /* Input Styles */
+  /* Modern Input Styles */
   .input {
-    @apply w-full px-3 py-2 rounded-lg transition-all duration-200;
-    @apply dark:bg-dark-bg-tertiary dark:border-dark-border-primary dark:text-dark-text-primary;
-    @apply bg-light-bg-tertiary border-light-border-primary text-light-text-primary border;
-    @apply dark:placeholder-dark-text-tertiary placeholder-light-text-tertiary;
-    @apply focus:outline-none focus:ring-2 focus:ring-brand-orange/50;
-    @apply dark:focus:border-brand-orange focus:border-brand-orange;
+    @apply w-full px-4 py-3 rounded-lg transition-all duration-200;
+    @apply bg-dark-bg-tertiary/50 border border-dark-border-primary text-white;
+    @apply placeholder-dark-text-tertiary;
+    @apply focus:outline-none focus:bg-dark-bg-tertiary focus:border-brand-blue/50 focus:ring-1 focus:ring-brand-blue/50;
   }
 
-  /* Select Dropdown Styles */
+  /* Select Dropdown */
   select.input {
     @apply cursor-pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
   }
 
-  /* Ensure dropdown options are visible */
   select.input option {
-    background-color: #282828 !important;
-    color: #eff1f6bf !important;
-    padding: 8px !important;
+    @apply bg-dark-bg-elevated text-white py-2;
   }
 
-  html:not(.dark) select.input option {
-    background-color: #ffffff !important;
-    color: #262626 !important;
-  }
-
-  /* Difficulty Badges - LeetCode Style */
-  .badge-cakewalk {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-    @apply text-green-400;
-  }
-
+  /* Difficulty Badges */
   .badge-easy {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-    @apply text-difficulty-easy;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-difficulty-easy/10 text-difficulty-easy border border-difficulty-easy/20;
   }
 
   .badge-medium {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-    @apply text-difficulty-medium;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-difficulty-medium/10 text-difficulty-medium border border-difficulty-medium/20;
   }
 
   .badge-hard {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-    @apply text-difficulty-hard;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-difficulty-hard/10 text-difficulty-hard border border-difficulty-hard/20;
   }
 
   /* Navigation Link */
   .nav-link {
-    @apply px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200;
-    @apply dark:text-dark-text-secondary text-light-text-secondary;
-    @apply dark:hover:text-dark-text-primary hover:text-light-text-primary;
-    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
+    @apply px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200;
+    @apply text-dark-text-secondary;
+    @apply hover:text-white hover:bg-white/5;
   }
 
   .nav-link-active {
-    @apply dark:text-dark-text-primary text-light-text-primary;
-    @apply dark:bg-dark-bg-secondary bg-light-bg-secondary;
+    @apply text-white bg-white/10;
   }
 
-  /* Table Styles */
-  .table-row {
-    @apply transition-colors duration-150;
-    @apply dark:border-dark-border-primary border-light-border-primary border-b;
-    @apply dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary;
-  }
-
-  /* Divider */
-  .divider {
-    @apply dark:border-dark-border-primary border-light-border-primary;
-  }
-
-  /* Panel/Container - Transparent Glass Style */
-  .panel {
-    @apply rounded-xl backdrop-blur-sm;
-    /* Light theme - transparent */
-    @apply bg-white/30 border border-gray-200/40;
-    /* Dark theme - very transparent */
-    @apply dark:bg-white/[0.02] dark:border-white/5;
-  }
-
-  /* Text Styles */
-  .text-primary {
-    @apply dark:text-dark-text-primary text-light-text-primary;
-  }
-
-  .text-secondary {
-    @apply dark:text-dark-text-secondary text-light-text-secondary;
-  }
-
-  .text-tertiary {
-    @apply dark:text-dark-text-tertiary text-light-text-tertiary;
-  }
-
-  /* Loading Skeleton */
-  .skeleton {
-    @apply animate-pulse rounded;
-    @apply dark:bg-dark-bg-tertiary bg-light-bg-tertiary;
-  }
-
-  /* Glassmorphism Effect - Transparent */
+  /* Glass Utilities */
   .glass {
-    @apply backdrop-blur-sm;
-    /* Light theme - transparent */
-    @apply bg-white/30 border border-gray-200/40;
-    @apply shadow-lg shadow-gray-200/20;
-    /* Dark theme - very transparent */
-    @apply dark:bg-white/[0.02] dark:border-white/5;
-    @apply dark:shadow-lg dark:shadow-black/10;
+    @apply bg-dark-bg-secondary/40 backdrop-blur-xl border border-white/5;
   }
 
-  .glass-subtle {
-    @apply backdrop-blur-sm;
-    @apply bg-white/20 border border-gray-200/30;
-    @apply dark:bg-white/[0.01] dark:border-white/[0.03];
+  .glass-panel {
+    @apply bg-dark-bg-secondary/80 backdrop-blur-md border border-white/5;
   }
 
-  /* Gradient border effect for cards */
-  .glass-gradient {
-    @apply relative overflow-hidden;
-    @apply backdrop-blur-xl backdrop-saturate-150;
-    @apply dark:bg-dark-bg-secondary/60 bg-white/60;
+  /* Text Gradients */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70;
   }
 
-  .glass-gradient::before {
-    @apply absolute inset-0 -z-10;
-    @apply bg-gradient-to-br from-brand-orange/10 via-transparent to-purple-500/10;
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-orange to-red-500;
+  }
+
+  /* Dotted Grid Background */
+  .dotted-grid {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Live Indicator Pulse */
+  .live-pulse {
+    @apply relative;
+  }
+  .live-pulse::before {
     content: '';
+    @apply absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75;
   }
 
-  /* Gradient Text */
-  .gradient-text {
-    @apply font-bold;
-    @apply dark:text-dark-text-primary text-light-text-primary;
+  /* Performance Card Glow */
+  .card-glow-green {
+    box-shadow: 0 0 60px -15px rgba(34, 197, 94, 0.3);
+  }
+
+  /* Focus Card Style */
+  .focus-card {
+    @apply bg-dark-bg-secondary/80 backdrop-blur-xl rounded-2xl border border-white/10;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Tag Pills */
+  .tag-pill {
+    @apply px-3 py-1 rounded-full text-xs font-medium border;
+  }
+  .tag-pill-dark {
+    @apply bg-dark-bg-tertiary/50 border-white/10 text-dark-text-secondary;
+  }
+  .tag-pill-accent {
+    @apply bg-brand-blue/10 border-brand-blue/30 text-brand-blue;
   }
 }

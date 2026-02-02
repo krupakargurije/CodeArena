@@ -8,29 +8,30 @@ export default {
     theme: {
         extend: {
             colors: {
-                // LeetCode Brand Color
+                // LeetCode Brand Color - Preserved but slightly vibrated
                 'brand-orange': '#ffa116',
+                'brand-blue': '#007AFF', // Added vibrant blue from new design
 
-                // Difficulty Colors (same for both themes)
+                // Difficulty Colors
                 'difficulty-easy': '#00b8a3',
                 'difficulty-medium': '#ffc01e',
                 'difficulty-hard': '#ff375f',
 
-                // Dark Theme Colors - Flattened structure
-                'dark-bg-primary': '#1a1a1a',
-                'dark-bg-secondary': '#282828',
-                'dark-bg-tertiary': '#2d2d2d',
+                // Dark Theme Colors - Premium Palette
+                'dark-bg-primary': '#121212',   // Deep charcoal/black
+                'dark-bg-secondary': '#1e1e1e', // Slightly lighter for cards
+                'dark-bg-tertiary': '#2d2d2d',  // Inputs/Hover
                 'dark-bg-elevated': '#333333',
 
-                'dark-text-primary': '#eff1f6bf',
-                'dark-text-secondary': '#a8a8a8',
-                'dark-text-tertiary': '#6c6c6c',
+                'dark-text-primary': '#ffffff',
+                'dark-text-secondary': '#a0a0a0',
+                'dark-text-tertiary': '#666666',
 
-                'dark-border-primary': '#3e3e3e',
-                'dark-border-secondary': '#4a4a4a',
-                'dark-border-tertiary': '#5a5a5a',
+                'dark-border-primary': '#333333', // Subtle borders
+                'dark-border-secondary': '#404040',
+                'dark-border-tertiary': '#505050',
 
-                // Light Theme Colors - Flattened structure
+                // Light Theme Colors (Keeping for safety/fallback)
                 'light-bg-primary': '#ffffff',
                 'light-bg-secondary': '#f7f8fa',
                 'light-bg-tertiary': '#eff1f6',
@@ -45,12 +46,13 @@ export default {
                 'light-border-tertiary': '#c4c4c4',
             },
             fontFamily: {
-                sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                mono: ['Source Code Pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
+                sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                mono: ['JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
             },
             animation: {
-                'fade-in': 'fadeIn 0.2s ease-in-out',
-                'slide-up': 'slideUp 0.2s ease-out',
+                'fade-in': 'fadeIn 0.3s ease-in-out',
+                'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
                 fadeIn: {
@@ -58,9 +60,12 @@ export default {
                     '100%': { opacity: '1' },
                 },
                 slideUp: {
-                    '0%': { transform: 'translateY(10px)', opacity: '0' },
+                    '0%': { transform: 'translateY(20px)', opacity: '0' },
                     '100%': { transform: 'translateY(0)', opacity: '1' },
                 },
+            },
+            backdropBlur: {
+                xs: '2px',
             },
         },
     },

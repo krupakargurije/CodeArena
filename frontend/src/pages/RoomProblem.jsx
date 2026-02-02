@@ -27,16 +27,16 @@ const RoomProblem = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-primary flex items-center justify-center">
-                <div className="text-primary-400 text-xl">Loading room problem...</div>
+            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
+                <div className="text-dark-text-secondary text-xl animate-pulse">Loading room problem...</div>
             </div>
         );
     }
 
     if (!problemId) {
         return (
-            <div className="min-h-screen bg-dark-primary flex items-center justify-center">
-                <div className="text-red-400 text-xl">Problem not found in this room</div>
+            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
+                <div className="text-red-400 text-xl font-bold">Problem not found in this room</div>
             </div>
         );
     }

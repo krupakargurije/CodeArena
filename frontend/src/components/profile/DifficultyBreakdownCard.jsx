@@ -123,36 +123,36 @@ const DifficultyBreakdownCard = ({ submissions = [], problems = [] }) => {
     ];
 
     return (
-        <div className="glass rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-orange/10">
-            <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary mb-6 flex items-center gap-2">
-                <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full flex flex-col">
+            <h3 className="text-base font-medium text-dark-text-secondary mb-6 flex items-center gap-2 uppercase tracking-wider text-xs">
+                <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
                 Difficulty Breakdown
             </h3>
 
             {/* Total Progress Circle */}
-            <div className="flex items-center justify-center mb-6">
-                <div className="relative">
-                    <svg className="w-28 h-28" viewBox="0 0 100 100">
+            <div className="flex items-center justify-center mb-8">
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-brand-orange/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <svg className="w-32 h-32 transform -rotate-90 drop-shadow-lg" viewBox="0 0 100 100">
                         {/* Background circle */}
                         <circle
                             cx="50"
                             cy="50"
-                            r="40"
+                            r="42"
                             fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            className="dark:text-dark-bg-tertiary text-light-bg-tertiary"
+                            stroke="#1e1e24"
+                            strokeWidth="6"
                         />
                         {/* Progress segments */}
                         {difficulties.map((diff, index) => {
                             const prevSolved = difficulties.slice(0, index).reduce((acc, d) => acc + d.solved, 0);
                             const startPercent = totalSolved > 0 ? (prevSolved / totalSolved) * 100 : 0;
                             const percent = totalSolved > 0 ? (diff.solved / totalSolved) * 100 : 0;
-                            const circumference = 2 * Math.PI * 40;
+                            const circumference = 2 * Math.PI * 42;
                             const strokeDasharray = `${(percent / 100) * circumference} ${circumference}`;
-                            const rotation = -90 + (startPercent / 100) * 360;
+                            const rotation = (startPercent / 100) * 360; // Base rotation handled by svg transform
 
                             if (diff.solved === 0) return null;
 
@@ -161,76 +161,63 @@ const DifficultyBreakdownCard = ({ submissions = [], problems = [] }) => {
                                     key={diff.name}
                                     cx="50"
                                     cy="50"
-                                    r="40"
+                                    r="42"
                                     fill="none"
                                     stroke={diff.ringColor}
-                                    strokeWidth="8"
-                                    strokeDasharray={animated ? strokeDasharray : '0 251.2'}
+                                    strokeWidth="6"
+                                    strokeDasharray={animated ? strokeDasharray : '0 263.8'}
                                     strokeLinecap="round"
                                     transform={`rotate(${rotation} 50 50)`}
-                                    className="transition-all duration-1000 ease-out"
+                                    className="transition-all duration-1000 ease-out hover:opacity-80"
                                 />
                             );
                         })}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-bold dark:text-dark-text-primary text-light-text-primary">
+                        <span className="text-3xl font-bold text-white tracking-tight">
                             {totalSolved}
                         </span>
-                        <span className="text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
-                            /{totalProblems}
+                        <span className="text-[10px] text-dark-text-tertiary uppercase tracking-widest mt-0.5">
+                            Solved
                         </span>
                     </div>
                 </div>
             </div>
 
             {/* Difficulty Progress Bars */}
-            <div className="space-y-3">
+            <div className="space-y-5 flex-1">
                 {difficulties.map((diff) => {
                     const percentage = diff.total > 0 ? (diff.solved / diff.total) * 100 : 0;
 
                     return (
-                        <div key={diff.name} className="space-y-1.5">
-                            <div className="flex justify-between items-center">
+                        <div key={diff.name} className="space-y-2">
+                            <div className="flex justify-between items-end">
                                 <div className="flex items-center gap-2">
-                                    <span
-                                        className="w-2 h-2 rounded-full"
-                                        style={{ backgroundColor: diff.ringColor }}
-                                    />
-                                    <span className={`text-sm font-medium ${diff.textColor}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${diff.bgColor.replace('/20', '')}`} style={{ backgroundColor: diff.ringColor }}></div>
+                                    <span className={`text-sm font-medium text-gray-300`}>
                                         {diff.name}
                                     </span>
                                 </div>
-                                <span className="text-sm dark:text-dark-text-secondary text-light-text-secondary">
-                                    <span className="font-semibold dark:text-dark-text-primary text-light-text-primary">
-                                        {diff.solved}
-                                    </span>
-                                    /{diff.total}
-                                </span>
+                                <div className="text-xs">
+                                    <span className="font-bold text-white text-sm">{diff.solved}</span>
+                                    <span className="text-dark-text-tertiary mx-1">/</span>
+                                    <span className="text-dark-text-tertiary">{diff.total}</span>
+                                </div>
                             </div>
-                            <div className="h-2 rounded-full dark:bg-dark-bg-tertiary bg-light-bg-tertiary overflow-hidden">
+                            <div className="h-1.5 rounded-full bg-[#1e1e24] overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full bg-gradient-to-r ${diff.color} transition-all duration-1000 ease-out`}
+                                    className={`h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden`}
                                     style={{
-                                        width: animated ? `${percentage}%` : '0%'
+                                        width: animated ? `${percentage}%` : '0%',
+                                        backgroundColor: diff.ringColor
                                     }}
-                                />
+                                >
+                                    <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]" style={{ content: '""' }}></div>
+                                </div>
                             </div>
                         </div>
                     );
                 })}
-            </div>
-
-            {/* Legend Summary */}
-            <div className="mt-6 pt-4 border-t dark:border-dark-border-primary border-light-border-primary">
-                <div className="grid grid-cols-4 gap-2 text-center">
-                    {difficulties.map((diff) => (
-                        <div key={diff.name} className="flex flex-col items-center">
-                            <span className={`text-lg font-bold ${diff.textColor}`}>{diff.solved}</span>
-                            <span className="text-xs dark:text-dark-text-tertiary text-light-text-tertiary truncate w-full">{diff.name}</span>
-                        </div>
-                    ))}
-                </div>
             </div>
         </div>
     );

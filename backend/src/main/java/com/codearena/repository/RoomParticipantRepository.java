@@ -22,4 +22,6 @@ public interface RoomParticipantRepository extends JpaRepository<RoomParticipant
     List<RoomParticipant> findActiveRoomsByUserId(@Param("userId") String userId);
 
     long countByRoomIdAndLeftAtIsNull(String roomId);
+
+    long countByLeftAtIsNull();
 }

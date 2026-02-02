@@ -85,7 +85,7 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
 
     // Get color based on count
     const getColor = (count) => {
-        if (count === 0) return 'dark:bg-dark-bg-tertiary bg-light-bg-tertiary';
+        if (count === 0) return 'bg-dark-bg-tertiary';
         if (count === 1) return 'bg-green-900/50';
         if (count <= 3) return 'bg-green-700/60';
         if (count <= 5) return 'bg-green-500/70';
@@ -99,39 +99,36 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <div className="glass rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/10">
+        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold dark:text-dark-text-primary text-light-text-primary flex items-center gap-2">
-                    <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h3 className="text-base font-medium text-dark-text-secondary flex items-center gap-2 uppercase tracking-wider text-xs">
+                    <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Activity
                 </h3>
-                <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                        <span className="dark:text-dark-text-secondary text-light-text-secondary">
-                            {totalSubmissions} submissions
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="dark:text-dark-text-secondary text-light-text-secondary">
-                            {activeDays} active days
-                        </span>
-                    </div>
+                <div className="flex items-center gap-4 text-xs font-medium bg-white/[0.02] border border-white/5 px-3 py-1 rounded-lg">
+                    <span className="text-white">
+                        {totalSubmissions} <span className="text-dark-text-tertiary font-normal">submissions</span>
+                    </span>
+                    <span className="w-px h-3 bg-white/10" />
+                    <span className="text-white">
+                        {activeDays} <span className="text-dark-text-tertiary font-normal">active days</span>
+                    </span>
                 </div>
             </div>
 
             {/* Heatmap Container */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto pb-2">
                 <div className="min-w-max">
                     {/* Month Labels */}
                     <div className="flex ml-8 mb-2">
                         {months.map((m, i) => (
                             <div
                                 key={i}
-                                className="text-xs dark:text-dark-text-tertiary text-light-text-tertiary"
+                                className="text-[10px] uppercase tracking-wider text-dark-text-tertiary font-medium"
                                 style={{
-                                    marginLeft: i === 0 ? `${m.index * 14}px` : `${(m.index - (months[i - 1]?.index || 0)) * 14 - 24}px`
+                                    marginLeft: i === 0 ? `${m.index * 13}px` : `${(m.index - (months[i - 1]?.index || 0)) * 13 - 20}px`
                                 }}
                             >
                                 {m.month}
@@ -141,9 +138,9 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
 
                     <div className="flex">
                         {/* Day Labels */}
-                        <div className="flex flex-col gap-[2px] mr-2 text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
+                        <div className="flex flex-col gap-[3px] mr-3 text-[10px] text-dark-text-tertiary font-medium pt-[1px]">
                             {dayLabels.map((day, i) => (
-                                <div key={day} className="h-3 flex items-center" style={{ visibility: i % 2 === 1 ? 'visible' : 'hidden' }}>
+                                <div key={day} className="h-2.5 flex items-center" style={{ visibility: i % 2 === 1 ? 'visible' : 'hidden' }}>
                                     {day}
                                 </div>
                             ))}
@@ -156,8 +153,11 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
                                     {week.map((day, dayIndex) => (
                                         <div
                                             key={dayIndex}
-                                            className={`w-3 h-3 rounded-sm transition-all duration-200 ${day ? getColor(day.count) : 'bg-transparent'
-                                                } ${day ? 'hover:ring-2 hover:ring-brand-orange hover:ring-opacity-50 cursor-pointer' : ''}`}
+                                            className={`
+                                                w-2.5 h-2.5 rounded-[2px] transition-all duration-300
+                                                ${day ? getColor(day.count) : 'bg-transparent'}
+                                                ${day ? 'hover:scale-125 hover:z-10 hover:shadow-lg hover:shadow-green-500/20 cursor-pointer' : ''}
+                                            `}
                                             onMouseEnter={() => day && setHoveredDay(day)}
                                             onMouseLeave={() => setHoveredDay(null)}
                                         />
@@ -169,29 +169,36 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
                 </div>
             </div>
 
-            {/* Tooltip */}
-            {hoveredDay && (
-                <div className="mt-4 text-center">
-                    <span className="text-sm dark:text-dark-text-secondary text-light-text-secondary">
-                        <span className="font-semibold dark:text-dark-text-primary text-light-text-primary">
-                            {hoveredDay.count} submission{hoveredDay.count !== 1 ? 's' : ''}
+            {/* Footer: Tooltip & Legend */}
+            <div className="flex justify-between items-end mt-4 pt-4 border-t border-white/5 h-10">
+                {/* Tooltip */}
+                <div className="transition-all duration-300">
+                    {hoveredDay ? (
+                        <div className="text-xs text-dark-text-secondary animate-in fade-in slide-in-from-bottom-1">
+                            <span className="font-bold text-white">
+                                {hoveredDay.count} submission{hoveredDay.count !== 1 ? 's' : ''}
+                            </span>
+                            {' '}on <span className="text-dark-text-tertiary">{hoveredDay.displayDate}</span>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-dark-text-tertiary italic">
+                            Hover over a square to view details
                         </span>
-                        {' '}on {hoveredDay.displayDate}
-                    </span>
+                    )}
                 </div>
-            )}
 
-            {/* Legend */}
-            <div className="flex items-center justify-end gap-2 mt-4 text-xs dark:text-dark-text-tertiary text-light-text-tertiary">
-                <span>Less</span>
-                <div className="flex gap-1">
-                    <div className="w-3 h-3 rounded-sm dark:bg-dark-bg-tertiary bg-light-bg-tertiary" />
-                    <div className="w-3 h-3 rounded-sm bg-green-900/50" />
-                    <div className="w-3 h-3 rounded-sm bg-green-700/60" />
-                    <div className="w-3 h-3 rounded-sm bg-green-500/70" />
-                    <div className="w-3 h-3 rounded-sm bg-green-400" />
+                {/* Legend */}
+                <div className="flex items-center gap-2 text-[10px] text-dark-text-tertiary font-medium uppercase tracking-wider">
+                    <span>Less</span>
+                    <div className="flex gap-1">
+                        <div className="w-2.5 h-2.5 rounded-[2px] bg-dark-bg-tertiary" />
+                        <div className="w-2.5 h-2.5 rounded-[2px] bg-green-900/40" />
+                        <div className="w-2.5 h-2.5 rounded-[2px] bg-green-700/50" />
+                        <div className="w-2.5 h-2.5 rounded-[2px] bg-green-500/60" />
+                        <div className="w-2.5 h-2.5 rounded-[2px] bg-green-400" />
+                    </div>
+                    <span>More</span>
                 </div>
-                <span>More</span>
             </div>
         </div>
     );

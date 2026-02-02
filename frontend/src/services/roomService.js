@@ -226,6 +226,7 @@ export const getRoomDetails = async (roomId) => {
                 problem_id: room.problemId,
                 problem_selection_mode: room.problemSelectionMode,
                 max_participants: room.maxParticipants,
+                is_private: room.isPrivate,
                 started_at: room.startedAt,
                 created_at: room.createdAt
             };
@@ -358,7 +359,9 @@ export const getUserRooms = async (userId) => {
                 created_by: room.createdBy,
                 problem_id: room.problemId,
                 max_participants: room.maxParticipants,
-                problem_selection_mode: room.problemSelectionMode
+                problem_selection_mode: room.problemSelectionMode,
+                is_private: room.isPrivate,
+                created_at: room.createdAt
             }));
 
             return { data: transformedRooms };
@@ -396,7 +399,8 @@ export const getPublicRooms = async () => {
                 problem_id: room.problemId,
                 max_participants: room.maxParticipants,
                 problem_selection_mode: room.problemSelectionMode,
-                is_private: room.isPrivate
+                is_private: room.isPrivate,
+                created_at: room.createdAt
             }));
 
             return { data: transformedRooms };

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProblem } from '../services/problemService';
 import { getUserSolvedProblemIds } from '../services/submissionService';
@@ -13,6 +13,11 @@ const CODE_TEMPLATES = {
 `,
     python: `# Python Solution
 # Write your code here
+
+class Solution:
+    def solve(self, s: str) -> str:
+        # Your code here
+        pass
 `,
     java: `// Java Solution
 import java.util.*;
@@ -45,15 +50,23 @@ const ProblemDetail = ({ problemIdProp }) => {
 
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [language, setLanguage] = useState('javascript');
-    const [code, setCode] = useState(CODE_TEMPLATES['javascript']);
-    const [activeTab, setActiveTab] = useState('testcase');
-    const [consoleHeight, setConsoleHeight] = useState(256);
-    const [isResizing, setIsResizing] = useState(false);
-    const [leftPanelWidth, setLeftPanelWidth] = useState(50);
-    const [isResizingHorizontal, setIsResizingHorizontal] = useState(false);
-    const containerRef = useRef(null);
+    const [language, setLanguage] = useState('python');
+    const [code, setCode] = useState(CODE_TEMPLATES['python']);
+    const [activeTab, setActiveTab] = useState('testcases');
+
+    // Panel sizes and positions
+    const [leftPanelWidth, setLeftPanelWidth] = useState(25);
+    const [rightPanelWidth, setRightPanelWidth] = useState(25);
+    const [bottomPanelHeight, setBottomPanelHeight] = useState(200);
+    const [consolePosition, setConsolePosition] = useState('right'); // 'right' or 'bottom'
+
+    // Resizing states
+    const [isResizingLeft, setIsResizingLeft] = useState(false);
+    const [isResizingRight, setIsResizingRight] = useState(false);
+    const [isResizingBottom, setIsResizingBottom] = useState(false);
+
     const mainContainerRef = useRef(null);
+    const editorContainerRef = useRef(null);
 
     useEffect(() => {
         if (!id) return;
@@ -89,7 +102,7 @@ const ProblemDetail = ({ problemIdProp }) => {
     }, [user, id, submissionResult]);
 
     const handleSubmit = () => {
-        setActiveTab('result');
+        setActiveTab('console');
         dispatch(submitCodeThunk({
             problemId: parseInt(id),
             code,
@@ -99,7 +112,7 @@ const ProblemDetail = ({ problemIdProp }) => {
     };
 
     const handleRun = () => {
-        setActiveTab('result');
+        setActiveTab('console');
         dispatch(runCodeThunk({
             problemId: parseInt(id),
             code,
@@ -107,36 +120,33 @@ const ProblemDetail = ({ problemIdProp }) => {
         }));
     };
 
-    const startResize = (e) => {
-        e.preventDefault();
-        setIsResizing(true);
-    };
-
-    const startHorizontalResize = (e) => {
-        e.preventDefault();
-        setIsResizingHorizontal(true);
-    };
-
+    // Handle horizontal resize for left and right panels
     useEffect(() => {
         const handleMouseMove = (e) => {
-            if (!isResizing || !containerRef.current) return;
+            if (!mainContainerRef.current) return;
+            const containerRect = mainContainerRef.current.getBoundingClientRect();
 
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const newHeight = containerRect.bottom - e.clientY;
+            if (isResizingLeft) {
+                const newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+                if (newWidthPercent >= 15 && newWidthPercent <= 40) {
+                    setLeftPanelWidth(newWidthPercent);
+                }
+            }
 
-            const minHeight = 150;
-            const maxHeight = containerRect.height - 200;
-
-            if (newHeight >= minHeight && newHeight <= maxHeight) {
-                setConsoleHeight(newHeight);
+            if (isResizingRight) {
+                const newWidthPercent = ((containerRect.right - e.clientX) / containerRect.width) * 100;
+                if (newWidthPercent >= 15 && newWidthPercent <= 40) {
+                    setRightPanelWidth(newWidthPercent);
+                }
             }
         };
 
         const handleMouseUp = () => {
-            setIsResizing(false);
+            setIsResizingLeft(false);
+            setIsResizingRight(false);
         };
 
-        if (isResizing) {
+        if (isResizingLeft || isResizingRight) {
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
         }
@@ -145,336 +155,420 @@ const ProblemDetail = ({ problemIdProp }) => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isResizing]);
+    }, [isResizingLeft, isResizingRight]);
 
+    // Handle vertical resize for bottom panel
     useEffect(() => {
-        const handleHorizontalMouseMove = (e) => {
-            if (!isResizingHorizontal || !mainContainerRef.current) return;
-
-            const containerRect = mainContainerRef.current.getBoundingClientRect();
-            const newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-
-            const minWidth = 30;
-            const maxWidth = 70;
-
-            if (newWidthPercent >= minWidth && newWidthPercent <= maxWidth) {
-                setLeftPanelWidth(newWidthPercent);
+        const handleMouseMove = (e) => {
+            if (!isResizingBottom || !editorContainerRef.current) return;
+            const containerRect = editorContainerRef.current.getBoundingClientRect();
+            const newHeight = containerRect.bottom - e.clientY;
+            if (newHeight >= 100 && newHeight <= 400) {
+                setBottomPanelHeight(newHeight);
             }
         };
 
-        const handleHorizontalMouseUp = () => {
-            setIsResizingHorizontal(false);
+        const handleMouseUp = () => {
+            setIsResizingBottom(false);
         };
 
-        if (isResizingHorizontal) {
-            document.addEventListener('mousemove', handleHorizontalMouseMove);
-            document.addEventListener('mouseup', handleHorizontalMouseUp);
+        if (isResizingBottom) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
         }
 
         return () => {
-            document.removeEventListener('mousemove', handleHorizontalMouseMove);
-            document.removeEventListener('mouseup', handleHorizontalMouseUp);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isResizingHorizontal]);
+    }, [isResizingBottom]);
+
+    const toggleConsolePosition = () => {
+        setConsolePosition(prev => prev === 'right' ? 'bottom' : 'right');
+    };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-primary flex items-center justify-center">
-                <div className="text-primary-400 text-xl">Loading problem...</div>
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+                <div className="text-brand-blue text-xl animate-pulse">Loading problem...</div>
             </div>
         );
     }
 
     if (!problem) {
         return (
-            <div className="min-h-screen bg-dark-primary flex items-center justify-center">
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
                 <div className="text-red-400 text-xl">Problem not found</div>
             </div>
         );
     }
 
-    const getDifficultyBadge = (difficulty) => {
-        const badges = {
-            EASY: 'badge-easy',
-            MEDIUM: 'badge-medium',
-            HARD: 'badge-hard',
+    const getLanguageIcon = (lang) => {
+        const icons = {
+            python: '🐍',
+            javascript: '🟨',
+            java: '☕',
+            cpp: '⚡'
         };
-        return badges[difficulty] || 'badge-medium';
+        return icons[lang] || '📄';
     };
 
+    // Console Panel Component (reusable for both positions)
+    const ConsolePanel = ({ className = '', style = {} }) => (
+        <div className={`flex flex-col bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden ${className}`} style={style}>
+            {/* Tabs */}
+            <div className="h-10 bg-[#0d0d12] border-b border-white/5 flex items-center justify-between px-4">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setActiveTab('testcases')}
+                        className={`text-sm font-medium transition-colors ${activeTab === 'testcases'
+                            ? 'text-white'
+                            : 'text-dark-text-tertiary hover:text-white'
+                            }`}
+                    >
+                        Test Cases
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('console')}
+                        className={`text-sm font-medium transition-colors ${activeTab === 'console'
+                            ? 'text-white'
+                            : 'text-dark-text-tertiary hover:text-white'
+                            }`}
+                    >
+                        Console
+                    </button>
+                </div>
+
+                {/* Position Toggle Button */}
+                <button
+                    onClick={toggleConsolePosition}
+                    className="p-1.5 rounded-md hover:bg-white/5 text-dark-text-tertiary hover:text-white transition-colors"
+                    title={consolePosition === 'right' ? 'Move to bottom' : 'Move to right'}
+                >
+                    {consolePosition === 'right' ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    )}
+                </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+                {activeTab === 'testcases' && (
+                    <div className="space-y-4">
+                        <div>
+                            <div className="text-dark-text-tertiary text-xs mb-2">Input:</div>
+                            <pre className="bg-[#0a0a0f] border border-white/5 rounded-lg p-3 text-white text-xs font-mono">
+                                {problem.sampleInput || 's = "example"'}
+                            </pre>
+                        </div>
+                        <div>
+                            <div className="text-dark-text-tertiary text-xs mb-2">Expected Output:</div>
+                            <pre className="bg-[#0a0a0f] border border-white/5 rounded-lg p-3 text-white text-xs font-mono">
+                                {problem.sampleOutput || '"result"'}
+                            </pre>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'console' && (
+                    <div className="h-full">
+                        {submitting ? (
+                            <div className="flex items-center gap-2 text-cyan-400 text-sm">
+                                <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                                Running...
+                            </div>
+                        ) : submissionResult ? (
+                            <div className="space-y-3">
+                                <div className={`font-medium text-sm ${submissionResult.status === 'ACCEPTED' ? 'text-green-400' :
+                                    submissionResult.status === 'WRONG_ANSWER' ? 'text-red-400' :
+                                        'text-yellow-400'
+                                    }`}>
+                                    Run log ({submissionResult.status === 'ACCEPTED' ? 'Successful' : submissionResult.status.replace(/_/g, ' ')})
+                                </div>
+
+                                <div className="bg-[#0a0a0f] border border-white/5 rounded-lg p-3 font-mono text-xs space-y-1">
+                                    <div className="text-green-400">Successfully run: oc.</div>
+                                    <div className="text-dark-text-secondary">Running log:</div>
+                                    {submissionResult.executionTime && (
+                                        <div className="text-dark-text-tertiary">Runtime: {submissionResult.executionTime} ms</div>
+                                    )}
+                                    {submissionResult.stdout && (
+                                        <div className="text-white mt-2">Output: {submissionResult.stdout}</div>
+                                    )}
+                                    {submissionResult.stderr && (
+                                        <div className="text-red-400 mt-2">Error: {submissionResult.stderr}</div>
+                                    )}
+                                    {submissionResult.compile_error && (
+                                        <div className="text-red-400 mt-2">Compile Error: {submissionResult.compile_error}</div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-dark-text-tertiary text-sm">
+                                Run your code to see console output here.
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="h-screen dark:bg-dark-bg-primary bg-light-bg-primary flex flex-col">
-            <div ref={mainContainerRef} className="flex-1 flex overflow-hidden">
+        <div className="h-screen bg-[#0a0a0f] flex flex-col overflow-hidden">
+            {/* Top Header Bar */}
+            <div className="h-14 bg-[#0d0d12] border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0">
+                {/* Left: Logo */}
+                <Link to="/" className="flex items-center gap-2">
+                    <img src="/logo.png" alt="CodeArena" className="w-8 h-8" />
+                    <span className="text-white font-semibold text-lg">CodeArena</span>
+                </Link>
+
+                {/* Right: Action Buttons */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleRun}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-transparent border border-cyan-500/50 text-cyan-400 text-sm font-medium hover:bg-cyan-500/10 transition-all disabled:opacity-50"
+                    >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                        {submitting ? 'Running...' : 'Run Code'}
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-brand-blue text-white text-sm font-medium hover:bg-blue-600 transition-all disabled:opacity-50 shadow-lg shadow-brand-blue/20"
+                    >
+                        {submitting ? 'Submitting...' : 'Submit'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div ref={mainContainerRef} className="flex-1 flex overflow-hidden p-3 gap-3">
                 {/* Left Panel - Problem Description */}
-                <div style={{ width: `${leftPanelWidth}%` }} className="border-r dark:border-dark-border-primary border-light-border-primary overflow-y-auto">
-                    <div className="p-8">
+                <div
+                    style={{ width: `${leftPanelWidth}%` }}
+                    className="flex flex-col gap-3 overflow-hidden flex-shrink-0"
+                >
+                    {/* Problem Header Card */}
+                    <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 p-4">
+                        <div className="text-dark-text-tertiary text-xs font-medium mb-1">Problem</div>
+                        <h1 className="text-white font-semibold text-lg leading-tight">
+                            Problem {id}: {problem.title}
+                        </h1>
+                        {isSolved && (
+                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
+                                ✓ Solved
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Problem Description Card */}
+                    <div className="flex-1 bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 p-5 overflow-y-auto custom-scrollbar">
+                        {/* Difficulty & Stats Header - Mobile only (since desktop header is above) or Inline below title */}
+                        <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${(problem.difficulty || '').toLowerCase() === 'hard' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                (problem.difficulty || '').toLowerCase() === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                    'bg-green-500/10 text-green-400 border border-green-500/20'
+                                }`}>
+                                {problem.difficulty || 'Easy'}
+                            </span>
+
+                            {problem.acceptanceRate !== undefined && (
+                                <div className="flex items-center gap-1.5 text-dark-text-secondary">
+                                    <span className="text-dark-text-tertiary">Acceptance:</span>
+                                    <span className="font-medium text-white">{problem.acceptanceRate}%</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="prose prose-invert max-w-none mb-6">
+                            <p className="text-dark-text-secondary text-sm leading-7">
+                                {problem.description}
+                            </p>
+                        </div>
+
+                        {/* Input Format */}
+                        {problem.inputFormat && (
+                            <div className="mb-5">
+                                <h3 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                                    <span className="w-1 h-4 bg-brand-blue rounded-full"></span>
+                                    Input Format
+                                </h3>
+                                <div className="text-dark-text-secondary text-sm leading-relaxed whitespace-pre-wrap pl-3 border-l border-white/5 ml-0.5 font-mono bg-[#0a0a0f]/30 p-2 rounded-r-lg">
+                                    {problem.inputFormat?.replace(/\\n/g, '\n')}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Output Format */}
+                        {problem.outputFormat && (
+                            <div className="mb-5">
+                                <h3 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                                    <span className="w-1 h-4 bg-brand-blue rounded-full"></span>
+                                    Output Format
+                                </h3>
+                                <div className="text-dark-text-secondary text-sm leading-relaxed whitespace-pre-wrap pl-3 border-l border-white/5 ml-0.5 font-mono bg-[#0a0a0f]/30 p-2 rounded-r-lg">
+                                    {problem.outputFormat?.replace(/\\n/g, '\n')}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Constraints */}
+                        {problem.constraints && (
+                            <div className="mb-6">
+                                <h3 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                                    <span className="w-1 h-4 bg-brand-orange rounded-full"></span>
+                                    Constraints
+                                </h3>
+                                <div className="bg-[#0a0a0f]/50 border border-white/5 rounded-lg p-3">
+                                    <code className="text-dark-text-secondary text-xs font-mono whitespace-pre-wrap block leading-relaxed">
+                                        {problem.constraints?.replace(/\\n/g, '\n')}
+                                    </code>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Sample Input Section */}
+                        <div className="mb-5">
+                            <h3 className="text-white font-semibold text-sm mb-2">Sample Input</h3>
+                            <div className="relative group">
+                                <pre className="bg-[#0a0a0f] border border-white/5 rounded-lg p-3 text-gray-300 text-xs font-mono overflow-x-auto custom-scrollbar">
+                                    {problem.sampleInput || ''}
+                                </pre>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(problem.sampleInput || '')}
+                                    className="absolute top-2 right-2 p-1.5 rounded bg-white/5 text-dark-text-tertiary hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Copy Input"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Sample Output Section */}
                         <div className="mb-6">
-                            <div className="flex items-center gap-4 mb-4">
-                                <h1 className="text-3xl font-bold dark:text-dark-text-primary text-light-text-primary">
-                                    {problem.title}
-                                </h1>
-                                <span className={getDifficultyBadge(problem.difficulty)}>
-                                    {problem.difficulty}
-                                </span>
-                                {isSolved && (
-                                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-500 text-white text-sm font-semibold shadow-lg shadow-green-500/30">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Solved
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2 flex-wrap">
-                                {problem.tags?.map((tag, index) => (
-                                    <span
-                                        key={index}
-                                        className="px-3 py-1 text-sm rounded-md bg-brand-orange/10 text-brand-orange border border-brand-orange/20"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
+                            <h3 className="text-white font-semibold text-sm mb-2">Sample Output</h3>
+                            <pre className="bg-[#0a0a0f] border border-white/5 rounded-lg p-3 text-gray-300 text-xs font-mono overflow-x-auto custom-scrollbar">
+                                {problem.sampleOutput || ''}
+                            </pre>
                         </div>
 
-                        <div className="max-w-none">
-                            <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Description</h3>
-                            <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.description}</p>
+                        {/* Explanation */}
+                        {problem.explanation && (
+                            <div className="mb-6 bg-brand-blue/5 border border-brand-blue/10 rounded-lg p-4">
+                                <h3 className="text-brand-blue font-semibold text-sm mb-2 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Explanation
+                                </h3>
+                                <p className="text-dark-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
+                                    {problem.explanation?.replace(/\\n/g, '\n')}
+                                </p>
+                            </div>
+                        )}
 
-                            {problem.inputFormat && (
-                                <>
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Input Format</h3>
-                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.inputFormat}</p>
-                                </>
-                            )}
-
-                            {problem.outputFormat && (
-                                <>
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Output Format</h3>
-                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.outputFormat}</p>
-                                </>
-                            )}
-
-                            {problem.constraints && (
-                                <>
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Constraints</h3>
-                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.constraints}</p>
-                                </>
-                            )}
-
-                            {problem.sampleInput && (
-                                <div className="mt-6">
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Sample Input</h3>
-                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-4 rounded-lg dark:text-dark-text-primary text-light-text-primary overflow-x-auto">
-                                        {problem.sampleInput}
-                                    </pre>
+                        {/* Tags */}
+                        {problem.tags && problem.tags.length > 0 && (
+                            <div className="mt-8 pt-4 border-t border-white/5">
+                                <div className="flex flex-wrap gap-2">
+                                    {problem.tags.map((tag, idx) => (
+                                        <span key={idx} className="px-2 py-1 rounded bg-[#1e1e24] text-dark-text-tertiary text-[10px] border border-white/5 hover:border-white/10 transition-colors cursor-default">
+                                            #{tag}
+                                        </span>
+                                    ))}
                                 </div>
-                            )}
-
-                            {problem.sampleOutput && (
-                                <div className="mt-4">
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mb-3">Sample Output</h3>
-                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-4 rounded-lg dark:text-dark-text-primary text-light-text-primary overflow-x-auto">
-                                        {problem.sampleOutput}
-                                    </pre>
-                                </div>
-                            )}
-
-                            {problem.explanation && (
-                                <>
-                                    <h3 className="text-xl font-semibold dark:text-dark-text-primary text-light-text-primary mt-6 mb-3">Explanation</h3>
-                                    <p className="dark:text-dark-text-secondary text-light-text-secondary whitespace-pre-wrap">{problem.explanation}</p>
-                                </>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Vertical Resize Handle */}
+                {/* Left Resize Handle */}
                 <div
-                    onMouseDown={startHorizontalResize}
-                    className={`w-1 dark:bg-dark-border-primary bg-light-border-primary hover:bg-brand-orange cursor-ew-resize transition-colors flex-shrink-0 ${isResizingHorizontal ? 'bg-brand-orange' : ''
+                    onMouseDown={() => setIsResizingLeft(true)}
+                    className={`w-1 rounded-full cursor-col-resize transition-colors flex-shrink-0 ${isResizingLeft ? 'bg-brand-blue' : 'bg-transparent hover:bg-white/20'
                         }`}
-                    style={{ userSelect: 'none' }}
                 />
 
-                {/* Right Panel - Code Editor + Console */}
-                <div ref={containerRef} style={{ width: `${100 - leftPanelWidth}%` }} className="flex flex-col overflow-hidden">
-                    {/* Editor Header */}
-                    <div className="dark:bg-dark-bg-secondary bg-light-bg-secondary border-b dark:border-dark-border-primary border-light-border-primary py-4 px-3 flex items-center justify-between shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <span className="text-xs font-semibold dark:text-dark-text-secondary text-light-text-secondary uppercase tracking-wider">Language:</span>
-                            <select
-                                value={language}
-                                onChange={(e) => setLanguage(e.target.value)}
-                                className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-primary text-light-text-primary px-4 py-2 text-sm rounded-lg border dark:border-dark-border-primary border-light-border-primary focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent hover:border-brand-orange/50 transition-all duration-200 cursor-pointer font-medium shadow-sm"
-                            >
-                                <option value="javascript">JavaScript</option>
-                                <option value="python">Python</option>
-                                <option value="java">Java</option>
-                                <option value="cpp">C++</option>
-                            </select>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleRun}
-                                disabled={submitting}
-                                className="px-5 py-2 text-sm font-medium dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-primary text-light-text-primary rounded-lg hover:bg-brand-orange/10 border dark:border-dark-border-primary border-light-border-primary hover:border-brand-orange/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-                            >
-                                {submitting ? '⏳ Running...' : '▶ Run Code'}
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                                className="px-5 py-2 text-sm font-medium bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] transform"
-                            >
-                                {submitting ? '⏳ Submitting...' : '✓ Submit'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Code Editor */}
-                    <div className="relative pt-1 pr-1" style={{ flex: 1, overflow: 'hidden' }}>
-                        <div className="absolute inset-0 bg-gradient-to-br from-dark-primary/50 to-dark-secondary/30 pointer-events-none" />
-                        <CodeEditor
-                            code={code}
-                            onChange={(value) => setCode(value || '')}
-                            language={language}
-                        />
-                    </div>
-
-                    {/* Resize Handle */}
-                    <div
-                        onMouseDown={startResize}
-                        className={`h-1 dark:bg-dark-border-primary bg-light-border-primary hover:bg-brand-orange cursor-ns-resize transition-colors ${isResizing ? 'bg-brand-orange' : ''
-                            }`}
-                        style={{ userSelect: 'none' }}
-                    />
-
-                    {/* Console Panel - Resizable */}
-                    <div style={{ height: `${consoleHeight}px` }} className="border-t dark:border-dark-border-primary border-light-border-primary dark:bg-dark-bg-secondary bg-light-bg-secondary flex flex-col">
-                        {/* Console Tabs */}
-                        <div className="flex border-b dark:border-dark-border-primary border-light-border-primary">
-                            <button
-                                onClick={() => setActiveTab('testcase')}
-                                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'testcase'
-                                    ? 'text-brand-orange border-b-2 border-brand-orange dark:bg-dark-bg-tertiary/50 bg-light-bg-tertiary/50'
-                                    : 'dark:text-dark-text-secondary text-light-text-secondary dark:hover:text-dark-text-primary hover:text-light-text-primary'
-                                    }`}
-                            >
-                                Testcase
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('result')}
-                                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'result'
-                                    ? 'text-brand-orange border-b-2 border-brand-orange dark:bg-dark-bg-tertiary/50 bg-light-bg-tertiary/50'
-                                    : 'dark:text-dark-text-secondary text-light-text-secondary dark:hover:text-dark-text-primary hover:text-light-text-primary'
-                                    }`}
-                            >
-                                Test Result
-                            </button>
-                        </div>
-
-                        {/* Console Content */}
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {activeTab === 'testcase' && (
-                                <div className="dark:text-dark-text-secondary text-light-text-secondary text-sm">
-                                    <div className="mb-2 font-semibold dark:text-dark-text-primary text-light-text-primary">Input:</div>
-                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded dark:text-dark-text-primary text-light-text-primary mb-4">
-                                        {problem.sampleInput || 'No test case available'}
-                                    </pre>
-                                    <div className="mb-2 font-semibold dark:text-dark-text-primary text-light-text-primary">Expected Output:</div>
-                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded dark:text-dark-text-primary text-light-text-primary">
-                                        {problem.sampleOutput || 'No expected output available'}
-                                    </pre>
+                {/* Center + Right Area */}
+                <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+                    <div className="flex-1 flex gap-3 overflow-hidden">
+                        {/* Center Panel - Code Editor */}
+                        <div
+                            ref={editorContainerRef}
+                            className={`flex flex-col bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden ${consolePosition === 'right' ? 'flex-1' : 'flex-1'
+                                }`}
+                        >
+                            {/* Editor Header with File Tab */}
+                            <div className="h-10 bg-[#0d0d12] border-b border-white/5 flex items-center px-2 flex-shrink-0">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] rounded-t-lg border-b-2 border-brand-blue">
+                                    <span className="text-xs">{getLanguageIcon(language)}</span>
+                                    <span className="text-white text-xs font-medium">main.{language === 'python' ? 'py' : language === 'javascript' ? 'js' : language === 'java' ? 'java' : 'cpp'}</span>
+                                    <span className="text-dark-text-tertiary text-xs">×</span>
                                 </div>
-                            )}
-
-                            {activeTab === 'result' && (
-                                <div>
-                                    {submitting ? (
-                                        <div className="flex items-center justify-center h-32">
-                                            <div className="text-brand-orange">Running code...</div>
-                                        </div>
-                                    ) : submissionResult ? (
-                                        <div className="space-y-3">
-                                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold ${submissionResult.status === 'ACCEPTED' ? 'bg-green-500/20 text-green-400' :
-                                                submissionResult.status === 'WRONG_ANSWER' ? 'bg-red-500/20 text-red-400' :
-                                                    submissionResult.status === 'COMPILATION_ERROR' ? 'bg-orange-500/20 text-orange-400' :
-                                                        submissionResult.status === 'RUNTIME_ERROR' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            'bg-gray-500/20 text-gray-400'
-                                                }`}>
-                                                {submissionResult.status === 'ACCEPTED' && '✓'}
-                                                {submissionResult.status === 'WRONG_ANSWER' && '✗'}
-                                                {submissionResult.status === 'COMPILATION_ERROR' && '⚠'}
-                                                {submissionResult.status === 'RUNTIME_ERROR' && '⚠'}
-                                                {submissionResult.status.replace(/_/g, ' ')}
-                                            </div>
-
-                                            {submissionResult.compile_error && (
-                                                <div>
-                                                    <div className="text-red-400 font-semibold mb-2 text-sm">Compilation Error:</div>
-                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-red-400 text-xs font-mono overflow-x-auto">
-                                                        {submissionResult.compile_error}
-                                                    </pre>
-                                                </div>
-                                            )}
-
-                                            {submissionResult.stdout && (
-                                                <div>
-                                                    <div className="text-green-400 font-semibold mb-2 text-sm">Output:</div>
-                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-green-600 dark:text-green-400 text-xs font-mono overflow-x-auto">
-                                                        {submissionResult.stdout}
-                                                    </pre>
-                                                </div>
-                                            )}
-
-                                            {submissionResult.stderr && (
-                                                <div>
-                                                    <div className="text-yellow-400 font-semibold mb-2 text-sm">Error:</div>
-                                                    <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-yellow-600 dark:text-yellow-400 text-xs font-mono overflow-x-auto">
-                                                        {submissionResult.stderr}
-                                                    </pre>
-                                                </div>
-                                            )}
-
-                                            {submissionResult.status === 'ACCEPTED' && (
-                                                <div className="flex gap-4 text-sm dark:text-dark-text-secondary text-light-text-secondary">
-                                                    <div>Runtime: <span className="dark:text-dark-text-primary text-light-text-primary">{submissionResult.executionTime}ms</span></div>
-                                                    <div>Memory: <span className="dark:text-dark-text-primary text-light-text-primary">{(submissionResult.memoryUsed / 1024).toFixed(2)}MB</span></div>
-                                                </div>
-                                            )}
-
-                                            {submissionResult.status === 'WRONG_ANSWER' && (
-                                                <div className="space-y-3">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <div className="text-green-400 font-semibold mb-2 text-sm">Expected Output:</div>
-                                                            <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-green-600 dark:text-green-400 text-xs font-mono overflow-x-auto">
-                                                                {submissionResult.expectedOutput || problem.sampleOutput}
-                                                            </pre>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-red-400 font-semibold mb-2 text-sm">Your Output:</div>
-                                                            <pre className="dark:bg-dark-bg-tertiary bg-light-bg-tertiary p-3 rounded text-red-600 dark:text-red-400 text-xs font-mono overflow-x-auto">
-                                                                {submissionResult.actualOutput || submissionResult.stdout || '(empty)'}
-                                                            </pre>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="dark:text-dark-text-tertiary text-light-text-tertiary text-sm text-center py-8">
-                                            Click "Run Code" to see the output here
-                                        </div>
-                                    )}
+                                <div className="ml-auto flex items-center gap-2 px-2">
+                                    <select
+                                        value={language}
+                                        onChange={(e) => setLanguage(e.target.value)}
+                                        className="bg-transparent text-dark-text-secondary text-xs border-none focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="python">Python</option>
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="java">Java</option>
+                                        <option value="cpp">C++</option>
+                                    </select>
+                                    <span className="text-dark-text-tertiary text-xs">◇ Visual Studio Dark</span>
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Monaco Editor */}
+                            <div className="flex-1 overflow-hidden">
+                                <CodeEditor
+                                    code={code}
+                                    onChange={(value) => setCode(value || '')}
+                                    language={language}
+                                />
+                            </div>
                         </div>
+
+                        {/* Right Panel - Console (when position is 'right') */}
+                        {consolePosition === 'right' && (
+                            <>
+                                {/* Right Resize Handle */}
+                                <div
+                                    onMouseDown={() => setIsResizingRight(true)}
+                                    className={`w-1 rounded-full cursor-col-resize transition-colors flex-shrink-0 ${isResizingRight ? 'bg-brand-blue' : 'bg-transparent hover:bg-white/20'
+                                        }`}
+                                />
+                                <ConsolePanel style={{ width: `${rightPanelWidth}%`, flexShrink: 0 }} />
+                            </>
+                        )}
                     </div>
+
+                    {/* Bottom Panel - Console (when position is 'bottom') */}
+                    {consolePosition === 'bottom' && (
+                        <>
+                            {/* Bottom Resize Handle */}
+                            <div
+                                onMouseDown={() => setIsResizingBottom(true)}
+                                className={`h-1 rounded-full cursor-row-resize transition-colors flex-shrink-0 ${isResizingBottom ? 'bg-brand-blue' : 'bg-transparent hover:bg-white/20'
+                                    }`}
+                            />
+                            <ConsolePanel style={{ height: `${bottomPanelHeight}px`, flexShrink: 0 }} />
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -482,4 +576,3 @@ const ProblemDetail = ({ problemIdProp }) => {
 };
 
 export default ProblemDetail;
-

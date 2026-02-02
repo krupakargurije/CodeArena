@@ -8,7 +8,9 @@ const Problems = () => {
     const dispatch = useDispatch();
     const { items: problems, loading, error } = useSelector((state) => state.problems);
     const { user } = useSelector((state) => state.auth);
-    const [filter, setFilter] = useState('ALL');
+    const [difficultyFilter, setDifficultyFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [showFilters, setShowFilters] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [solvedProblemIds, setSolvedProblemIds] = useState([]);
 
@@ -16,7 +18,6 @@ const Problems = () => {
         dispatch(fetchProblems());
     }, [dispatch]);
 
-    // Fetch user's solved problems
     useEffect(() => {
         const fetchSolvedProblems = async () => {
             if (user?.id) {
@@ -31,132 +32,167 @@ const Problems = () => {
 
     const filteredProblems = problemsToDisplay.filter((problem) => {
         if (!problem) return false;
-        const matchesFilter = filter === 'ALL' || problem.difficulty === filter;
+
+        // Difficulty Filter
+        const matchesDifficulty = difficultyFilter === 'ALL' || (problem.difficulty || '').toUpperCase() === difficultyFilter.toUpperCase();
+
+        // Status Filter
+        let matchesStatus = true;
+        if (statusFilter === 'SOLVED') {
+            matchesStatus = solvedProblemIds.includes(problem.id);
+        } else if (statusFilter === 'UNSOLVED') {
+            matchesStatus = !solvedProblemIds.includes(problem.id);
+        }
+
+        // Search Filter
         const title = problem.title || '';
         const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesFilter && matchesSearch;
+
+        return matchesDifficulty && matchesStatus && matchesSearch;
     });
 
+    const activeFiltersCount = (difficultyFilter !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0);
+
     return (
-        <div className="min-h-screen dark:bg-dark-bg-primary bg-light-bg-primary">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Header with Stats */}
+        <div className="min-h-screen bg-dark-bg-primary" onClick={() => setShowFilters(false)}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
                 <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold mb-1 dark:text-dark-text-primary text-light-text-primary">
-                                Problems
-                            </h1>
-                            <p className="dark:text-dark-text-secondary text-light-text-secondary text-sm">
-                                Practice makes perfect
-                            </p>
-                        </div>
-                        <div className="flex gap-3">
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm
-                                dark:bg-white/5 bg-white/60 border dark:border-white/10 border-gray-200/60">
-                                <span className="text-lg font-bold dark:text-white text-gray-800">{problemsToDisplay.length}</span>
-                                <span className="text-sm dark:text-gray-400 text-gray-500">Total</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm
-                                dark:bg-emerald-500/10 bg-emerald-50/60 border dark:border-emerald-500/20 border-emerald-200/60">
-                                <span className="text-lg font-bold text-emerald-500">{solvedProblemIds.length}</span>
-                                <span className="text-sm dark:text-emerald-400/70 text-emerald-600/70">Solved</span>
-                            </div>
-                        </div>
-                    </div>
+                    <h1 className="text-4xl font-bold text-white mb-2">
+                        Problems
+                    </h1>
+                    <p className="text-dark-text-secondary">
+                        Practice with a clean list view — filter by id, title, or tag.
+                    </p>
                 </div>
 
-                {/* Search & Filters */}
-                <div className="mb-6">
-                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                {/* Search and Filters */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6 relative">
+                    <div className="relative flex-1 max-w-md">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg className="w-4 h-4 text-dark-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
                         <input
                             type="text"
-                            placeholder="Search problems..."
+                            placeholder="Search problems (e.g, dp, graph, CA-...)"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="input md:w-80 text-sm"
+                            className="w-full pl-10 pr-4 py-3 bg-dark-bg-secondary/50 border border-white/10 rounded-xl text-white placeholder-dark-text-tertiary focus:outline-none focus:ring-1 focus:ring-brand-blue/50 focus:border-brand-blue/50 transition-all"
                         />
+                    </div>
 
-                        <div className="flex gap-2 flex-wrap">
-                            {['ALL', 'CAKEWALK', 'EASY', 'MEDIUM', 'HARD'].map((difficulty) => (
-                                <button
-                                    key={difficulty}
-                                    onClick={() => setFilter(difficulty)}
-                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${filter === difficulty
-                                        ? 'bg-brand-orange text-white shadow-md shadow-brand-orange/20'
-                                        : 'dark:bg-dark-bg-tertiary bg-light-bg-tertiary dark:text-dark-text-secondary text-light-text-secondary dark:hover:bg-dark-bg-secondary hover:bg-light-bg-secondary'
-                                        }`}
-                                >
-                                    {difficulty}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="relative">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowFilters(!showFilters);
+                            }}
+                            className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl border font-medium transition-all ${showFilters || activeFiltersCount > 0
+                                ? 'bg-white/10 border-white/20 text-white'
+                                : 'bg-dark-bg-secondary border-white/10 text-white hover:bg-dark-bg-tertiary'
+                                }`}
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            Filters
+                            {activeFiltersCount > 0 && (
+                                <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-white/20 text-white">
+                                    {activeFiltersCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showFilters && (
+                            <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute right-0 top-full mt-2 w-64 bg-[#12121a] border border-white/10 rounded-xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+                            >
+                                {/* Difficulty Section */}
+                                <div className="mb-4">
+                                    <h3 className="text-white text-xs font-semibold uppercase tracking-wider mb-2">Difficulty</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['ALL', 'Cakewalk', 'Easy', 'Medium', 'Hard'].map((level) => (
+                                            <button
+                                                key={level}
+                                                onClick={() => setDifficultyFilter(level)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${difficultyFilter === level
+                                                    ? 'bg-white text-black'
+                                                    : 'bg-white/5 text-dark-text-secondary hover:bg-white/10 hover:text-white'
+                                                    }`}
+                                            >
+                                                {level === 'ALL' ? 'All' : level}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Status Section */}
+                                <div>
+                                    <h3 className="text-white text-xs font-semibold uppercase tracking-wider mb-2">Status</h3>
+                                    <div className="flex flex-col gap-1">
+                                        {[
+                                            { id: 'ALL', label: 'All Problems' },
+                                            { id: 'SOLVED', label: 'Solved' },
+                                            { id: 'UNSOLVED', label: 'Unsolved' }
+                                        ].map((status) => (
+                                            <button
+                                                key={status.id}
+                                                onClick={() => setStatusFilter(status.id)}
+                                                className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${statusFilter === status.id
+                                                    ? 'bg-white/5 text-white border border-white/10'
+                                                    : 'text-dark-text-secondary hover:bg-white/5 hover:text-white border border-transparent'
+                                                    }`}
+                                            >
+                                                {status.label}
+                                                {statusFilter === status.id && (
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Reset Row */}
+                                {(difficultyFilter !== 'ALL' || statusFilter !== 'ALL') && (
+                                    <div className="mt-4 pt-3 border-t border-white/5">
+                                        <button
+                                            onClick={() => {
+                                                setDifficultyFilter('ALL');
+                                                setStatusFilter('ALL');
+                                            }}
+                                            className="w-full text-center text-xs text-dark-text-tertiary hover:text-white transition-colors"
+                                        >
+                                            Reset Filters
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {error && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-center text-sm backdrop-blur-sm">
-                        Failed to load problems: {error}
-                    </div>
-                )}
+                {/* Problems List */}
+                <div className="bg-dark-bg-secondary/30 rounded-2xl border border-white/5 overflow-hidden">
+                    {error && (
+                        <div className="p-8 text-center">
+                            <p className="text-red-400">Failed to load problems: {error}</p>
+                        </div>
+                    )}
 
-                {/* Problems Container */}
-                <div className="rounded-2xl overflow-hidden dark:bg-white/[0.02] bg-gray-50/50 border dark:border-white/5 border-gray-200/50 backdrop-blur-sm p-2">
-                    {/* Column Labels */}
-                    <div className="flex items-center px-7 py-3 mb-1">
-                        <div className="w-10 flex justify-center flex-shrink-0">
-                            <span className="text-[10px] font-semibold dark:text-gray-500 text-gray-400 uppercase tracking-widest">
-                                Status
-                            </span>
-                        </div>
-                        <div className="flex-1 min-w-0 px-4">
-                            <span className="text-[10px] font-semibold dark:text-gray-500 text-gray-400 uppercase tracking-widest">
-                                Title
-                            </span>
-                        </div>
-                        <div className="hidden md:block w-52 flex-shrink-0">
-                            <span className="text-[10px] font-semibold dark:text-gray-500 text-gray-400 uppercase tracking-widest">
-                                Tags
-                            </span>
-                        </div>
-                        <div className="w-24 text-right hidden sm:block flex-shrink-0">
-                            <span className="text-[10px] font-semibold dark:text-gray-500 text-gray-400 uppercase tracking-widest">
-                                Acceptance
-                            </span>
-                        </div>
-                        <div className="w-28 text-right flex-shrink-0">
-                            <span className="text-[10px] font-semibold dark:text-gray-500 text-gray-400 uppercase tracking-widest">
-                                Difficulty
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Problem Rows */}
                     {loading ? (
-                        <div className="divide-y dark:divide-dark-border divide-light-border">
-                            {[...Array(8)].map((_, i) => (
-                                <div key={i} className="flex items-center px-4 py-4">
-                                    <div className="w-10 flex justify-center">
-                                        <div className="w-5 h-5 rounded-full skeleton"></div>
-                                    </div>
-                                    <div className="flex-1 min-w-0 px-4">
-                                        <div className="h-4 w-48 skeleton rounded"></div>
-                                    </div>
-                                    <div className="hidden md:flex w-48 gap-2">
-                                        <div className="h-5 w-16 skeleton rounded"></div>
-                                        <div className="h-5 w-12 skeleton rounded"></div>
-                                    </div>
-                                    <div className="w-20 hidden sm:flex justify-end">
-                                        <div className="h-4 w-10 skeleton rounded"></div>
-                                    </div>
-                                    <div className="w-24 flex justify-end">
-                                        <div className="h-4 w-14 skeleton rounded"></div>
-                                    </div>
-                                </div>
+                        <div className="p-6 space-y-3">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="h-16 bg-white/5 rounded-xl animate-pulse" />
                             ))}
                         </div>
                     ) : filteredProblems.length > 0 ? (
-                        <div>
+                        <div className="divide-y divide-white/5">
                             {filteredProblems.map((problem, index) => (
                                 <ProblemRow
                                     key={problem.id}
@@ -167,26 +203,25 @@ const Problems = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-16">
-                            <svg className="mx-auto h-12 w-12 dark:text-dark-text-tertiary text-light-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="mt-4 dark:text-dark-text-secondary text-light-text-secondary">
-                                No problems found
-                            </p>
-                            <p className="mt-1 text-sm dark:text-dark-text-tertiary text-light-text-tertiary">
-                                Try adjusting your search or filter
-                            </p>
+                        <div className="py-24 text-center">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4 text-3xl">
+                                🔍
+                            </div>
+                            <h3 className="text-lg font-semibold text-white mb-1">No problems found</h3>
+                            <p className="text-dark-text-secondary text-sm">Try adjusting your search or filters</p>
+                            <button
+                                onClick={() => {
+                                    setDifficultyFilter('ALL');
+                                    setStatusFilter('ALL');
+                                    setSearchTerm('');
+                                }}
+                                className="mt-4 px-4 py-2 rounded-lg bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+                            >
+                                Clear all filters
+                            </button>
                         </div>
                     )}
                 </div>
-
-                {/* Stats Footer - Showing filtered count */}
-                {!loading && filteredProblems.length > 0 && filteredProblems.length !== problemsToDisplay.length && (
-                    <div className="mt-4 text-center text-sm dark:text-gray-500 text-gray-400">
-                        Showing {filteredProblems.length} of {problemsToDisplay.length} problems
-                    </div>
-                )}
             </div>
         </div>
     );
