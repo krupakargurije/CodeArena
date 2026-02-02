@@ -299,7 +299,7 @@ export const grantAdminPermission = async (userEmail) => {
         }
 
         // 1. Backend Update (Source of Truth for API) - Send full profile for Provisioning
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/grant`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/grant-admin`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -353,7 +353,7 @@ export const revokeAdminPermission = async (userEmail) => {
         const headers = await getAuthHeaders();
 
         // 1. Backend Update
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/users/admin/revoke`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/revoke-admin`, {
             method: 'POST',
             headers,
             body: userEmail // Backend expects raw string body
@@ -403,7 +403,7 @@ export const getAllUsers = async () => {
     try {
         console.log('Fetching users from Spring Boot backend...');
         const headers = await getAuthHeaders();
-        const response = await fetchWithRetry(`${BACKEND_URL}/api/users`, {
+        const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users`, {
             headers
         });
 

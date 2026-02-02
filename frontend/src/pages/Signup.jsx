@@ -40,6 +40,12 @@ const Signup = () => {
 
             const { token, user } = response.data;
 
+            if (!token) {
+                // Email confirmation is required
+                setError('Account created! Please check your email to verify your account before logging in.');
+                return;
+            }
+
             dispatch(loginSuccess({
                 token,
                 user

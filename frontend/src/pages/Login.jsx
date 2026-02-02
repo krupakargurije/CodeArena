@@ -30,7 +30,11 @@ const Login = () => {
         }).then(({ data, error }) => {
             if (error) {
                 console.error('Login error:', error.message);
-                setError(error.message);
+                let message = error.message;
+                if (message === 'Invalid login credentials') {
+                    message += '. Please check your password or confirm your email address.';
+                }
+                setError(message);
                 setLoading(false);
             } else {
                 console.log('Login success, redirecting...');
@@ -148,6 +152,25 @@ const Login = () => {
                                     {loading ? 'Signing in...' : 'Sign In'}
                                 </button>
                             </form>
+
+                            {/* Resend Confirmation - Only show on specific error */}
+                            {error && (error.includes('Invalid login credentials') || error.includes('Email not confirmed')) && (
+                                <div className="mt-4 text-center">
+                                    <button
+                                        onClick={async () => {
+                                            const { error } = await supabase.auth.resend({
+                                                type: 'signup',
+                                                email: formData.username,
+                                            });
+                                            if (error) setError(error.message);
+                                            else setError('Confirmation email sent! Please check your inbox.');
+                                        }}
+                                        className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors"
+                                    >
+                                        Resend Confirmation Email
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Forgot Password */}
                             <div className="mt-4 text-center">
