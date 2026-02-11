@@ -1,66 +1,115 @@
 package com.codearena.service;
 
 import com.codearena.entity.Submission;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class CodeRunnerService {
 
-    private final Random random = new Random();
+    private final RestTemplate restTemplate;
+    private static final String PISTON_API_URL = "https://emkc.org/api/v2/piston/execute";
 
-    /**
-     * Mock code execution service
-     * In production, this would run code in a sandboxed Docker container
-     */
+    public CodeRunnerService() {
+        this.restTemplate = new RestTemplate();
+    }
+
     public ExecutionResult executeCode(String code, String language, String input) {
-        // Simulate execution delay
         try {
-            Thread.sleep(random.nextInt(1000) + 500); // 500-1500ms
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+            // Map language to Piston format
+            String pistonLang = mapLanguage(language);
+            String version = "*"; // Use latest available
 
-        // Mock execution results
-        ExecutionResult result = new ExecutionResult();
+            // Prepare Request
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("language", pistonLang);
+            requestBody.put("version", version);
 
-        // 70% chance of success
-        if (random.nextDouble() < 0.7) {
-            result.setStatus(Submission.Status.ACCEPTED);
-            result.setOutput("Correct output");
-        } else {
-            // Random failure types
-            double failType = random.nextDouble();
-            if (failType < 0.5) {
-                result.setStatus(Submission.Status.WRONG_ANSWER);
-                result.setOutput("Wrong output");
-            } else if (failType < 0.7) {
-                result.setStatus(Submission.Status.RUNTIME_ERROR);
-                result.setErrorMessage("NullPointerException at line 10");
-            } else if (failType < 0.85) {
-                result.setStatus(Submission.Status.TIME_LIMIT_EXCEEDED);
-                result.setErrorMessage("Time limit exceeded");
-            } else {
-                result.setStatus(Submission.Status.COMPILATION_ERROR);
-                result.setErrorMessage("Syntax error at line 5");
+            List<Map<String, String>> files = new ArrayList<>();
+            Map<String, String> file = new HashMap<>();
+            file.put("content", code);
+            files.add(file);
+            requestBody.put("files", files);
+
+            if (input != null && !input.isEmpty()) {
+                requestBody.put("stdin", input);
             }
+
+            // Execute Request
+            ResponseEntity<Map> response = restTemplate.postForEntity(PISTON_API_URL, requestBody, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody == null || !response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("API Execution Failed");
+            }
+
+            // Parse Response
+            Map<String, Object> run = (Map<String, Object>) responseBody.get("run");
+            String stdout = (String) run.get("stdout");
+            String stderr = (String) run.get("stderr");
+            Integer exitCode = (Integer) run.get("code");
+
+            ExecutionResult result = new ExecutionResult();
+            result.setOutput(stdout != null ? stdout.trim() : "");
+            // Piston doesn't always return time inside the 'run' object in a standardized
+            // way across versions,
+            // but usually it's there. We'll default to 0 if missing.
+            result.setExecutionTime(0);
+            result.setMemoryUsed(0);
+
+            if (exitCode != 0) {
+                // Runtime or Compilation Error
+                result.setStatus(Submission.Status.RUNTIME_ERROR);
+                // If it's a compilation error, Piston usually puts it in stderr too
+                // We can set it to COMPILATION_ERROR if we detect keywords, but RUNTIME_ERROR
+                // is safe general bucket
+                result.setErrorMessage(stderr);
+            } else {
+                result.setStatus(Submission.Status.ACCEPTED);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            ExecutionResult error = new ExecutionResult();
+            error.setStatus(Submission.Status.RUNTIME_ERROR);
+            error.setErrorMessage("Execution Error: " + e.getMessage());
+            return error;
         }
+    }
 
-        result.setExecutionTime(random.nextInt(1000) + 100); // 100-1100ms
-        result.setMemoryUsed(random.nextInt(50000) + 10000); // 10-60 MB in KB
-
-        return result;
+    private String mapLanguage(String lang) {
+        if (lang == null)
+            return "python";
+        lang = lang.toLowerCase();
+        if (lang.contains("python"))
+            return "python";
+        if (lang.contains("java"))
+            return "java";
+        if (lang.contains("c++") || lang.contains("cpp"))
+            return "c++";
+        if (lang.contains("c") && !lang.contains("++"))
+            return "c";
+        if (lang.contains("script") || lang.contains("js"))
+            return "javascript";
+        return lang;
     }
 
     public static class ExecutionResult {
         private Submission.Status status;
         private String output;
         private String errorMessage;
-        private Integer executionTime;
-        private Integer memoryUsed;
+        private Integer executionTime = 0;
+        private Integer memoryUsed = 0;
 
-        // Getters and setters
+        // Getters and Setters
         public Submission.Status getStatus() {
             return status;
         }

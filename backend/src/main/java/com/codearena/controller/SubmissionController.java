@@ -18,11 +18,17 @@ public class SubmissionController {
 
     private final SubmissionService submissionService;
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        System.out.println(">>> SubmissionController Initialized! Mapped to /api/submissions <<<");
+    }
+
     @PostMapping
     public ResponseEntity<SubmissionResponse> submitCode(
             @Valid @RequestBody SubmissionRequest request,
             Authentication authentication) {
         System.out.println("Submission Endpoint HIT!");
+        System.out.println("Request: ProblemID=" + request.getProblemId() + ", Language=" + request.getLanguage());
         String username = authentication.getName();
         return ResponseEntity.ok(submissionService.submitCode(request, username));
     }

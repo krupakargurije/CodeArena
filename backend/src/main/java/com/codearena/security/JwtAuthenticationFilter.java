@@ -39,6 +39,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.info(">>> JWT Filter: {} {} <<<", method, uri);
 
         final String authHeader = request.getHeader("Authorization");
+        log.info(">>> Auth Header: {} <<<", authHeader != null ? "PRESENT" : "MISSING");
+
         final String jwt;
         final String username;
 

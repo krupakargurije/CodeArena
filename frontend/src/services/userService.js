@@ -356,7 +356,7 @@ export const revokeAdminPermission = async (userEmail) => {
         const response = await fetchWithRetry(`${BACKEND_URL}/api/admin/users/revoke-admin`, {
             method: 'POST',
             headers,
-            body: userEmail // Backend expects raw string body
+            body: JSON.stringify({ email: userEmail })
         });
 
         if (response.ok) {

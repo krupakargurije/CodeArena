@@ -29,9 +29,9 @@ public class SubmissionService {
     private final RoomParticipantRepository roomParticipantRepository;
 
     @Transactional
-    public SubmissionResponse submitCode(SubmissionRequest request, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public SubmissionResponse submitCode(SubmissionRequest request, String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
         Problem problem = problemRepository.findById(request.getProblemId())
                 .orElseThrow(() -> new RuntimeException("Problem not found"));
@@ -85,8 +85,6 @@ public class SubmissionService {
             // Update user stats if first time solving
             List<Submission> previousAccepted = submissionRepository.findByUserIdAndProblemId(
                     user.getId(), problem.getId())
-                    .map(List::of)
-                    .orElse(List.of())
                     .stream().filter(s -> s.getStatus() == Submission.Status.ACCEPTED)
                     .toList();
 

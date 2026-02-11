@@ -13,6 +13,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         String message = ex.getMessage();
+        System.out.println(">>> GlobalExceptionHandler caught: " + message);
+        ex.printStackTrace(); // Print stack trace for debugging
 
         // Determine appropriate status based on the exception message
         HttpStatus status;
