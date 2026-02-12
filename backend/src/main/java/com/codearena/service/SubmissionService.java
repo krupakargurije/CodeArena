@@ -59,9 +59,26 @@ public class SubmissionService {
                     request.getLanguage(),
                     testCase.getInput());
 
-            if (result.getStatus() != Submission.Status.ACCEPTED) {
+            // If there was a runtime/compilation error, fail immediately
+            if (result.getStatus() == Submission.Status.RUNTIME_ERROR
+                    || result.getStatus() == Submission.Status.COMPILATION_ERROR) {
                 submission.setStatus(result.getStatus());
                 submission.setErrorMessage(result.getErrorMessage());
+                submission.setExecutionTime(result.getExecutionTime());
+                submission.setMemoryUsed(result.getMemoryUsed());
+                break;
+            }
+
+            // Compare actual output with expected output
+            String actualOutput = normalizeOutput(result.getOutput());
+            String expectedOutput = normalizeOutput(testCase.getExpectedOutput());
+
+            if (!actualOutput.equals(expectedOutput)) {
+                submission.setStatus(Submission.Status.WRONG_ANSWER);
+                submission.setErrorMessage(
+                        "Wrong Answer on test case " + (passed + 1) +
+                                "\nExpected: " + expectedOutput +
+                                "\nGot: " + actualOutput);
                 submission.setExecutionTime(result.getExecutionTime());
                 submission.setMemoryUsed(result.getMemoryUsed());
                 break;
@@ -159,6 +176,23 @@ public class SubmissionService {
             multiplier = 0.5; // Good
 
         return basePoints + (int) (maxBonus * multiplier);
+    }
+
+    /**
+     * Normalize output for comparison: trim, normalize line endings, trim each
+     * line.
+     */
+    private String normalizeOutput(String output) {
+        if (output == null)
+            return "";
+        return output
+                .trim()
+                .replace("\r\n", "\n")
+                .replace("\r", "\n")
+                .lines()
+                .map(String::trim)
+                .reduce((a, b) -> a + "\n" + b)
+                .orElse("");
     }
 
     private SubmissionResponse toResponse(Submission submission) {

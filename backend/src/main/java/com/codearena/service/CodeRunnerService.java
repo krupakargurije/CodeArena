@@ -66,12 +66,11 @@ public class CodeRunnerService {
             if (exitCode != 0) {
                 // Runtime or Compilation Error
                 result.setStatus(Submission.Status.RUNTIME_ERROR);
-                // If it's a compilation error, Piston usually puts it in stderr too
-                // We can set it to COMPILATION_ERROR if we detect keywords, but RUNTIME_ERROR
-                // is safe general bucket
                 result.setErrorMessage(stderr);
             } else {
-                result.setStatus(Submission.Status.ACCEPTED);
+                // Code ran successfully — NOT yet validated against expected output.
+                // SubmissionService will compare output and decide ACCEPTED vs WRONG_ANSWER.
+                result.setStatus(Submission.Status.PENDING);
             }
 
             return result;

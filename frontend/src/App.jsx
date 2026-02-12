@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { supabase } from './services/supabaseClient';
@@ -20,8 +20,12 @@ import RoomProblem from './pages/RoomProblem';
 import AdminDashboard from './pages/AdminDashboard';
 import Discuss from './pages/Discuss';
 
-function App() {
+function AppContent() {
     const dispatch = useDispatch();
+    const location = useLocation();
+
+    // Hide navbar on coding environment pages (LeetCode-style)
+    const isCodingEnv = /^\/problems\/\d+/.test(location.pathname) || /^\/rooms\/[^/]+\/problem/.test(location.pathname);
 
     useEffect(() => {
         // Initial load from local storage
@@ -139,77 +143,85 @@ function App() {
     }, []);
 
     return (
-        <Router>
-            <div className="min-h-screen bg-[#121212] text-dark-text-primary relative selection:bg-brand-orange/30">
-                {/* Global Background Effects */}
+        <div className="min-h-screen bg-[#121212] text-dark-text-primary relative selection:bg-brand-orange/30">
+            {/* Global Background Effects */}
+            {!isCodingEnv && (
                 <div className="fixed inset-0 z-0 pointer-events-none">
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
                     <div className="absolute left-0 right-0 top-[-10%] h-[1000px] w-[1000px] rounded-full bg-brand-blue/5 blur-[100px] pointer-events-none"></div>
                     <div className="absolute right-0 bottom-[-10%] h-[1000px] w-[1000px] rounded-full bg-brand-orange/5 blur-[100px] pointer-events-none"></div>
                 </div>
+            )}
 
-                <div className="relative z-10">
-                    <Navbar />
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<Signup />} />
-                        <Route path="/problems" element={<Problems />} />
-                        <Route
-                            path="/problems/:id"
-                            element={
-                                <ProtectedRoute>
-                                    <ProblemDetail />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route path="/leaderboard" element={<Leaderboard />} />
-                        <Route path="/discuss" element={<Discuss />} />
-                        <Route
-                            path="/profile"
-                            element={
-                                <ProtectedRoute>
-                                    <Profile />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/rooms"
-                            element={
-                                <ProtectedRoute>
-                                    <Rooms />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/rooms/:roomId/lobby"
-                            element={
-                                <ProtectedRoute>
-                                    <RoomLobby />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/rooms/:roomId/problem"
-                            element={
-                                <ProtectedRoute>
-                                    <RoomProblem />
-                                </ProtectedRoute>
-                            }
-                        />
+            <div className="relative z-10">
+                {!isCodingEnv && <Navbar />}
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/problems" element={<Problems />} />
+                    <Route
+                        path="/problems/:id"
+                        element={
+                            <ProtectedRoute>
+                                <ProblemDetail />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="/leaderboard" element={<Leaderboard />} />
+                    <Route path="/discuss" element={<Discuss />} />
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <Profile />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/rooms"
+                        element={
+                            <ProtectedRoute>
+                                <Rooms />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/rooms/:roomId/lobby"
+                        element={
+                            <ProtectedRoute>
+                                <RoomLobby />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/rooms/:roomId/problem"
+                        element={
+                            <ProtectedRoute>
+                                <RoomProblem />
+                            </ProtectedRoute>
+                        }
+                    />
 
-                        {/* Admin Route */}
-                        <Route
-                            path="/admin"
-                            element={
-                                <ProtectedRoute requireAdmin>
-                                    <AdminDashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                    </Routes>
-                </div>
+                    {/* Admin Route */}
+                    <Route
+                        path="/admin"
+                        element={
+                            <ProtectedRoute requireAdmin>
+                                <AdminDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Routes>
             </div>
+        </div>
+    );
+}
+
+function App() {
+    return (
+        <Router>
+            <AppContent />
         </Router>
     );
 }
