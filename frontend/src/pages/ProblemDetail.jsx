@@ -269,40 +269,40 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
     // Loading / Not found states
     if (loading) {
         return (
-            <div className="h-screen bg-[#1a1a2e] flex items-center justify-center">
-                <div className="text-cyan-400 text-lg animate-pulse">Loading problem...</div>
+            <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
+                <div className="text-lg animate-pulse" style={{ color: 'var(--brand-primary)' }}>Loading problem...</div>
             </div>
         );
     }
     if (!problem) {
         return (
-            <div className="h-screen bg-[#1a1a2e] flex items-center justify-center">
-                <div className="text-red-400 text-lg">Problem not found</div>
+            <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
+                <div className="text-lg" style={{ color: 'var(--brand-primary)' }}>Problem not found</div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen flex flex-col bg-dark-bg-primary overflow-hidden font-sans">
+        <div className="h-screen flex flex-col overflow-hidden font-sans" style={{ background: 'var(--bg-page)' }}>
             {/* ═══════════════ TOP TOOLBAR ═══════════════ */}
-            <div className="h-14 bg-dark-bg-primary/80 backdrop-blur-xl border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0 z-20 relative">
+            <div className="h-14 backdrop-blur-xl flex items-center px-4 gap-3 flex-shrink-0 z-20 relative" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-subtle)' }}>
                 {/* Left group: Logo + Problem list nav */}
                 <div className="flex items-center gap-3">
-                    <Link to="/" className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors">
+                    <Link to="/" className="flex items-center gap-2 transition-colors hover:opacity-80" style={{ color: 'var(--text-primary)' }}>
                         <img src="/logo.png" alt="CodeArena" className="w-8 h-8" />
-                        <span className="text-white font-semibold text-lg hidden sm:block">CodeArena</span>
+                        <span className="font-semibold text-lg hidden sm:block">CodeArena</span>
                     </Link>
-                    <div className="w-px h-5 bg-white/10" />
-                    <Link to="/problems" className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                    <div className="w-px h-5" style={{ background: 'var(--border-subtle)' }} />
+                    <Link to="/problems" className="flex items-center gap-1.5 px-3 py-1.5 text-sm hover:opacity-80 rounded-lg transition-all" style={{ color: 'var(--text-secondary)' }}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                         Problem List
                     </Link>
-                    <button onClick={() => navigate(`/problems/${Math.max(1, parseInt(id) - 1)}`)} className="p-1.5 text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Previous">
+                    <button onClick={() => navigate(`/problems/${Math.max(1, parseInt(id) - 1)}`)} className="p-1.5 hover:opacity-80 rounded-lg transition-all" title="Previous" style={{ color: 'var(--text-secondary)' }}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
-                    <button onClick={() => navigate(`/problems/${parseInt(id) + 1}`)} className="p-1.5 text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Next">
+                    <button onClick={() => navigate(`/problems/${parseInt(id) + 1}`)} className="p-1.5 hover:opacity-80 rounded-lg transition-all" title="Next" style={{ color: 'var(--text-secondary)' }}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </div>
@@ -312,7 +312,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     <button
                         onClick={handleRun}
                         disabled={submitting}
-                        className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-dark-bg-tertiary hover:bg-dark-bg-elevated rounded-lg transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg transition-all disabled:opacity-50 hover:brightness-110"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                     >
                         <svg className="w-3.5 h-3.5 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                         Run
@@ -332,9 +333,9 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                 <div className="flex items-center gap-3">
                     {roomData && (
                         <div className="flex items-center gap-2 mr-1">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-dark-bg-tertiary rounded-lg">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
                                 <div className={`w-1.5 h-1.5 rounded-full ${roomData.status === 'COMPLETED' ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
-                                <span className="text-white font-mono text-xs">{elapsedTime}</span>
+                                <span className="font-mono text-xs" style={{ color: 'var(--text-primary)' }}>{elapsedTime}</span>
                             </div>
                         </div>
                     )}
@@ -342,7 +343,11 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     {roomId && (
                         <button
                             onClick={() => setShowDiscussPanel(!showDiscussPanel)}
-                            className={`p-2 rounded-lg text-sm transition-all ${showDiscussPanel ? 'bg-brand-blue/20 text-brand-blue' : 'text-dark-text-secondary hover:text-white hover:bg-white/5'}`}
+                            className={`p-2 rounded-lg text-sm transition-all ${showDiscussPanel ? 'text-brand-blue' : 'hover:opacity-80'}`}
+                            style={{
+                                background: showDiscussPanel ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                                color: showDiscussPanel ? '' : 'var(--text-secondary)'
+                            }}
                             title="Discuss"
                         >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -355,7 +360,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     <div className="relative lang-dropdown-container">
                         <button
                             onClick={() => setShowLangDropdown(!showLangDropdown)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 rounded-lg transition-all"
+                            style={{ color: 'var(--text-secondary)' }}
                         >
                             <span>{getLanguageIcon(language)}</span>
                             <span className="font-medium">{language === 'cpp' ? 'C++' : language.charAt(0).toUpperCase() + language.slice(1)}</span>
@@ -364,12 +370,14 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                             </svg>
                         </button>
                         {showLangDropdown && (
-                            <div className="absolute top-full right-0 mt-1.5 w-44 bg-dark-bg-secondary border border-white/10 rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden py-1">
+                            <div className="absolute top-full right-0 mt-1.5 w-44 rounded-xl shadow-2xl z-50 overflow-hidden py-1"
+                                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                                 {['python', 'javascript', 'java', 'cpp'].map((lang) => (
                                     <button
                                         key={lang}
                                         onClick={() => { setLanguage(lang); setShowLangDropdown(false); }}
-                                        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 hover:bg-white/5 transition-colors ${language === lang ? 'text-brand-blue bg-brand-blue/5' : 'text-dark-text-secondary hover:text-white'}`}
+                                        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2.5 transition-colors ${language === lang ? 'text-brand-blue bg-brand-blue/5' : 'hover:opacity-80'}`}
+                                        style={language !== lang ? { color: 'var(--text-secondary)' } : {}}
                                     >
                                         <span>{getLanguageIcon(lang)}</span>
                                         <span>{lang === 'cpp' ? 'C++' : lang.charAt(0).toUpperCase() + lang.slice(1)}</span>
@@ -381,9 +389,10 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     </div>
 
                     {/* User Avatar — matching original Navbar */}
+                    {/* User Avatar — matching original Navbar */}
                     {user && (
-                        <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10">
+                        <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors hover:opacity-80">
+                            <div className="w-8 h-8 rounded-full overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
                                 {user?.avatarUrl || user?.avatar_url ? (
                                     <img src={user.avatarUrl || user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
@@ -392,7 +401,7 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                     </div>
                                 )}
                             </div>
-                            <span className="hidden sm:block text-sm text-white font-medium">
+                            <span className="hidden sm:block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                                 {user?.username || 'Profile'}
                             </span>
                         </Link>
@@ -404,19 +413,21 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
             <div ref={mainRef} className="flex-1 flex overflow-hidden">
 
                 {/* ──── LEFT PANEL: Problem Description ──── */}
-                <div style={{ width: `${leftPanelWidth}%` }} className="flex flex-col overflow-hidden flex-shrink-0 border-r border-white/5">
+                <div style={{ width: `${leftPanelWidth}%`, borderRight: '1px solid var(--border-subtle)' }} className="flex flex-col overflow-hidden flex-shrink-0">
                     {/* Left Panel Tabs */}
-                    <div className="h-10 bg-dark-bg-secondary border-b border-white/5 flex items-center px-3 gap-1 flex-shrink-0">
+                    <div className="h-10 flex items-center px-3 gap-1 flex-shrink-0" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
                         <button
                             onClick={() => setLeftTab('description')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${leftTab === 'description' ? 'text-white bg-white/10' : 'text-dark-text-secondary hover:text-white hover:bg-white/5'}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${leftTab === 'description' ? '' : 'hover:opacity-80'}`}
+                            style={leftTab === 'description' ? { color: 'var(--text-primary)', background: 'var(--bg-tertiary)' } : { color: 'var(--text-secondary)' }}
                         >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             Description
                         </button>
                         <button
                             onClick={() => setLeftTab('submissions')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${leftTab === 'submissions' ? 'text-white bg-white/10' : 'text-dark-text-secondary hover:text-white hover:bg-white/5'}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${leftTab === 'submissions' ? '' : 'hover:opacity-80'}`}
+                            style={leftTab === 'submissions' ? { color: 'var(--text-primary)', background: 'var(--bg-tertiary)' } : { color: 'var(--text-secondary)' }}
                         >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                             Submissions
@@ -424,11 +435,11 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     </div>
 
                     {/* Left Panel Content */}
-                    <div className="flex-1 overflow-y-auto bg-dark-bg-primary custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar" style={{ background: 'var(--bg-page)' }}>
                         {leftTab === 'description' && (
                             <div className="p-5">
                                 {/* Problem Title */}
-                                <h1 className="text-xl font-semibold text-white mb-3">
+                                <h1 className="text-xl font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                                     {id}. {problem.title}
                                     {isSolved && <span className="ml-2 text-green-400 text-sm">✓ Solved</span>}
                                 </h1>
@@ -443,20 +454,20 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                         {problem.difficulty || 'Easy'}
                                     </span>
                                     {problem.acceptanceRate !== undefined && (
-                                        <span className="text-gray-400">Acceptance: <span className="text-white font-medium">{problem.acceptanceRate}%</span></span>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Acceptance: <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{problem.acceptanceRate}%</span></span>
                                     )}
                                 </div>
 
                                 {/* Description */}
-                                <div className="text-gray-300 text-sm leading-7 mb-6 whitespace-pre-wrap">
+                                <div className="text-sm leading-7 mb-6 whitespace-pre-wrap" style={{ color: 'var(--text-tertiary)' }}>
                                     {problem.description}
                                 </div>
 
                                 {/* Input Format */}
                                 {problem.inputFormat && (
                                     <div className="mb-5">
-                                        <h3 className="text-white font-semibold text-sm mb-2">Input Format</h3>
-                                        <div className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-mono bg-[#161622] p-3 rounded-lg border border-[#2d2d3d]">
+                                        <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>Input Format</h3>
+                                        <div className="text-sm leading-relaxed whitespace-pre-wrap font-mono p-3 rounded-lg border" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
                                             {problem.inputFormat?.replace(/\\n/g, '\n')}
                                         </div>
                                     </div>
@@ -465,8 +476,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 {/* Output Format */}
                                 {problem.outputFormat && (
                                     <div className="mb-5">
-                                        <h3 className="text-white font-semibold text-sm mb-2">Output Format</h3>
-                                        <div className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-mono bg-[#161622] p-3 rounded-lg border border-[#2d2d3d]">
+                                        <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>Output Format</h3>
+                                        <div className="text-sm leading-relaxed whitespace-pre-wrap font-mono p-3 rounded-lg border" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
                                             {problem.outputFormat?.replace(/\\n/g, '\n')}
                                         </div>
                                     </div>
@@ -475,9 +486,9 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 {/* Constraints */}
                                 {problem.constraints && (
                                     <div className="mb-5">
-                                        <h3 className="text-white font-semibold text-sm mb-2">Constraints</h3>
-                                        <div className="bg-[#161622] border border-[#2d2d3d] rounded-lg p-3">
-                                            <code className="text-gray-400 text-xs font-mono whitespace-pre-wrap block leading-relaxed">
+                                        <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>Constraints</h3>
+                                        <div className="border rounded-lg p-3" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)' }}>
+                                            <code className="text-xs font-mono whitespace-pre-wrap block leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                                                 {problem.constraints?.replace(/\\n/g, '\n')}
                                             </code>
                                         </div>
@@ -486,15 +497,15 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
 
                                 {/* Example 1: Sample Input */}
                                 <div className="mb-4">
-                                    <h3 className="text-white font-semibold text-sm mb-2">Example 1:</h3>
-                                    <div className="bg-[#161622] border border-[#2d2d3d] rounded-lg p-3 space-y-2">
+                                    <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>Example 1:</h3>
+                                    <div className="border rounded-lg p-3 space-y-2" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)' }}>
                                         <div>
-                                            <span className="text-gray-500 text-xs">Input: </span>
-                                            <span className="text-white text-xs font-mono">{problem.sampleInput || ''}</span>
+                                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Input: </span>
+                                            <span className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{problem.sampleInput || ''}</span>
                                         </div>
                                         <div>
-                                            <span className="text-gray-500 text-xs">Output: </span>
-                                            <span className="text-white text-xs font-mono">{problem.sampleOutput || ''}</span>
+                                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Output: </span>
+                                            <span className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{problem.sampleOutput || ''}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -502,8 +513,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 {/* Explanation */}
                                 {problem.explanation && (
                                     <div className="mb-6">
-                                        <h3 className="text-white font-semibold text-sm mb-2">Explanation:</h3>
-                                        <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">
+                                        <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>Explanation:</h3>
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
                                             {problem.explanation?.replace(/\\n/g, '\n')}
                                         </p>
                                     </div>
@@ -511,10 +522,10 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
 
                                 {/* Tags */}
                                 {problem.tags && problem.tags.length > 0 && (
-                                    <div className="mt-6 pt-4 border-t border-[#2d2d3d]">
+                                    <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
                                         <div className="flex flex-wrap gap-1.5">
                                             {problem.tags.map((tag, idx) => (
-                                                <span key={idx} className="px-2 py-0.5 rounded bg-[#282838] text-gray-400 text-[10px] border border-[#2d2d3d]">
+                                                <span key={idx} className="px-2 py-0.5 rounded text-[10px] border" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderColor: 'var(--border-subtle)' }}>
                                                     {tag}
                                                 </span>
                                             ))}
@@ -536,7 +547,9 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 ) : (
                                     <div className="space-y-2">
                                         {submissions.map((sub, idx) => (
-                                            <div key={sub.id || idx} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#161622] border border-[#2d2d3d] hover:border-[#3d3d4d] transition-colors cursor-pointer">
+                                            <div key={sub.id || idx} className="flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors cursor-pointer"
+                                                style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)' }}
+                                            >
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className={`text-xs font-semibold ${sub.status === 'ACCEPTED' ? 'text-green-400' :
                                                         sub.status === 'WRONG_ANSWER' ? 'text-red-400' :
@@ -545,11 +558,11 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                         }`}>
                                                         {sub.status === 'ACCEPTED' ? '✓ Accepted' : (sub.status || 'Unknown').replace(/_/g, ' ')}
                                                     </span>
-                                                    <span className="text-[10px] text-gray-500">
+                                                    <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
                                                         {sub.submittedAt || sub.submitted_at ? new Date(sub.submittedAt || sub.submitted_at).toLocaleString() : ''}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-3 text-xs text-gray-400">
+                                                <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
                                                     <span className="capitalize">{sub.language || '—'}</span>
                                                     {sub.executionTime !== undefined && sub.executionTime !== null && (
                                                         <span>{sub.executionTime} ms</span>
@@ -576,20 +589,21 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     {/* Editor + Bottom Column */}
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Code Editor Header */}
-                        <div className="h-10 bg-dark-bg-secondary border-b border-white/5 flex items-center px-3 flex-shrink-0">
+                        <div className="h-10 flex items-center px-3 flex-shrink-0" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
                             <div className="flex items-center gap-0.5">
-                                <span className="text-xs text-dark-text-tertiary mr-1.5">{'</>'}</span>
-                                <span className="text-white text-xs font-medium">Code</span>
+                                <span className="text-xs mr-1.5" style={{ color: 'var(--text-tertiary)' }}>{'</>'}</span>
+                                <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>Code</span>
                             </div>
-                            <div className="ml-4 flex items-center gap-2 px-2.5 py-1 bg-dark-bg-primary rounded border-t-2 border-brand-blue">
+                            <div className="ml-4 flex items-center gap-2 px-2.5 py-1 rounded border-t-2 border-brand-blue" style={{ background: 'var(--bg-page)' }}>
                                 <span className="text-xs">{getLanguageIcon(language)}</span>
-                                <span className="text-white text-xs">main.{getFileExt(language)}</span>
+                                <span className="text-xs" style={{ color: 'var(--text-primary)' }}>main.{getFileExt(language)}</span>
                             </div>
-                            <div className="ml-auto flex items-center gap-3 text-dark-text-tertiary text-xs">
+                            <div className="ml-auto flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                                 <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
                                 <button
                                     onClick={() => setShowResetModal(true)}
-                                    className="flex items-center gap-1 px-2 py-1 text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                    style={{ color: 'var(--text-secondary)' }}
                                     title="Reset Code"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -617,11 +631,15 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
 
                         {/* ──── BOTTOM PANEL: Testcase / Result ──── */}
                         <div
-                            style={{ height: isBottomCollapsed ? `${MIN_BOTTOM_HEIGHT}px` : `${bottomPanelHeight}px` }}
-                            className="flex flex-col bg-dark-bg-primary border-t border-white/5 flex-shrink-0 overflow-hidden"
+                            style={{
+                                height: isBottomCollapsed ? `${MIN_BOTTOM_HEIGHT}px` : `${bottomPanelHeight}px`,
+                                background: 'var(--bg-page)',
+                                borderTop: '1px solid var(--border-subtle)'
+                            }}
+                            className="flex flex-col flex-shrink-0 overflow-hidden"
                         >
                             {/* Bottom Panel Header */}
-                            <div className="h-10 bg-dark-bg-secondary flex items-center px-3 flex-shrink-0 border-b border-white/5">
+                            <div className="h-10 flex items-center px-3 flex-shrink-0" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => {
@@ -631,7 +649,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                 setBottomPanelHeight(prevBottomHeight);
                                             }
                                         }}
-                                        className={`px-3 py-1.5 text-sm rounded-lg transition-all ${bottomTab === 'testcase' ? 'text-white bg-white/10' : 'text-dark-text-secondary hover:text-white hover:bg-white/5'}`}
+                                        className={`px-3 py-1.5 text-sm rounded-lg transition-all ${bottomTab === 'testcase' ? '' : 'hover:opacity-80'}`}
+                                        style={bottomTab === 'testcase' ? { color: 'var(--text-primary)', background: 'var(--bg-tertiary)' } : { color: 'var(--text-secondary)' }}
                                     >
                                         ✓ Testcase
                                     </button>
@@ -643,7 +662,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                 setBottomPanelHeight(prevBottomHeight);
                                             }
                                         }}
-                                        className={`px-3 py-1.5 text-sm rounded-lg transition-all ${bottomTab === 'result' ? 'text-white bg-white/10' : 'text-dark-text-secondary hover:text-white hover:bg-white/5'}`}
+                                        className={`px-3 py-1.5 text-sm rounded-lg transition-all ${bottomTab === 'result' ? '' : 'hover:opacity-80'}`}
+                                        style={bottomTab === 'result' ? { color: 'var(--text-primary)', background: 'var(--bg-tertiary)' } : { color: 'var(--text-secondary)' }}
                                     >
                                         ↗ Test Result
                                     </button>
@@ -652,7 +672,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 <div className="ml-auto">
                                     <button
                                         onClick={toggleBottomPanel}
-                                        className="p-1 text-gray-400 hover:text-white hover:bg-white/5 rounded transition-all"
+                                        className="p-1 hover:opacity-80 rounded transition-all"
+                                        style={{ color: 'var(--text-secondary)' }}
                                         title={isBottomCollapsed ? 'Expand' : 'Collapse'}
                                     >
                                         {isBottomCollapsed ? (
@@ -670,14 +691,14 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                     {bottomTab === 'testcase' && (
                                         <div className="space-y-3">
                                             <div>
-                                                <div className="text-gray-500 text-xs mb-1">Input:</div>
-                                                <pre className="bg-[#161622] border border-[#2d2d3d] rounded-lg p-3 text-white text-xs font-mono">
+                                                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Input:</div>
+                                                <pre className="rounded-lg p-3 text-xs font-mono" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
                                                     {problem.sampleInput || 'No sample input'}
                                                 </pre>
                                             </div>
                                             <div>
-                                                <div className="text-gray-500 text-xs mb-1">Expected Output:</div>
-                                                <pre className="bg-[#161622] border border-[#2d2d3d] rounded-lg p-3 text-white text-xs font-mono">
+                                                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Expected Output:</div>
+                                                <pre className="rounded-lg p-3 text-xs font-mono" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
                                                     {problem.sampleOutput || 'No sample output'}
                                                 </pre>
                                             </div>
@@ -714,16 +735,16 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                     {/* Stats Row */}
                                                     <div className="flex items-center gap-4 text-xs">
                                                         {submissionResult.executionTime !== undefined && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-bg-tertiary rounded-lg">
-                                                                <svg className="w-3.5 h-3.5 text-dark-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                <span className="text-dark-text-secondary">Runtime</span>
-                                                                <span className="text-white font-medium">{submissionResult.executionTime} ms</span>
+                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                                                                <svg className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>Runtime</span>
+                                                                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{submissionResult.executionTime} ms</span>
                                                             </div>
                                                         )}
                                                         {submissionResult.testCasesPassed !== undefined && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-bg-tertiary rounded-lg">
-                                                                <svg className="w-3.5 h-3.5 text-dark-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                                                                <span className="text-dark-text-secondary">Test Cases</span>
+                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                                                                <svg className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>Test Cases</span>
                                                                 <span className={`font-medium ${submissionResult.testCasesPassed === submissionResult.totalTestCases ? 'text-green-400' : 'text-red-400'}`}>
                                                                     {submissionResult.testCasesPassed}/{submissionResult.totalTestCases}
                                                                 </span>
@@ -746,8 +767,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                     {/* Stdout */}
                                                     {submissionResult.stdout && (
                                                         <div>
-                                                            <div className="text-xs text-dark-text-secondary font-medium mb-1.5">Stdout</div>
-                                                            <pre className="bg-dark-bg-tertiary border border-white/5 rounded-lg p-3 text-white text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+                                                            <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Stdout</div>
+                                                            <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
                                                                 {submissionResult.stdout}</pre>
                                                         </div>
                                                     )}
@@ -767,8 +788,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                     {/* ──── DISCUSS SIDEBAR (only in rooms, toggled) ──── */}
                     {roomId && showDiscussPanel && (
                         <>
-                            <div className="w-px bg-[#3d3d3d] flex-shrink-0" />
-                            <div className="w-[280px] flex-shrink-0 h-full overflow-hidden border-l border-[#3d3d3d]">
+                            <div className="w-px flex-shrink-0" style={{ background: 'var(--border-subtle)' }} />
+                            <div className="w-[280px] flex-shrink-0 h-full overflow-hidden border-l" style={{ borderColor: 'var(--border-subtle)' }}>
                                 <DiscussPanel roomId={roomId} />
                             </div>
                         </>
@@ -779,7 +800,7 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
             {/* Reset Code Confirmation Modal */}
             {showResetModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowResetModal(false)}>
-                    <div className="bg-dark-bg-secondary border border-white/10 rounded-2xl shadow-2xl shadow-black/50 w-[360px] p-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="rounded-2xl shadow-2xl w-[360px] p-6" onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
                                 <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -787,15 +808,16 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-white font-semibold text-sm">Reset Code</h3>
-                                <p className="text-dark-text-secondary text-xs mt-0.5">This action cannot be undone</p>
+                                <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Reset Code</h3>
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>This action cannot be undone</p>
                             </div>
                         </div>
-                        <p className="text-dark-text-secondary text-sm mb-6">Are you sure you want to reset your code to the default template? Your current code will be lost.</p>
+                        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Are you sure you want to reset your code to the default template? Your current code will be lost.</p>
                         <div className="flex items-center justify-end gap-2">
                             <button
                                 onClick={() => setShowResetModal(false)}
-                                className="px-4 py-2 text-sm font-medium text-dark-text-secondary hover:text-white bg-dark-bg-tertiary hover:bg-dark-bg-elevated rounded-lg transition-all"
+                                className="px-4 py-2 text-sm font-medium hover:opacity-80 rounded-lg transition-all"
+                                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                             >
                                 Cancel
                             </button>

@@ -126,8 +126,8 @@ const RecentActivityCard = ({ submissions = [] }) => {
 
     if (recentSubmissions.length === 0) {
         return (
-            <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5">
-                <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+            <div className="backdrop-blur-xl rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                     <svg className="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -139,10 +139,10 @@ const RecentActivityCard = ({ submissions = [] }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <p className="text-dark-text-secondary">
+                    <p style={{ color: 'var(--text-secondary)' }}>
                         No submissions yet
                     </p>
-                    <p className="text-sm text-dark-text-tertiary mt-1">
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
                         Start solving problems to see your activity here!
                     </p>
                 </div>
@@ -151,15 +151,15 @@ const RecentActivityCard = ({ submissions = [] }) => {
     }
 
     return (
-        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full">
+        <div className="backdrop-blur-xl rounded-xl p-6 h-full" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-base font-medium text-dark-text-secondary flex items-center gap-2 uppercase tracking-wider text-xs">
+                <h3 className="text-base font-medium flex items-center gap-2 uppercase tracking-wider text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Recent Activity
                 </h3>
-                <span className="text-[10px] font-medium text-dark-text-tertiary px-2 py-0.5 rounded border border-white/5 bg-white/[0.02]">
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                     Last {recentSubmissions.length}
                 </span>
             </div>
@@ -185,10 +185,10 @@ const RecentActivityCard = ({ submissions = [] }) => {
                             {/* Problem Info */}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-0.5">
-                                    <h4 className="text-sm font-medium text-gray-200 truncate group-hover:text-white transition-colors">
+                                    <h4 className="text-sm font-medium truncate transition-colors" style={{ color: 'var(--text-secondary)' }}>
                                         {submission.problemTitle || `Problem #${submission.problemId || submission.problem_id}`}
                                     </h4>
-                                    <span className="text-xs text-dark-text-tertiary font-mono">
+                                    <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>
                                         {formatTimeAgo(submission.submittedAt || submission.createdAt)}
                                     </span>
                                 </div>
@@ -197,13 +197,13 @@ const RecentActivityCard = ({ submissions = [] }) => {
                                         {statusStyle.label}
                                     </span>
                                     <span className="w-0.5 h-0.5 rounded-full bg-dark-text-tertiary/50" />
-                                    <span className={`text-[10px] font-medium text-dark-text-tertiary capitalize`}>
+                                    <span className="text-[10px] font-medium capitalize" style={{ color: 'var(--text-tertiary)' }}>
                                         {submission.language}
                                     </span>
                                     {submission.executionTime && (
                                         <>
                                             <span className="w-0.5 h-0.5 rounded-full bg-dark-text-tertiary/50" />
-                                            <span className="text-[10px] text-dark-text-tertiary flex items-center gap-0.5">
+                                            <span className="text-[10px] flex items-center gap-0.5" style={{ color: 'var(--text-tertiary)' }}>
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                                 </svg>

@@ -35,19 +35,20 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="glass-panel rounded-2xl p-8 max-w-md w-full border border-white/10 relative overflow-hidden shadow-2xl shadow-black/50">
+            <div className="rounded-2xl p-8 max-w-md w-full relative overflow-hidden shadow-2xl" id="join-modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                 {/* Decorative background */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-blue/10 rounded-full blur-2xl -ml-16 -mb-16 pointer-events-none" />
 
                 <div className="relative flex items-center justify-between mb-8">
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-1">Join Room</h2>
-                        <p className="text-dark-text-secondary text-sm">Enter the code to join your friends</p>
+                        <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Join Room</h2>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enter the code to join your friends</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-dark-text-secondary hover:text-white hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--text-secondary)' }}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -57,7 +58,7 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
 
                 <form onSubmit={handleSubmit} className="relative space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-dark-text-secondary mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                             Room Code
                         </label>
                         <input
@@ -65,7 +66,8 @@ const JoinRoomModal = ({ onClose, onRoomJoined }) => {
                             value={roomId}
                             onChange={handleInputChange}
                             placeholder="ABC123"
-                            className="input text-center text-3xl font-bold tracking-[0.5em] uppercase h-16 bg-dark-bg-tertiary/50 focus:bg-dark-bg-tertiary focus:border-brand-blue/50 placeholder:tracking-normal placeholder:font-normal placeholder:text-dark-text-tertiary transition-all"
+                            className="input text-center text-3xl font-bold tracking-[0.5em] uppercase h-16 focus:border-brand-blue/50 placeholder:tracking-normal placeholder:font-normal transition-all"
+                            style={{ background: 'var(--bg-input)', color: 'var(--text-primary)' }}
                             maxLength={6}
                             autoFocus
                         />

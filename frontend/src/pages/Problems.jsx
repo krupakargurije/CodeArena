@@ -49,19 +49,19 @@ const Problems = () => {
         const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
 
         return matchesDifficulty && matchesStatus && matchesSearch;
-    });
+    }).sort((a, b) => a.id - b.id);
 
     const activeFiltersCount = (difficultyFilter !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0);
 
     return (
-        <div className="min-h-screen bg-dark-bg-primary" onClick={() => setShowFilters(false)}>
+        <div className="min-h-screen" style={{ background: 'var(--bg-page)' }} onClick={() => setShowFilters(false)}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">
+                    <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                         Problems
                     </h1>
-                    <p className="text-dark-text-secondary">
+                    <p style={{ color: 'var(--text-secondary)' }}>
                         Practice with a clean list view — filter by id, title, or tag.
                     </p>
                 </div>
@@ -79,7 +79,8 @@ const Problems = () => {
                             placeholder="Search problems (e.g, dp, graph, CA-...)"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-dark-bg-secondary/50 border border-white/10 rounded-xl text-white placeholder-dark-text-tertiary focus:outline-none focus:ring-1 focus:ring-brand-blue/50 focus:border-brand-blue/50 transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-blue/50 focus:border-brand-blue/50 transition-all"
+                            style={{ background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                         />
                     </div>
 
@@ -109,11 +110,12 @@ const Problems = () => {
                         {showFilters && (
                             <div
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute right-0 top-full mt-2 w-64 bg-[#12121a] border border-white/10 rounded-xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+                                className="absolute right-0 top-full mt-2 w-64 rounded-xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
                             >
                                 {/* Difficulty Section */}
                                 <div className="mb-4">
-                                    <h3 className="text-white text-xs font-semibold uppercase tracking-wider mb-2">Difficulty</h3>
+                                    <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-primary)' }}>Difficulty</h3>
                                     <div className="grid grid-cols-2 gap-2">
                                         {['ALL', 'Cakewalk', 'Easy', 'Medium', 'Hard'].map((level) => (
                                             <button
@@ -132,7 +134,7 @@ const Problems = () => {
 
                                 {/* Status Section */}
                                 <div>
-                                    <h3 className="text-white text-xs font-semibold uppercase tracking-wider mb-2">Status</h3>
+                                    <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-primary)' }}>Status</h3>
                                     <div className="flex flex-col gap-1">
                                         {[
                                             { id: 'ALL', label: 'All Problems' },
@@ -178,7 +180,7 @@ const Problems = () => {
                 </div>
 
                 {/* Problems List */}
-                <div className="bg-dark-bg-secondary/30 rounded-2xl border border-white/5 overflow-hidden">
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                     {error && (
                         <div className="p-8 text-center">
                             <p className="text-red-400">Failed to load problems: {error}</p>
@@ -207,7 +209,7 @@ const Problems = () => {
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4 text-3xl">
                                 🔍
                             </div>
-                            <h3 className="text-lg font-semibold text-white mb-1">No problems found</h3>
+                            <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>No problems found</h3>
                             <p className="text-dark-text-secondary text-sm">Try adjusting your search or filters</p>
                             <button
                                 onClick={() => {

@@ -123,8 +123,8 @@ const DifficultyBreakdownCard = ({ submissions = [], problems = [] }) => {
     ];
 
     return (
-        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full flex flex-col">
-            <h3 className="text-base font-medium text-dark-text-secondary mb-6 flex items-center gap-2 uppercase tracking-wider text-xs">
+        <div className="backdrop-blur-xl rounded-xl p-6 h-full flex flex-col" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+            <h3 className="text-base font-medium mb-6 flex items-center gap-2 uppercase tracking-wider text-xs" style={{ color: 'var(--text-secondary)' }}>
                 <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
@@ -174,10 +174,10 @@ const DifficultyBreakdownCard = ({ submissions = [], problems = [] }) => {
                         })}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-bold text-white tracking-tight">
+                        <span className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                             {totalSolved}
                         </span>
-                        <span className="text-[10px] text-dark-text-tertiary uppercase tracking-widest mt-0.5">
+                        <span className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                             Solved
                         </span>
                     </div>
@@ -194,14 +194,14 @@ const DifficultyBreakdownCard = ({ submissions = [], problems = [] }) => {
                             <div className="flex justify-between items-end">
                                 <div className="flex items-center gap-2">
                                     <div className={`w-1.5 h-1.5 rounded-full ${diff.bgColor.replace('/20', '')}`} style={{ backgroundColor: diff.ringColor }}></div>
-                                    <span className={`text-sm font-medium text-gray-300`}>
+                                    <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                                         {diff.name}
                                     </span>
                                 </div>
                                 <div className="text-xs">
-                                    <span className="font-bold text-white text-sm">{diff.solved}</span>
-                                    <span className="text-dark-text-tertiary mx-1">/</span>
-                                    <span className="text-dark-text-tertiary">{diff.total}</span>
+                                    <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{diff.solved}</span>
+                                    <span className="mx-1" style={{ color: 'var(--text-tertiary)' }}>/</span>
+                                    <span style={{ color: 'var(--text-tertiary)' }}>{diff.total}</span>
                                 </div>
                             </div>
                             <div className="h-1.5 rounded-full bg-[#1e1e24] overflow-hidden">

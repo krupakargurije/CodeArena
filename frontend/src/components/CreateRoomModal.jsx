@@ -98,12 +98,13 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="glass rounded-2xl p-8 max-w-md w-full border dark:border-dark-border-primary border-light-border-primary relative overflow-visible">
+            <div className="rounded-2xl p-8 max-w-md w-full relative overflow-visible" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold gradient-text">Create Room</h2>
+                    <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Room</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-200 transition-colors"
+                        className="transition-colors hover:opacity-80"
+                        style={{ color: 'var(--text-secondary)' }}
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -114,7 +115,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Max Participants */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
                             Number of Players
                         </label>
                         <div className="grid grid-cols-4 gap-3">
@@ -125,8 +126,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                     onClick={() => setMaxParticipants(num)}
                                     className={`py-3 rounded-xl font-semibold transition-all ${maxParticipants === num
                                         ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20'
-                                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
+                                        : 'hover:opacity-80'
                                         }`}
+                                    style={maxParticipants !== num ? { background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' } : {}}
                                 >
                                     {num}
                                 </button>
@@ -145,7 +147,9 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                     <div>
                         <label className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all border ${isPrivate
                             ? 'bg-brand-orange/10 border-brand-orange/30'
-                            : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                            : ''}`}
+                            style={!isPrivate ? { background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' } : {}}
+                        >
                             <input
                                 type="checkbox"
                                 checked={isPrivate}
@@ -153,7 +157,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                 className="w-5 h-5 rounded border-gray-500 bg-transparent checked:bg-brand-orange checked:border-brand-orange focus:ring-brand-orange focus:ring-offset-0"
                             />
                             <div className="flex-1">
-                                <div className="font-semibold text-white flex items-center gap-2">
+                                <div className="font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                                     Private Room
                                     {isPrivate && (
                                         <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,7 +165,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                         </svg>
                                     )}
                                 </div>
-                                <div className="text-sm text-gray-400">
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                                     Room won't be listed in public lobby or random matching
                                 </div>
                             </div>
@@ -170,13 +174,15 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
                     {/* Problem Selection Mode */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
                             Problem Selection
                         </label>
                         <div className="space-y-3">
                             <label className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all border ${problemSelectionMode === 'random'
                                 ? 'bg-brand-blue/10 border-brand-blue/30'
-                                : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                                : ''}`}
+                                style={problemSelectionMode !== 'random' ? { background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' } : {}}
+                            >
                                 <input
                                     type="radio"
                                     name="problemMode"
@@ -186,14 +192,16 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                     className="w-4 h-4 text-brand-blue bg-transparent border-gray-500 focus:ring-brand-blue focus:ring-offset-0"
                                 />
                                 <div>
-                                    <div className="font-semibold text-white">Random Problem</div>
-                                    <div className="text-sm text-gray-400">System picks a random problem</div>
+                                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Random Problem</div>
+                                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>System picks a random problem</div>
                                 </div>
                             </label>
 
                             <label className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all border ${problemSelectionMode === 'single'
                                 ? 'bg-brand-blue/10 border-brand-blue/30'
-                                : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                                : ''}`}
+                                style={problemSelectionMode !== 'single' ? { background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' } : {}}
+                            >
                                 <input
                                     type="radio"
                                     name="problemMode"
@@ -203,8 +211,8 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                     className="w-4 h-4 text-brand-blue bg-transparent border-gray-500 focus:ring-brand-blue focus:ring-offset-0"
                                 />
                                 <div>
-                                    <div className="font-semibold text-white">Choose Problem</div>
-                                    <div className="text-sm text-gray-400">Select a specific problem</div>
+                                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Choose Problem</div>
+                                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Select a specific problem</div>
                                 </div>
                             </label>
                         </div>
@@ -214,7 +222,7 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                     {/* Problem Dropdown (if single mode) */}
                     {problemSelectionMode === 'single' && (
                         <div className="relative" ref={dropdownRef}>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                                 Select Problem {problems.length > 0 && `(${problems.length} available)`}
                             </label>
 
@@ -222,11 +230,12 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                             <button
                                 type="button"
                                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                                className="input w-full text-left flex items-center justify-between text-white"
+                                className="input w-full text-left flex items-center justify-between"
+                                style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
                             >
                                 <span>
                                     {selectedProblemId
-                                        ? problems.find(p => p.id === selectedProblemId)?.title || 'Select a problem'
+                                        ? (() => { const p = problems.find(p => p.id === selectedProblemId); return p ? `${p.id}. ${p.title}` : 'Select a problem'; })()
                                         : 'Select a problem'}
                                 </span>
                                 <svg
@@ -241,16 +250,19 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
 
                             {/* Dropdown Menu - Opens upward to prevent bottom overflow */}
                             {dropdownOpen && (
-                                <div className="absolute z-[100] w-full bottom-full mb-1 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-xl shadow-black/50 max-h-72 overflow-hidden flex flex-col">
+                                <div className="absolute z-[100] w-full bottom-full mb-1 rounded-xl shadow-xl shadow-black/50 max-h-72 overflow-hidden flex flex-col"
+                                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
+                                >
                                     {/* Search Input */}
-                                    <div className="p-2 border-b border-white/5">
+                                    <div className="p-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                                         <input
                                             type="text"
                                             placeholder="Search problems..."
                                             value={problemSearch}
                                             onChange={(e) => setProblemSearch(e.target.value)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="input w-full py-2 text-sm bg-black/20 border-transparent focus:border-brand-blue/50"
+                                            className="input w-full py-2 text-sm border-transparent focus:border-brand-blue/50"
+                                            style={{ background: 'var(--bg-input)', color: 'var(--text-primary)' }}
                                             autoFocus
                                         />
                                     </div>
@@ -268,12 +280,17 @@ const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                                                         setDropdownOpen(false);
                                                         setProblemSearch('');
                                                     }}
-                                                    className={`w-full text-left px-4 py-3 transition-colors border-b border-white/5 last:border-0 ${selectedProblemId === problem.id
+                                                    className={`w-full text-left px-4 py-3 transition-colors last:border-0 ${selectedProblemId === problem.id
                                                         ? 'bg-brand-blue/10 text-brand-blue'
-                                                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                                                        : 'hover:opacity-80'
                                                         }`}
+                                                    style={{
+                                                        borderBottom: '1px solid var(--border-subtle)',
+                                                        color: selectedProblemId === problem.id ? '' : 'var(--text-secondary)',
+                                                        background: selectedProblemId === problem.id ? '' : 'transparent'
+                                                    }}
                                                 >
-                                                    <div className="font-medium">{problem.title}</div>
+                                                    <div className="font-medium">{problem.id}. {problem.title}</div>
                                                     <div className={`text-xs mt-0.5 ${problem.difficulty === 'EASY' ? 'text-green-400' :
                                                         problem.difficulty === 'MEDIUM' ? 'text-yellow-400' :
                                                             'text-red-400'

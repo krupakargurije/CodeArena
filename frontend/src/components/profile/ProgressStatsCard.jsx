@@ -136,8 +136,8 @@ const ProgressStatsCard = ({ submissions = [], problems = [] }) => {
     const solvedPercentage = totalProblemsCount > 0 ? Math.round((problemsSolved / totalProblemsCount) * 100) : 0;
 
     return (
-        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full flex flex-col">
-            <h3 className="text-base font-medium text-dark-text-secondary mb-6 flex items-center gap-2 uppercase tracking-wider text-xs">
+        <div className="backdrop-blur-xl rounded-xl p-6 h-full flex flex-col" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+            <h3 className="text-base font-medium mb-6 flex items-center gap-2 uppercase tracking-wider text-xs" style={{ color: 'var(--text-secondary)' }}>
                 <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -146,7 +146,7 @@ const ProgressStatsCard = ({ submissions = [], problems = [] }) => {
 
             <div className="grid grid-cols-2 gap-8 items-center flex-1">
                 {/* Acceptance Rate Circle */}
-                <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 relative group">
+                <div className="flex flex-col items-center justify-center p-4 rounded-2xl relative group" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                     <div className="absolute inset-0 bg-brand-orange/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="relative w-24 h-24">
                         <svg className="w-full h-full transform -rotate-90">
@@ -178,12 +178,12 @@ const ProgressStatsCard = ({ submissions = [], problems = [] }) => {
                             </defs>
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-bold text-white tracking-tight">
-                                {animatedRate}<span className="text-sm font-normal text-dark-text-tertiary">%</span>
+                            <span className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                                {animatedRate}<span className="text-sm font-normal" style={{ color: 'var(--text-tertiary)' }}>%</span>
                             </span>
                         </div>
                     </div>
-                    <span className="text-xs text-dark-text-tertiary uppercase tracking-wider mt-3 font-medium">Acceptance Rate</span>
+                    <span className="text-xs uppercase tracking-wider mt-3 font-medium" style={{ color: 'var(--text-tertiary)' }}>Acceptance Rate</span>
                 </div>
 
                 {/* Stats Grid */}
@@ -196,12 +196,12 @@ const ProgressStatsCard = ({ submissions = [], problems = [] }) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <span className="text-dark-text-secondary text-sm font-medium">Solved</span>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Solved</span>
                         </div>
                         <div className="pl-11">
                             <div className="flex items-baseline gap-1.5">
-                                <span className="text-2xl font-bold text-white tracking-tight">{animatedSolved}</span>
-                                <span className="text-xs text-dark-text-tertiary">/ {totalProblemsCount}</span>
+                                <span className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>{animatedSolved}</span>
+                                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>/ {totalProblemsCount}</span>
                             </div>
                         </div>
                     </div>
@@ -215,22 +215,22 @@ const ProgressStatsCard = ({ submissions = [], problems = [] }) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
                                 </svg>
                             </div>
-                            <span className="text-dark-text-secondary text-sm font-medium">Day Streak</span>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Day Streak</span>
                         </div>
                         <div className="pl-11">
-                            <span className="text-2xl font-bold text-white tracking-tight">{streak.current}</span>
+                            <span className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>{streak.current}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Footer Stats */}
-            <div className="mt-8 pt-4 border-t border-white/5 flex justify-between items-center text-xs text-dark-text-tertiary">
+            <div className="mt-8 pt-4 flex justify-between items-center text-xs" style={{ borderTop: '1px solid var(--border-subtle)', color: 'var(--text-tertiary)' }}>
                 <div>
-                    Total Submissions: <span className="text-white font-medium ml-1">{totalSubmissions}</span>
+                    Total Submissions: <span className="font-medium ml-1" style={{ color: 'var(--text-primary)' }}>{totalSubmissions}</span>
                 </div>
                 <div>
-                    Max Streak: <span className="text-white font-medium ml-1">{streak.max}</span>
+                    Max Streak: <span className="font-medium ml-1" style={{ color: 'var(--text-primary)' }}>{streak.max}</span>
                 </div>
             </div>
         </div>

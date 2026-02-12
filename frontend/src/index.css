@@ -4,97 +4,164 @@
 
 @layer base {
 
-  /* Theme-aware body styles */
+  /* ━━━━ Theme variables ━━━━ */
+  :root {
+    /* Light theme (default when no .dark class) */
+    --bg-page:       #f5f6fa;
+    --bg-primary:    #ffffff;
+    --bg-secondary:  #f7f8fa;
+    --bg-tertiary:   #eff1f6;
+    --bg-elevated:   #e8eaf0;
+    --bg-card:       #ffffff;
+    --bg-card-hover: #f7f8fa;
+    --bg-input:      #f0f1f5;
+    --bg-nav:        rgba(255,255,255,0.85);
+    --bg-code:       #f5f6fa;
+
+    --text-primary:   #1a1a2e;
+    --text-secondary: #555770;
+    --text-tertiary:  #8c8ca1;
+
+    --border-primary:   #e2e4ea;
+    --border-secondary: #d0d3db;
+    --border-subtle:    rgba(0,0,0,0.06);
+
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-elevated: 0 10px 25px rgba(0,0,0,0.08);
+
+    --glass-bg:      rgba(255,255,255,0.7);
+    --glass-border:  rgba(0,0,0,0.06);
+    --overlay:       rgba(0,0,0,0.3);
+
+    --scrollbar-thumb: #ccc;
+    --scrollbar-hover: #aaa;
+  }
+
+  .dark {
+    --bg-page:       #0a0a0f;
+    --bg-primary:    #121212;
+    --bg-secondary:  #1e1e1e;
+    --bg-tertiary:   #2d2d2d;
+    --bg-elevated:   #333333;
+    --bg-card:       rgba(18,18,26,0.8);
+    --bg-card-hover: rgba(30,30,40,0.9);
+    --bg-input:      rgba(45,45,45,0.5);
+    --bg-nav:        rgba(10,10,15,0.85);
+    --bg-code:       #161622;
+
+    --text-primary:   #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-tertiary:  #666666;
+
+    --border-primary:   #333333;
+    --border-secondary: #404040;
+    --border-subtle:    rgba(255,255,255,0.05);
+
+    --shadow-card: 0 4px 20px rgba(0,0,0,0.3);
+    --shadow-card-hover: 0 8px 30px rgba(0,0,0,0.4);
+    --shadow-elevated: 0 25px 50px rgba(0,0,0,0.5);
+
+    --glass-bg:      rgba(30,30,30,0.4);
+    --glass-border:  rgba(255,255,255,0.05);
+    --overlay:       rgba(0,0,0,0.7);
+
+    --scrollbar-thumb: #333;
+    --scrollbar-hover: #505050;
+  }
+
   body {
-    @apply font-sans antialiased transition-colors duration-200;
-    @apply bg-dark-bg-primary text-dark-text-primary;
-    /* Force dark mode background by default for this redesign */
-    background-color: #121212;
+    @apply font-sans antialiased;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* ... rest of file ... */
-  /* I need to be careful with replace_file_content. I should probably just rewrite the top and the bottom separately or rewrite the whole file if it's small enough. The file is ~150 lines. */
-
-
-  /* Scrollbar Styling */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-dark-bg-elevated hover:bg-dark-border-secondary transition-colors;
+    border-radius: 9999px;
+    background: var(--scrollbar-thumb);
+    transition: background 0.2s;
   }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 }
 
 @layer components {
 
-  /* Premium Button Styles */
+  /* ━━━━ Buttons ━━━━ */
   .btn-primary {
     @apply relative inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-medium transition-all duration-300;
     @apply overflow-hidden isolate;
-    /* Gradient Background */
     background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
     @apply text-white shadow-lg shadow-blue-500/20;
     @apply hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95;
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0;
   }
-
-  /* Shine effect for primary button */
   .btn-primary::before {
     content: '';
     @apply absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-white/20 to-transparent;
     @apply translate-x-[-200%] transition-transform duration-700;
   }
-
-  .btn-primary:hover::before {
-    @apply translate-x-[200%];
-  }
+  .btn-primary:hover::before { @apply translate-x-[200%]; }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200;
-    @apply bg-dark-bg-secondary text-dark-text-secondary border border-dark-border-primary;
-    @apply hover:bg-dark-bg-elevated hover:text-white hover:border-dark-border-secondary;
-    @apply active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
   }
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: var(--border-secondary);
+  }
+  .btn-secondary:active { @apply scale-95; }
+  .btn-secondary:disabled { @apply opacity-50 cursor-not-allowed; }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
-    @apply text-dark-text-secondary hover:text-white;
-    @apply hover:bg-white/5;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background: var(--border-subtle);
   }
 
-  /* Ultra-Premium Glass Cards */
+  /* ━━━━ Cards ━━━━ */
   .card {
     @apply rounded-xl p-6 transition-all duration-300;
-    /* Glass Background */
-    @apply bg-dark-bg-secondary/60 backdrop-blur-md;
-    @apply border border-white/5;
-    /* Shadow */
-    @apply shadow-xl shadow-black/20;
-    /* Hover Effect */
-    @apply hover:bg-dark-bg-secondary/80 hover:border-white/10 hover:shadow-2xl hover:shadow-black/30;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+  }
+  .card:hover {
+    background: var(--bg-card-hover);
+    box-shadow: var(--shadow-card-hover);
   }
 
   .card-elevated {
     @apply rounded-xl p-6 transition-all duration-200;
-    @apply bg-dark-bg-elevated border border-dark-border-primary;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-primary);
     @apply shadow-lg;
   }
 
-  /* Modern Input Styles */
+  /* ━━━━ Inputs ━━━━ */
   .input {
     @apply w-full px-4 py-3 rounded-lg transition-all duration-200;
-    @apply bg-dark-bg-tertiary/50 border border-dark-border-primary text-white;
-    @apply placeholder-dark-text-tertiary;
-    @apply focus:outline-none focus:bg-dark-bg-tertiary focus:border-brand-blue/50 focus:ring-1 focus:ring-brand-blue/50;
+    background: var(--bg-input);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+  }
+  .input::placeholder { color: var(--text-tertiary); }
+  .input:focus {
+    @apply outline-none ring-1 ring-brand-blue/50;
+    background: var(--bg-tertiary);
+    border-color: rgba(0,122,255,0.5);
   }
 
-  /* Select Dropdown */
   select.input {
     @apply cursor-pointer;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -103,90 +170,112 @@
     background-size: 1.5em 1.5em;
     padding-right: 2.5rem;
   }
-
   select.input option {
-    @apply bg-dark-bg-elevated text-white py-2;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 0.5rem;
   }
 
-  /* Difficulty Badges */
+  /* ━━━━ Badges ━━━━ */
   .badge-easy {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
     @apply bg-difficulty-easy/10 text-difficulty-easy border border-difficulty-easy/20;
   }
-
   .badge-medium {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
     @apply bg-difficulty-medium/10 text-difficulty-medium border border-difficulty-medium/20;
   }
-
   .badge-hard {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
     @apply bg-difficulty-hard/10 text-difficulty-hard border border-difficulty-hard/20;
   }
+  .badge-cakewalk {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-cyan-500/10 text-cyan-500 border border-cyan-500/20;
+  }
 
-  /* Navigation Link */
+  /* ━━━━ Navigation ━━━━ */
   .nav-link {
     @apply px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200;
-    @apply text-dark-text-secondary;
-    @apply hover:text-white hover:bg-white/5;
+    color: var(--text-secondary);
   }
-
+  .nav-link:hover {
+    color: var(--text-primary);
+    background: var(--border-subtle);
+  }
   .nav-link-active {
-    @apply text-white bg-white/10;
+    color: var(--text-primary);
+    background: var(--border-subtle);
   }
 
-  /* Glass Utilities */
+  /* ━━━━ Glass ━━━━ */
   .glass {
-    @apply bg-dark-bg-secondary/40 backdrop-blur-xl border border-white/5;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
   }
-
   .glass-panel {
-    @apply bg-dark-bg-secondary/80 backdrop-blur-md border border-white/5;
+    background: var(--bg-card);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
   }
 
-  /* Text Gradients */
+  /* ━━━━ Text Gradients ━━━━ */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, var(--text-primary), var(--text-secondary));
   }
-
   .text-gradient-brand {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-orange to-red-500;
   }
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-orange to-red-500;
+  }
 
-  /* Dotted Grid Background */
+  /* ━━━━ Utility Classes ━━━━ */
   .dotted-grid {
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-image: radial-gradient(circle, var(--border-subtle) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
-  /* Live Indicator Pulse */
-  .live-pulse {
-    @apply relative;
-  }
+  .live-pulse { @apply relative; }
   .live-pulse::before {
     content: '';
     @apply absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75;
   }
 
-  /* Performance Card Glow */
-  .card-glow-green {
-    box-shadow: 0 0 60px -15px rgba(34, 197, 94, 0.3);
-  }
+  .card-glow-green { box-shadow: 0 0 60px -15px rgba(34, 197, 94, 0.3); }
 
-  /* Focus Card Style */
   .focus-card {
-    @apply bg-dark-bg-secondary/80 backdrop-blur-xl rounded-2xl border border-white/10;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    background: var(--bg-card);
+    @apply backdrop-blur-xl rounded-2xl;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-elevated);
   }
 
-  /* Tag Pills */
-  .tag-pill {
-    @apply px-3 py-1 rounded-full text-xs font-medium border;
-  }
+  .tag-pill { @apply px-3 py-1 rounded-full text-xs font-medium border; }
   .tag-pill-dark {
-    @apply bg-dark-bg-tertiary/50 border-white/10 text-dark-text-secondary;
+    background: var(--bg-tertiary);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
   }
   .tag-pill-accent {
     @apply bg-brand-blue/10 border-brand-blue/30 text-brand-blue;
+  }
+
+  /* ━━━━ Theme-aware text helpers ━━━━ */
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+
+  /* ━━━━ Custom scrollbar utility ━━━━ */
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--scrollbar-thumb);
   }
 }

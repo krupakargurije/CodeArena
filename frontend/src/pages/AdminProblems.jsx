@@ -136,7 +136,7 @@ const AdminProblems = () => {
                                         className="border-b dark:border-dark-border-primary border-light-border-primary hover:bg-dark-bg-secondary/50"
                                     >
                                         <td className="py-3 px-4 text-secondary">{problem.id}</td>
-                                        <td className="py-3 px-4 text-primary font-medium">{problem.title}</td>
+                                        <td className="py-3 px-4 text-primary font-medium">{problem.id}. {problem.title}</td>
                                         <td className="py-3 px-4">
                                             <span className={getDifficultyColor(problem.difficulty)}>
                                                 {problem.difficulty}

@@ -344,7 +344,7 @@ const AdminDashboard = () => {
                                         {filteredProblems.map((problem) => (
                                             <tr key={problem.id} className="hover:bg-white/5 transition-colors">
                                                 <td className="py-4 px-6 text-dark-text-tertiary font-mono text-sm">#{problem.id}</td>
-                                                <td className="py-4 px-6 text-white font-medium">{problem.title}</td>
+                                                <td className="py-4 px-6 text-white font-medium">{problem.id}. {problem.title}</td>
                                                 <td className="py-4 px-6">
                                                     <span className={`text-xs font-bold px-2 py-1 rounded-md border ${problem.difficulty === 'HARD' ? 'bg-difficulty-hard/10 text-difficulty-hard border-difficulty-hard/20' :
                                                         problem.difficulty === 'MEDIUM' ? 'bg-difficulty-medium/10 text-difficulty-medium border-difficulty-medium/20' :

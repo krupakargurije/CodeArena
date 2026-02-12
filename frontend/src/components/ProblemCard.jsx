@@ -36,7 +36,7 @@ const ProblemCard = ({ problem, isSolved = false }) => {
                             </span>
                         )}
                         <h3 className={`text-xl font-semibold dark:text-dark-text-primary text-light-text-primary group-hover:text-brand-orange transition-colors ${isSolved ? 'text-green-500 dark:text-green-400' : ''}`}>
-                            {problem.title}
+                            {problem.id}. {problem.title}
                         </h3>
                     </div>
                     <span className={getDifficultyBadge(problem.difficulty)}>

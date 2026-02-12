@@ -85,7 +85,7 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
 
     // Get color based on count
     const getColor = (count) => {
-        if (count === 0) return 'bg-dark-bg-tertiary';
+        if (count === 0) return 'bg-gray-200 dark:bg-dark-bg-tertiary';
         if (count === 1) return 'bg-green-900/50';
         if (count <= 3) return 'bg-green-700/60';
         if (count <= 5) return 'bg-green-500/70';
@@ -99,21 +99,21 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl p-6 border border-white/5 h-full">
+        <div className="backdrop-blur-xl rounded-xl p-6 h-full" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-base font-medium text-dark-text-secondary flex items-center gap-2 uppercase tracking-wider text-xs">
+                <h3 className="text-base font-medium flex items-center gap-2 uppercase tracking-wider text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Activity
                 </h3>
-                <div className="flex items-center gap-4 text-xs font-medium bg-white/[0.02] border border-white/5 px-3 py-1 rounded-lg">
-                    <span className="text-white">
-                        {totalSubmissions} <span className="text-dark-text-tertiary font-normal">submissions</span>
+                <div className="flex items-center gap-4 text-xs font-medium px-3 py-1 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ color: 'var(--text-primary)' }}>
+                        {totalSubmissions} <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>submissions</span>
                     </span>
-                    <span className="w-px h-3 bg-white/10" />
-                    <span className="text-white">
-                        {activeDays} <span className="text-dark-text-tertiary font-normal">active days</span>
+                    <span className="w-px h-3" style={{ background: 'var(--border-subtle)' }} />
+                    <span style={{ color: 'var(--text-primary)' }}>
+                        {activeDays} <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>active days</span>
                     </span>
                 </div>
             </div>
@@ -126,8 +126,9 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
                         {months.map((m, i) => (
                             <div
                                 key={i}
-                                className="text-[10px] uppercase tracking-wider text-dark-text-tertiary font-medium"
+                                className="text-[10px] uppercase tracking-wider font-medium"
                                 style={{
+                                    color: 'var(--text-tertiary)',
                                     marginLeft: i === 0 ? `${m.index * 13}px` : `${(m.index - (months[i - 1]?.index || 0)) * 13 - 20}px`
                                 }}
                             >
@@ -138,7 +139,7 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
 
                     <div className="flex">
                         {/* Day Labels */}
-                        <div className="flex flex-col gap-[3px] mr-3 text-[10px] text-dark-text-tertiary font-medium pt-[1px]">
+                        <div className="flex flex-col gap-[3px] mr-3 text-[10px] font-medium pt-[1px]" style={{ color: 'var(--text-tertiary)' }}>
                             {dayLabels.map((day, i) => (
                                 <div key={day} className="h-2.5 flex items-center" style={{ visibility: i % 2 === 1 ? 'visible' : 'hidden' }}>
                                     {day}
@@ -170,25 +171,25 @@ const ActivityHeatmapCard = ({ submissions = [] }) => {
             </div>
 
             {/* Footer: Tooltip & Legend */}
-            <div className="flex justify-between items-end mt-4 pt-4 border-t border-white/5 h-10">
+            <div className="flex justify-between items-end mt-4 pt-4 h-10" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                 {/* Tooltip */}
                 <div className="transition-all duration-300">
                     {hoveredDay ? (
-                        <div className="text-xs text-dark-text-secondary animate-in fade-in slide-in-from-bottom-1">
-                            <span className="font-bold text-white">
+                        <div className="text-xs animate-in fade-in slide-in-from-bottom-1" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
                                 {hoveredDay.count} submission{hoveredDay.count !== 1 ? 's' : ''}
                             </span>
-                            {' '}on <span className="text-dark-text-tertiary">{hoveredDay.displayDate}</span>
+                            {' '}on <span style={{ color: 'var(--text-tertiary)' }}>{hoveredDay.displayDate}</span>
                         </div>
                     ) : (
-                        <span className="text-xs text-dark-text-tertiary italic">
+                        <span className="text-xs italic" style={{ color: 'var(--text-tertiary)' }}>
                             Hover over a square to view details
                         </span>
                     )}
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-2 text-[10px] text-dark-text-tertiary font-medium uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     <span>Less</span>
                     <div className="flex gap-1">
                         <div className="w-2.5 h-2.5 rounded-[2px] bg-dark-bg-tertiary" />

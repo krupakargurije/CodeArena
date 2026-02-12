@@ -30,10 +30,10 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
 
     return (
         <div className="group">
-            <div className="flex items-center px-6 py-4 hover:bg-white/[0.02] transition-colors">
+            <div className="flex items-center px-6 py-4 transition-colors" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 {/* Problem ID & Difficulty Badge */}
                 <div className="flex items-center gap-3 w-40 flex-shrink-0">
-                    <span className="text-dark-text-tertiary text-sm font-mono">
+                    <span className="text-sm font-mono" style={{ color: 'var(--text-tertiary)' }}>
                         {problemId}
                     </span>
                     <span className={`px-2 py-0.5 text-xs font-medium rounded border ${difficultyStyles.text} ${difficultyStyles.bg}`}>
@@ -43,8 +43,8 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
 
                 {/* Title */}
                 <div className="flex-1 min-w-0 px-4">
-                    <h3 className="text-white font-medium truncate group-hover:text-brand-blue transition-colors">
-                        {problem.title}
+                    <h3 className="font-medium truncate group-hover:text-brand-blue transition-colors" style={{ color: 'var(--text-primary)' }}>
+                        {problem.id}. {problem.title}
                     </h3>
                 </div>
 
@@ -53,7 +53,8 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
                     {problem.tags?.slice(0, 2).map((tag, idx) => (
                         <span
                             key={idx}
-                            className="px-2.5 py-1 text-xs font-medium rounded-md bg-dark-bg-tertiary/50 text-dark-text-secondary border border-white/5"
+                            className="px-2.5 py-1 text-xs font-medium rounded-md"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
                         >
                             {tag}
                         </span>
@@ -62,10 +63,10 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
 
                 {/* Acceptance Rate & Points */}
                 <div className="w-32 text-right flex-shrink-0 hidden md:block">
-                    <div className="text-dark-text-secondary text-sm">
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}% acceptance` : '—'}
                     </div>
-                    <div className="text-dark-text-tertiary text-xs">
+                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                         {problem.points || (index + 1) * 100} pts
                     </div>
                 </div>
@@ -74,7 +75,8 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
                 <div className="w-24 flex justify-end flex-shrink-0">
                     <Link
                         to={`/problems/${problem.id}`}
-                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-dark-bg-tertiary/50 border border-white/10 text-white text-sm font-medium hover:bg-dark-bg-tertiary hover:border-white/20 transition-all group/btn"
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all group/btn"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                     >
                         Open
                         <svg className="w-3.5 h-3.5 opacity-50 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -174,7 +174,7 @@ const Profile = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
                 <div className="w-8 h-8 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
             </div>
         );
@@ -183,10 +183,10 @@ const Profile = () => {
     const avatarDisplay = avatarPreview || profileData.avatarUrl;
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f]">
+        <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Profile Header Card */}
-                <div className="relative group bg-[#12121a]/80 backdrop-blur-xl rounded-2xl border border-white/5 p-8 mb-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-blue/5">
+                <div className="relative group backdrop-blur-xl rounded-2xl p-8 mb-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-blue/5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                     {/* Gradient overlay at top */}
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-brand-blue/10 via-brand-blue/5 to-transparent opacity-60" />
 
@@ -194,13 +194,14 @@ const Profile = () => {
                         {/* Avatar */}
                         <div className="relative group/avatar">
                             <div
-                                className={`relative w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#0a0a0f] shadow-2xl ${isEditing ? 'cursor-pointer hover:border-brand-blue/50' : ''} transition-colors`}
+                                className={`relative w-32 h-32 rounded-2xl overflow-hidden shadow-2xl ${isEditing ? 'cursor-pointer hover:border-brand-blue/50' : ''} transition-colors`}
+                                style={{ border: '4px solid var(--bg-page)' }}
                                 onClick={handleAvatarClick}
                             >
                                 {avatarDisplay ? (
                                     <img src={avatarDisplay} alt="Avatar" className="w-full h-full object-cover transform group-hover/avatar:scale-105 transition-transform duration-500" />
                                 ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-[#1e1e24] to-[#12121a] flex items-center justify-center text-4xl font-bold text-white/20">
+                                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>
                                         {(profileData.name || profileData.username || 'U').charAt(0).toUpperCase()}
                                     </div>
                                 )}
@@ -214,7 +215,7 @@ const Profile = () => {
                                 )}
                             </div>
                             {/* Offline/Online Badge (Static for now) */}
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#0a0a0f] rounded-full flex items-center justify-center">
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
                                 <div className="w-3 h-3 bg-green-500 rounded-full border border-black animate-pulse" />
                             </div>
                         </div>
@@ -234,11 +235,12 @@ const Profile = () => {
                                         type="text"
                                         value={editData.name}
                                         onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                                        className="text-3xl font-bold bg-transparent border-b border-white/20 text-white focus:outline-none focus:border-brand-blue text-center md:text-left"
+                                        className="text-3xl font-bold bg-transparent border-b focus:outline-none focus:border-brand-blue text-center md:text-left"
+                                        style={{ color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}
                                         placeholder="Your name"
                                     />
                                 ) : (
-                                    <h1 className="text-3xl font-bold text-white tracking-tight">
+                                    <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                                         {profileData.name || profileData.username}
                                     </h1>
                                 )}
@@ -247,25 +249,26 @@ const Profile = () => {
                                 </span>
                             </div>
 
-                            <p className="text-dark-text-secondary text-sm mb-4 font-mono opacity-80">@{profileData.username}</p>
+                            <p className="text-sm mb-4 font-mono opacity-80" style={{ color: 'var(--text-secondary)' }}>@{profileData.username}</p>
 
                             {isEditing ? (
                                 <textarea
                                     value={editData.bio}
                                     onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                                    className="w-full bg-dark-bg-tertiary/50 border border-white/10 rounded-lg px-4 py-3 text-dark-text-secondary text-sm focus:outline-none focus:border-brand-blue resize-none transition-colors"
+                                    className="w-full rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-brand-blue resize-none transition-colors"
+                                    style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}
                                     placeholder="Write a short bio..."
                                     rows={2}
                                 />
                             ) : (
-                                <p className="text-dark-text-secondary text-sm max-w-xl leading-relaxed">
-                                    {profileData.bio || <span className="italic text-dark-text-tertiary">No bio added yet.</span>}
+                                <p className="text-sm max-w-xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                                    {profileData.bio || <span className="italic" style={{ color: 'var(--text-tertiary)' }}>No bio added yet.</span>}
                                 </p>
                             )}
 
                             {/* Meta Info */}
                             {!isEditing && (profileData.country || profileData.organization) && (
-                                <div className="flex items-center justify-center md:justify-start gap-4 mt-4 text-xs text-dark-text-tertiary">
+                                <div className="flex items-center justify-center md:justify-start gap-4 mt-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                                     {profileData.country && (
                                         <div className="flex items-center gap-1.5">
                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -287,16 +290,16 @@ const Profile = () => {
                         </div>
 
                         {/* Stats & Actions */}
-                        <div className="flex flex-col items-center md:items-end gap-6 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5 md:pl-8 md:border-l">
+                        <div className="flex flex-col items-center md:items-end gap-6 w-full md:w-auto pt-4 md:pt-0 md:pl-8" style={{ borderTop: 'none', borderLeft: '1px solid var(--border-subtle)' }}>
                             <div className="flex items-center gap-8">
                                 <div className="text-center group/stat">
-                                    <div className="text-3xl font-bold text-white tracking-tight group-hover/stat:text-brand-blue transition-colors duration-300">{profileData.rating}</div>
-                                    <div className="text-[10px] uppercase tracking-widest text-dark-text-tertiary mt-1">Rating</div>
+                                    <div className="text-3xl font-bold tracking-tight group-hover/stat:text-brand-blue transition-colors duration-300" style={{ color: 'var(--text-primary)' }}>{profileData.rating}</div>
+                                    <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: 'var(--text-tertiary)' }}>Rating</div>
                                 </div>
-                                <div className="w-[1px] h-10 bg-white/5" />
+                                <div className="w-[1px] h-10" style={{ background: 'var(--border-subtle)' }} />
                                 <div className="text-center group/stat">
-                                    <div className="text-3xl font-bold text-white tracking-tight group-hover/stat:text-green-500 transition-colors duration-300">{profileData.solvedCount}</div>
-                                    <div className="text-[10px] uppercase tracking-widest text-dark-text-tertiary mt-1">Solved</div>
+                                    <div className="text-3xl font-bold tracking-tight group-hover/stat:text-green-500 transition-colors duration-300" style={{ color: 'var(--text-primary)' }}>{profileData.solvedCount}</div>
+                                    <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: 'var(--text-tertiary)' }}>Solved</div>
                                 </div>
                             </div>
 
@@ -305,7 +308,8 @@ const Profile = () => {
                                     <>
                                         <button
                                             onClick={handleCancel}
-                                            className="px-6 py-2.5 rounded-xl bg-dark-bg-tertiary border border-white/10 text-white text-sm font-medium hover:bg-dark-bg-elevated transition-all hover:scale-105 active:scale-95"
+                                            className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
+                                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                                         >
                                             Cancel
                                         </button>
@@ -321,7 +325,8 @@ const Profile = () => {
                                     <>
                                         <button
                                             onClick={handleEdit}
-                                            className="px-6 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white text-sm font-medium hover:bg-white/[0.08] transition-all hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                            className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                                         >
                                             Edit Profile
                                         </button>
@@ -342,39 +347,42 @@ const Profile = () => {
 
                     {/* Additional Fields when editing */}
                     {isEditing && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-white/5 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 animate-in fade-in slide-in-from-top-4 duration-300" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-wide text-dark-text-tertiary font-semibold">Username</label>
+                                <label className="block text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-tertiary)' }}>Username</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-text-tertiary">@</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }}>@</span>
                                     <input
                                         type="text"
                                         value={editData.username}
                                         onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                                        className="w-full pl-7 pr-3 py-2.5 bg-dark-bg-tertiary/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-brand-blue focus:bg-dark-bg-tertiary/50 transition-all"
+                                        className="w-full pl-7 pr-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-blue transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-wide text-dark-text-tertiary font-semibold">Country</label>
+                                <label className="block text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-tertiary)' }}>Country</label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={editData.country}
                                         onChange={(e) => setEditData({ ...editData, country: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-dark-bg-tertiary/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-brand-blue focus:bg-dark-bg-tertiary/50 transition-all"
+                                        className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-blue transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="e.g., India"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-wide text-dark-text-tertiary font-semibold">Organization</label>
+                                <label className="block text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-tertiary)' }}>Organization</label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={editData.organization}
                                         onChange={(e) => setEditData({ ...editData, organization: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-dark-bg-tertiary/30 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-brand-blue focus:bg-dark-bg-tertiary/50 transition-all"
+                                        className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-blue transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="e.g., University"
                                     />
                                 </div>

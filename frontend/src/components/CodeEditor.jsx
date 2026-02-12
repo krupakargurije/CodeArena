@@ -1,6 +1,10 @@
+import { useEffect } from 'react';
 import Editor from '@monaco-editor/react';
+import { useTheme } from '../context/ThemeContext';
 
 const CodeEditor = ({ code, onChange, language, onCursorChange }) => {
+    const { theme } = useTheme();
+    const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light';
     const editorOptions = {
         minimap: { enabled: false },
         fontSize: 14,
@@ -15,11 +19,11 @@ const CodeEditor = ({ code, onChange, language, onCursorChange }) => {
     };
 
     const handleEditorDidMount = (editor, monaco) => {
-        // Force dark theme after mount
-        monaco.editor.setTheme('vs-dark');
+        // Force theme after mount
+        monaco.editor.setTheme(monacoTheme);
 
         editor.updateOptions({
-            theme: 'vs-dark'
+            theme: monacoTheme
         });
 
         // Report cursor position changes
@@ -34,19 +38,19 @@ const CodeEditor = ({ code, onChange, language, onCursorChange }) => {
     };
 
     return (
-        <div className="h-full border border-white/5 rounded-xl overflow-hidden bg-[#1e1e1e] shadow-inner shadow-black/50">
+        <div className="h-full rounded-xl overflow-hidden shadow-inner" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-subtle)' }}>
             <Editor
                 height="100%"
                 language={language}
                 value={code}
                 onChange={onChange}
-                theme="vs-dark"
+                theme={monacoTheme}
                 options={{
                     ...editorOptions,
                     padding: { top: 16, bottom: 16 },
                 }}
                 beforeMount={(monaco) => {
-                    monaco.editor.setTheme('vs-dark');
+                    monaco.editor.setTheme(monacoTheme);
                 }}
                 onMount={handleEditorDidMount}
             />

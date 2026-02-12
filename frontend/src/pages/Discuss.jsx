@@ -53,12 +53,12 @@ const Discuss = () => {
     ]);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f]">
+        <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-white mb-2">Discuss</h1>
-                    <p className="text-dark-text-tertiary text-sm">
+                    <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Discuss</h1>
+                    <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                         Fast threads, clean formatting, and keyboard-first navigation.
                     </p>
                 </div>
@@ -68,10 +68,11 @@ const Discuss = () => {
                     {discussions.slice(0, 3).map((thread) => (
                         <div
                             key={thread.id}
-                            className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 p-5 hover:border-white/10 transition-all group"
+                            className="backdrop-blur-xl rounded-xl p-5 transition-all group"
+                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
                         >
                             {/* Meta Row */}
-                            <div className="flex items-center gap-3 mb-3 text-xs text-dark-text-tertiary">
+                            <div className="flex items-center gap-3 mb-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                                 {thread.isNew && (
                                     <span className="flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
@@ -84,22 +85,24 @@ const Discuss = () => {
                             </div>
 
                             {/* Title */}
-                            <h3 className="text-white font-semibold mb-2 group-hover:text-brand-blue transition-colors">
+                            <h3 className="font-semibold mb-2 group-hover:text-brand-blue transition-colors" style={{ color: 'var(--text-primary)' }}>
                                 {thread.title}
                             </h3>
 
                             {/* Description */}
-                            <p className="text-dark-text-secondary text-sm mb-4">
+                            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
                                 {thread.description}
                             </p>
 
                             {/* Footer */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 rounded bg-white/5 text-dark-text-tertiary text-xs">CA</span>
-                                    <span className="text-dark-text-secondary text-sm">{thread.author}</span>
+                                    <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>CA</span>
+                                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{thread.author}</span>
                                 </div>
-                                <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition-colors">
+                                <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                                >
                                     Open
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -113,24 +116,24 @@ const Discuss = () => {
                 {/* Build Your Momentum Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left - Momentum */}
-                    <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 p-6">
-                        <h2 className="text-xl font-bold text-white mb-3">Build your momentum</h2>
-                        <p className="text-dark-text-secondary text-sm mb-6">
+                    <div className="backdrop-blur-xl rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                        <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Build your momentum</h2>
+                        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
                             Stay in flow with a distraction-free editor, clean submissions history, and performance insights.
                         </p>
 
                         {/* Feature Tags */}
                         <div className="flex flex-wrap gap-2 mb-6">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-dark-text-secondary text-xs">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                                 <span>⌨️</span> Keyboard-first
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-dark-text-secondary text-xs">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                                 <span>&lt;/&gt;</span> Monaco-ready
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-dark-text-secondary text-xs">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                                 <span>⚡</span> Low-latency
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-dark-text-secondary text-xs">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                                 <span>🏆</span> Ranked
                             </span>
                         </div>
@@ -159,7 +162,8 @@ const Discuss = () => {
                             )}
                             <Link
                                 to="/problems"
-                                className="px-5 py-2.5 rounded-lg text-white font-medium hover:bg-white/5 transition-all"
+                                className="px-5 py-2.5 rounded-lg font-medium transition-all"
+                                style={{ color: 'var(--text-primary)' }}
                             >
                                 Explore problems
                             </Link>
@@ -167,84 +171,90 @@ const Discuss = () => {
                     </div>
 
                     {/* Right - Quick Actions */}
-                    <div className="bg-[#12121a]/80 backdrop-blur-xl rounded-xl border border-white/5 p-6">
+                    <div className="backdrop-blur-xl rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-white font-semibold">Quick actions</h3>
+                            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Quick actions</h3>
                             <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 text-xs font-medium">Pro</span>
                         </div>
 
                         {/* Action Items */}
                         <div className="space-y-3">
-                            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-white/10 transition-all group">
+                            <button className="w-full flex items-center justify-between p-4 rounded-xl transition-all group"
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                            >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
                                         🏆
                                     </div>
                                     <div className="text-left">
-                                        <div className="text-white font-medium text-sm">Join next contest</div>
-                                        <div className="text-dark-text-tertiary text-xs">One click. Stay in flow.</div>
+                                        <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Join next contest</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>One click. Stay in flow.</div>
                                     </div>
                                 </div>
-                                <svg className="w-4 h-4 text-dark-text-tertiary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-4 h-4 transition-colors" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
 
-                            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-white/10 transition-all group">
+                            <button className="w-full flex items-center justify-between p-4 rounded-xl transition-all group"
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                            >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
                                         &lt;/&gt;
                                     </div>
                                     <div className="text-left">
-                                        <div className="text-white font-medium text-sm">Solve a random problem</div>
-                                        <div className="text-dark-text-tertiary text-xs">One click. Stay in flow.</div>
+                                        <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Solve a random problem</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>One click. Stay in flow.</div>
                                     </div>
                                 </div>
-                                <svg className="w-4 h-4 text-dark-text-tertiary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-4 h-4 transition-colors" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
 
-                            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-white/10 transition-all group">
+                            <button className="w-full flex items-center justify-between p-4 rounded-xl transition-all group"
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                            >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
                                         ⏱️
                                     </div>
                                     <div className="text-left">
-                                        <div className="text-white font-medium text-sm">Start a 25-min sprint</div>
-                                        <div className="text-dark-text-tertiary text-xs">One click. Stay in flow.</div>
+                                        <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Start a 25-min sprint</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>One click. Stay in flow.</div>
                                     </div>
                                 </div>
-                                <svg className="w-4 h-4 text-dark-text-tertiary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-4 h-4 transition-colors" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
 
                         {/* Command Palette */}
-                        <div className="mt-4 p-4 rounded-xl bg-[#0a0a0f] border border-white/5">
+                        <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <div className="text-white font-medium text-sm">Command palette</div>
-                                    <div className="text-dark-text-tertiary text-xs">Jump to problems, contests, discussions—no mouse required.</div>
+                                    <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Command palette</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Jump to problems, contests, discussions—no mouse required.</div>
                                 </div>
-                                <kbd className="px-2 py-1 rounded bg-white/10 text-dark-text-secondary text-xs font-mono">Ctrl K</kbd>
+                                <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>Ctrl K</kbd>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <footer className="mt-16 pt-8 border-t border-white/5">
+                <footer className="mt-16 pt-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
                             <img src="/logo.png" alt="CodeArena" className="w-8 h-8" />
                             <div>
-                                <div className="text-white font-semibold">CodeArena</div>
-                                <div className="text-dark-text-tertiary text-xs">Fast, minimal competitive coding.</div>
+                                <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>CodeArena</div>
+                                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Fast, minimal competitive coding.</div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-6 text-dark-text-secondary text-sm">
+                        <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
                             <a href="#" className="hover:text-white transition-colors">Docs</a>
                             <a href="#" className="hover:text-white transition-colors">Status</a>
                             <a href="#" className="hover:text-white transition-colors">Privacy</a>

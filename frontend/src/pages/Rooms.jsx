@@ -136,19 +136,19 @@ const Rooms = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
                 <div className="w-8 h-8 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-dark-bg-primary">
+        <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">My Rooms</h1>
-                    <p className="text-dark-text-secondary">
+                    <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>My Rooms</h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>
                         Private spaces for group practice and mini-contests (mock UI).
                     </p>
                 </div>
@@ -170,7 +170,8 @@ const Rooms = () => {
                             </button>
                             <button
                                 onClick={() => setShowJoinModal(true)}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-dark-bg-secondary border border-white/10 text-white font-medium hover:bg-dark-bg-tertiary transition-all"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all"
+                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -194,9 +195,10 @@ const Rooms = () => {
                             <button
                                 onClick={() => setActiveTab('my')}
                                 className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'my'
-                                    ? 'text-white'
-                                    : 'text-dark-text-tertiary hover:text-white'
+                                    ? ''
+                                    : 'hover:opacity-100'
                                     }`}
+                                style={{ color: activeTab === 'my' ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
                             >
                                 My Rooms
                                 {activeTab === 'my' && (
@@ -206,9 +208,10 @@ const Rooms = () => {
                             <button
                                 onClick={() => setActiveTab('global')}
                                 className={`pb-3 text-sm font-medium transition-all relative ${activeTab === 'global'
-                                    ? 'text-white'
-                                    : 'text-dark-text-tertiary hover:text-white'
+                                    ? ''
+                                    : 'hover:opacity-100'
                                     }`}
+                                style={{ color: activeTab === 'global' ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
                             >
                                 Global Rooms
                                 {activeTab === 'global' && (
@@ -224,12 +227,13 @@ const Rooms = () => {
                                     rooms.map((room) => (
                                         <div
                                             key={room.id}
-                                            className="bg-[#0a0a0f]/50 rounded-xl border border-white/5 p-3 hover:border-white/10 transition-all group"
+                                            className="rounded-xl p-3 transition-all group"
+                                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-dark-text-tertiary text-xs font-mono">
+                                                        <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>
                                                             R-{String(room.id).slice(0, 4).toUpperCase()}
                                                         </span>
                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.status === 'waiting'
@@ -240,8 +244,10 @@ const Rooms = () => {
                                                         </span>
                                                         <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.is_private
                                                             ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                                            : 'bg-[#0a0a0f] text-dark-text-tertiary border border-white/10'
-                                                            }`}>
+                                                            : ''
+                                                            }`}
+                                                            style={!room.is_private ? { background: 'var(--bg-primary)', color: 'var(--text-tertiary)', border: '1px solid var(--border-subtle)' } : {}}
+                                                        >
                                                             {room.is_private ? (
                                                                 <>
                                                                     <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,10 +271,10 @@ const Rooms = () => {
                                                             {getExpiryTime(room.created_at) || 'Active'}
                                                         </span>
                                                     </div>
-                                                    <h3 className="text-white font-medium text-sm truncate pr-4">
+                                                    <h3 className="font-medium text-sm truncate pr-4" style={{ color: 'var(--text-primary)' }}>
                                                         {room.problems?.title || 'Room ' + room.id.slice(0, 8)}
                                                     </h3>
-                                                    <div className="flex items-center gap-2 text-dark-text-tertiary text-xs mt-1">
+                                                    <div className="flex items-center gap-2 text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                                                         <div className="flex items-center gap-1">
                                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -282,7 +288,8 @@ const Rooms = () => {
                                                     {String(room.created_by) === String(user?.id) && (
                                                         <button
                                                             onClick={(e) => handleDeleteRoom(room.id, e)}
-                                                            className="p-1.5 text-dark-text-tertiary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                            className="p-1.5 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                            style={{ color: 'var(--text-tertiary)' }}
                                                             title="Delete Room"
                                                         >
                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -292,7 +299,8 @@ const Rooms = () => {
                                                     )}
                                                     <button
                                                         onClick={() => navigate(`/rooms/${room.id}/lobby`)}
-                                                        className="px-3 py-1.5 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white text-xs font-medium hover:bg-dark-bg-elevated transition-all"
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                                                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                                                     >
                                                         Open
                                                     </button>
@@ -301,10 +309,10 @@ const Rooms = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-12 bg-dark-bg-secondary/30 rounded-xl border border-white/5">
+                                    <div className="text-center py-12 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                                         <div className="text-4xl mb-4">🚀</div>
-                                        <h3 className="text-white font-medium mb-1">No rooms yet</h3>
-                                        <p className="text-dark-text-tertiary text-sm">Create your first room to get started!</p>
+                                        <h3 className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No rooms yet</h3>
+                                        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Create your first room to get started!</p>
                                     </div>
                                 )
                             ) : (
@@ -319,12 +327,13 @@ const Rooms = () => {
                                         return (
                                             <div
                                                 key={room.id}
-                                                className="bg-[#0a0a0f]/50 rounded-xl border border-white/5 p-3 hover:border-white/10 transition-all"
+                                                className="rounded-xl p-3 transition-all"
+                                                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-dark-text-tertiary text-xs font-mono">
+                                                            <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>
                                                                 R-{String(room.id).slice(0, 4).toUpperCase()}
                                                             </span>
                                                             <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.status === 'waiting'
@@ -340,8 +349,10 @@ const Rooms = () => {
                                                             )}
                                                             <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${room.is_private
                                                                 ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                                                : 'bg-[#0a0a0f] text-dark-text-tertiary border border-white/10'
-                                                                }`}>
+                                                                : ''
+                                                                }`}
+                                                                style={!room.is_private ? { background: 'var(--bg-primary)', color: 'var(--text-tertiary)', border: '1px solid var(--border-subtle)' } : {}}
+                                                            >
                                                                 {room.is_private ? (
                                                                     <>
                                                                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,26 +376,27 @@ const Rooms = () => {
                                                                 {getExpiryTime(room.created_at) || 'Active'}
                                                             </span>
                                                         </div>
-                                                        <h3 className="text-white font-medium text-sm truncate pr-4">
+                                                        <h3 className="font-medium text-sm truncate pr-4" style={{ color: 'var(--text-primary)' }}>
                                                             {room.problems?.title || 'Room ' + room.id.slice(0, 8)}
                                                         </h3>
-                                                        <div className="flex items-center gap-3 text-dark-text-tertiary text-xs mt-1">
+                                                        <div className="flex items-center gap-3 text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                                                             <div className="flex items-center gap-1">
                                                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                                                 </svg>
                                                                 {room.participants?.length || room.roomParticipants?.length || 1}
                                                             </div>
-                                                            <span className="text-dark-text-tertiary/20">|</span>
+                                                            <span style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}>|</span>
                                                             <span>
-                                                                Host: <span className="text-white/80">{hostName}</span>
+                                                                Host: <span className="opacity-80" style={{ color: 'var(--text-secondary)' }}>{hostName}</span>
                                                             </span>
                                                         </div>
                                                     </div>
                                                     {isMyRoom ? (
                                                         <button
                                                             onClick={() => navigate(`/rooms/${room.id}/lobby`)}
-                                                            className="px-3 py-1.5 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white text-xs font-medium hover:bg-dark-bg-elevated transition-all"
+                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                                                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                                                         >
                                                             Open
                                                         </button>
@@ -401,10 +413,10 @@ const Rooms = () => {
                                         );
                                     })
                                 ) : (
-                                    <div className="text-center py-12 bg-dark-bg-secondary/30 rounded-xl border border-white/5">
+                                    <div className="text-center py-12 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                                         <div className="text-4xl mb-4">🌍</div>
-                                        <h3 className="text-white font-medium mb-1">No global rooms</h3>
-                                        <p className="text-dark-text-tertiary text-sm">Create a public room to see it here!</p>
+                                        <h3 className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No global rooms</h3>
+                                        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Create a public room to see it here!</p>
                                     </div>
                                 )
                             )}
@@ -413,21 +425,21 @@ const Rooms = () => {
 
                     {/* Room Tips Sidebar */}
                     <div className="lg:col-span-1">
-                        <div className="bg-dark-bg-secondary/50 rounded-xl border border-white/5 p-6 sticky top-24">
-                            <h3 className="text-white font-semibold mb-2">Room tips</h3>
-                            <p className="text-dark-text-tertiary text-sm mb-4">Keep it fast and focused.</p>
+                        <div className="rounded-xl p-6 sticky top-24" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Room tips</h3>
+                            <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>Keep it fast and focused.</p>
 
                             <ul className="space-y-3 text-sm">
-                                <li className="flex items-start gap-2 text-dark-text-secondary">
-                                    <span className="text-dark-text-tertiary">•</span>
+                                <li className="flex items-start gap-2" style={{ color: 'var(--text-secondary)' }}>
+                                    <span style={{ color: 'var(--text-tertiary)' }}>•</span>
                                     Use sprints (25m) for warmups.
                                 </li>
-                                <li className="flex items-start gap-2 text-dark-text-secondary">
-                                    <span className="text-dark-text-tertiary">•</span>
+                                <li className="flex items-start gap-2" style={{ color: 'var(--text-secondary)' }}>
+                                    <span style={{ color: 'var(--text-tertiary)' }}>•</span>
                                     Share a single template per topic.
                                 </li>
-                                <li className="flex items-start gap-2 text-dark-text-secondary">
-                                    <span className="text-dark-text-tertiary">•</span>
+                                <li className="flex items-start gap-2" style={{ color: 'var(--text-secondary)' }}>
+                                    <span style={{ color: 'var(--text-tertiary)' }}>•</span>
                                     Review wrong submissions together.
                                 </li>
                             </ul>
@@ -436,16 +448,16 @@ const Rooms = () => {
                 </div>
 
                 {/* Footer */}
-                <footer className="mt-16 pt-8 border-t border-white/5">
+                <footer className="mt-16 pt-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <img src="/logo.png" alt="CodeArena" className="w-6 h-6" />
                             <div>
-                                <span className="text-white font-medium text-sm">CodeArena</span>
-                                <p className="text-dark-text-tertiary text-xs">Fast, minimal competitive coding.</p>
+                                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>CodeArena</span>
+                                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Fast, minimal competitive coding.</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-6 text-dark-text-tertiary text-sm">
+                        <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                             <a href="#" className="hover:text-white transition-colors">Docs</a>
                             <a href="#" className="hover:text-white transition-colors">Status</a>
                             <a href="#" className="hover:text-white transition-colors">Privacy</a>
@@ -478,15 +490,16 @@ const Rooms = () => {
             {/* Delete Confirmation Modal */}
             {roomToDelete && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-dark-bg-secondary rounded-2xl p-8 max-w-md w-full border border-white/10">
-                        <h2 className="text-2xl font-bold text-white mb-4">Delete Room?</h2>
-                        <p className="text-dark-text-secondary mb-6">
+                    <div className="rounded-2xl p-8 max-w-md w-full" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                        <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Delete Room?</h2>
+                        <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
                             Are you sure you want to delete this room? This action cannot be undone.
                         </p>
                         <div className="flex gap-4">
                             <button
                                 onClick={cancelDelete}
-                                className="flex-1 px-4 py-2 rounded-lg bg-dark-bg-tertiary border border-white/10 text-white font-medium hover:bg-dark-bg-elevated transition-all"
+                                className="flex-1 px-4 py-2 rounded-lg font-medium transition-all"
+                                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                             >
                                 Cancel
                             </button>

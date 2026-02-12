@@ -60,12 +60,12 @@ const Signup = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#0a0a0f] relative overflow-hidden">
+        <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--bg-page)' }}>
             {/* Logo */}
             <div className="absolute top-6 left-6 z-20">
                 <Link to="/" className="flex items-center gap-2">
                     <img src="/logo.png" alt="CodeArena" className="w-8 h-8" />
-                    <span className="text-white font-semibold text-lg">CodeArena</span>
+                    <span className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>CodeArena</span>
                 </Link>
             </div>
 
@@ -95,10 +95,10 @@ const Signup = () => {
                         {/* Card glow effect */}
                         <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-50" />
 
-                        <div className="relative bg-[#12121a]/80 backdrop-blur-xl rounded-2xl p-8 border border-white/10 shadow-2xl">
+                        <div className="relative backdrop-blur-xl rounded-2xl p-8 shadow-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                             {/* Header */}
                             <div className="text-center mb-8">
-                                <h2 className="text-3xl font-bold text-white mb-2">
+                                <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                                     Sign Up
                                 </h2>
                             </div>
@@ -113,7 +113,7 @@ const Signup = () => {
                             {/* Form */}
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-white mb-2">
+                                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
                                         Username
                                     </label>
                                     <input
@@ -121,14 +121,15 @@ const Signup = () => {
                                         name="username"
                                         value={formData.username}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="Username"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-white mb-2">
+                                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
                                         Email Address
                                     </label>
                                     <input
@@ -136,14 +137,15 @@ const Signup = () => {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="Email Address"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-white mb-2">
+                                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
                                         Password
                                     </label>
                                     <input
@@ -151,14 +153,15 @@ const Signup = () => {
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="Password"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-white mb-2">
+                                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
                                         Confirm Password
                                     </label>
                                     <input
@@ -166,7 +169,8 @@ const Signup = () => {
                                         name="confirmPassword"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                         placeholder="Confirm Password"
                                         required
                                     />
@@ -183,7 +187,7 @@ const Signup = () => {
 
                             {/* Footer */}
                             <div className="mt-8 text-center">
-                                <p className="text-white/60 text-sm">
+                                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                                     Already have an account?{' '}
                                     <Link to="/login" className="text-brand-blue hover:text-blue-400 font-medium transition-colors">
                                         Sign In

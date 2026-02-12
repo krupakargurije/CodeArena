@@ -81,7 +81,7 @@ const Home = () => {
     };
 
     return (
-        <div className="min-h-screen bg-dark-bg-primary relative overflow-hidden">
+        <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg-page)' }}>
             {/* Dotted Grid Background */}
             <div className="fixed inset-0 dotted-grid opacity-60" />
 
@@ -106,32 +106,33 @@ const Home = () => {
 
                         {/* Hero Text */}
                         <div className="space-y-6">
-                            <h1 className="text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight">
+                            <h1 className="text-5xl md:text-6xl font-bold leading-[1.1] tracking-tight" style={{ color: 'var(--text-primary)' }}>
                                 Code. Battle. <br />
                                 <span className="bg-gradient-to-r from-brand-blue via-cyan-400 to-purple-500 bg-clip-text text-transparent">Dominate.</span>
                             </h1>
-                            <p className="text-dark-text-secondary text-lg leading-relaxed max-w-xl">
-                                CodeArena is the ultimate <span className="text-white font-medium">coding battle royale</span>.
+                            <p className="text-lg leading-relaxed max-w-xl" style={{ color: 'var(--text-secondary)' }}>
+                                CodeArena is the ultimate <span className="font-medium" style={{ color: 'var(--text-primary)' }}>coding battle royale</span>.
                                 Compete head-to-head with developers worldwide in real-time coding battles.
                                 Create rooms, challenge friends, or jump into random matches — last coder standing wins.
                             </p>
                         </div>
 
                         {/* Battle Mode Highlight */}
-                        <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                             <div className="p-3 rounded-full bg-brand-blue/20 border border-brand-blue/30">
                                 <svg className="w-6 h-6 text-brand-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <div className="text-white font-semibold">Arena Mode is LIVE</div>
-                                <div className="text-dark-text-tertiary text-sm">{stats.activePlayers} coders battling right now</div>
+                                <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Arena Mode is LIVE</div>
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{stats.activePlayers} coders battling right now</div>
                             </div>
                             <button
                                 onClick={handleRandomJoin}
                                 disabled={joiningRandom}
-                                className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-all"
+                                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                             >
                                 {joiningRandom ? 'Finding...' : 'Join Battle'}
                             </button>
@@ -150,7 +151,8 @@ const Home = () => {
                             </button>
                             <button
                                 onClick={handleJoinClick}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-dark-bg-secondary border border-white/10 text-white font-medium hover:bg-dark-bg-tertiary transition-all"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all"
+                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                             >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
@@ -176,8 +178,8 @@ const Home = () => {
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                 </div>
                                 <div>
-                                    <div className="text-white font-semibold">{stats.activePlayers || 0}</div>
-                                    <div className="text-dark-text-tertiary text-xs">Online Now</div>
+                                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{stats.activePlayers || 0}</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Online Now</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -187,8 +189,8 @@ const Home = () => {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-white font-semibold">{stats.activeRooms || 0}</div>
-                                    <div className="text-dark-text-tertiary text-xs">Active Battles</div>
+                                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{stats.activeRooms || 0}</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Active Battles</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -198,8 +200,8 @@ const Home = () => {
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="text-white font-semibold">{stats.totalUsers || 0}</div>
-                                    <div className="text-dark-text-tertiary text-xs">Total Coders</div>
+                                    <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{stats.totalUsers || 0}</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Total Coders</div>
                                 </div>
                             </div>
                         </div>
@@ -211,8 +213,8 @@ const Home = () => {
                         <div className="focus-card p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <h3 className="text-white font-semibold text-lg">⚔️ Live Battles</h3>
-                                    <p className="text-dark-text-tertiary text-sm">Jump into action now</p>
+                                    <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>⚔️ Live Battles</h3>
+                                    <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Jump into action now</p>
                                 </div>
                                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -222,14 +224,14 @@ const Home = () => {
 
                             {/* Active Battle Rooms */}
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-brand-blue/30 transition-colors cursor-pointer group">
+                                <div className="flex items-center justify-between p-3 rounded-xl hover:border-brand-blue/30 transition-colors cursor-pointer group" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-blue/20 to-purple-500/20 flex items-center justify-center border border-brand-blue/30">
                                             <span className="text-lg">🏆</span>
                                         </div>
                                         <div>
-                                            <div className="text-white font-medium text-sm">Elite Arena #47</div>
-                                            <div className="text-dark-text-tertiary text-xs">8/10 players · Starting in 2m</div>
+                                            <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Elite Arena #47</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>8/10 players · Starting in 2m</div>
                                         </div>
                                     </div>
                                     <button className="px-3 py-1.5 rounded-full bg-brand-blue text-white text-xs font-medium hover:bg-blue-600 transition-colors opacity-0 group-hover:opacity-100">
@@ -237,14 +239,14 @@ const Home = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-cyan-500/30 transition-colors cursor-pointer group">
+                                <div className="flex items-center justify-between p-3 rounded-xl hover:border-cyan-500/30 transition-colors cursor-pointer group" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-cyan-500/30">
                                             <span className="text-lg">⚡</span>
                                         </div>
                                         <div>
-                                            <div className="text-white font-medium text-sm">Speed Round</div>
-                                            <div className="text-dark-text-tertiary text-xs">4/4 players · In progress</div>
+                                            <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Speed Round</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>4/4 players · In progress</div>
                                         </div>
                                     </div>
                                     <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium border border-cyan-500/20">
@@ -252,14 +254,14 @@ const Home = () => {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-colors cursor-pointer group">
+                                <div className="flex items-center justify-between p-3 rounded-xl hover:border-purple-500/30 transition-colors cursor-pointer group" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/30">
                                             <span className="text-lg">👥</span>
                                         </div>
                                         <div>
-                                            <div className="text-white font-medium text-sm">1v1 Duel</div>
-                                            <div className="text-dark-text-tertiary text-xs">1/2 players · Waiting</div>
+                                            <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>1v1 Duel</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>1/2 players · Waiting</div>
                                         </div>
                                     </div>
                                     <button className="px-3 py-1.5 rounded-full bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition-colors opacity-0 group-hover:opacity-100">
@@ -271,7 +273,8 @@ const Home = () => {
                             <button
                                 onClick={handleRandomJoin}
                                 disabled={joiningRandom}
-                                className="w-full mt-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+                                className="w-full mt-4 py-2.5 rounded-full font-medium transition-all"
+                                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                             >
                                 {joiningRandom ? 'Finding Match...' : '🎮 Quick Match - Join Random Battle'}
                             </button>
@@ -280,28 +283,28 @@ const Home = () => {
                         {/* Battle Stats Card */}
                         <div className="focus-card p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-white font-semibold">🎖️ Your Battle Stats</h3>
+                                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>🎖️ Your Battle Stats</h3>
                                 <span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
                                     +5 wins today
                                 </span>
                             </div>
 
                             <div className="grid grid-cols-3 gap-4 mb-4">
-                                <div className="text-center p-3 rounded-xl bg-white/5 border border-white/5">
-                                    <div className="text-2xl font-bold text-white">47</div>
-                                    <div className="text-dark-text-tertiary text-xs">Total Wins</div>
+                                <div className="text-center p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>47</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Total Wins</div>
                                 </div>
-                                <div className="text-center p-3 rounded-xl bg-white/5 border border-white/5">
-                                    <div className="text-2xl font-bold text-white">#128</div>
-                                    <div className="text-dark-text-tertiary text-xs">Global Rank</div>
+                                <div className="text-center p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>#128</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Global Rank</div>
                                 </div>
-                                <div className="text-center p-3 rounded-xl bg-white/5 border border-white/5">
+                                <div className="text-center p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                                     <div className="text-2xl font-bold text-cyan-400">🔥 7</div>
-                                    <div className="text-dark-text-tertiary text-xs">Win Streak</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Win Streak</div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 text-dark-text-tertiary text-xs">
+                            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
@@ -315,10 +318,10 @@ const Home = () => {
             {/* Features Bento Grid Section */}
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                         Everything you need to level up
                     </h2>
-                    <p className="text-dark-text-secondary text-lg max-w-2xl mx-auto">
+                    <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
                         From practice problems to real-time contests, CodeArena has all the tools for competitive coding mastery.
                     </p>
                 </div>
@@ -334,15 +337,15 @@ const Home = () => {
                             </div>
                             <span className="tag-pill tag-pill-accent">Popular</span>
                         </div>
-                        <h3 className="text-white font-semibold text-xl mb-2">Multiplayer Arena Mode</h3>
-                        <p className="text-dark-text-secondary mb-6">
+                        <h3 className="font-semibold text-xl mb-2" style={{ color: 'var(--text-primary)' }}>Multiplayer Arena Mode</h3>
+                        <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
                             Compete head-to-head with other developers in real-time coding battles. Create rooms, invite friends, or jump into random matches.
                         </p>
                         <div className="flex gap-3">
                             <button onClick={handleCreateClick} className="px-4 py-2 rounded-lg bg-brand-blue text-white text-sm font-medium hover:bg-blue-600 transition-colors">
                                 Create room
                             </button>
-                            <button onClick={handleRandomJoin} disabled={joiningRandom} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors">
+                            <button onClick={handleRandomJoin} disabled={joiningRandom} className="px-4 py-2 rounded-lg text-sm font-medium transition-colors" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
                                 {joiningRandom ? 'Finding...' : 'Quick match'}
                             </button>
                         </div>
@@ -355,8 +358,8 @@ const Home = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <h3 className="text-white font-semibold text-lg mb-2">500+ Problems</h3>
-                        <p className="text-dark-text-secondary text-sm">
+                        <h3 className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>500+ Problems</h3>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Curated problem sets across all difficulty levels. From arrays to advanced graph algorithms.
                         </p>
                     </div>
@@ -368,8 +371,8 @@ const Home = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                         </div>
-                        <h3 className="text-white font-semibold text-lg mb-2">Instant Feedback</h3>
-                        <p className="text-dark-text-secondary text-sm">
+                        <h3 className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Instant Feedback</h3>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Get real-time feedback on your code. See execution time, memory usage, and detailed test results.
                         </p>
                     </div>
@@ -381,8 +384,8 @@ const Home = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                             </svg>
                         </div>
-                        <h3 className="text-white font-semibold text-lg mb-2">ELO Rating System</h3>
-                        <p className="text-dark-text-secondary text-sm">
+                        <h3 className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>ELO Rating System</h3>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Track your progress with a competitive rating. Climb the leaderboard and earn badges.
                         </p>
                     </div>
@@ -394,8 +397,8 @@ const Home = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
                         </div>
-                        <h3 className="text-white font-semibold text-lg mb-2">Monaco Editor</h3>
-                        <p className="text-dark-text-secondary text-sm">
+                        <h3 className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Monaco Editor</h3>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             VS Code-powered editor with syntax highlighting, autocomplete, and keyboard shortcuts.
                         </p>
                     </div>
@@ -406,8 +409,8 @@ const Home = () => {
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Upcoming Contests</h2>
-                        <p className="text-dark-text-tertiary">Join live competitions and test your skills</p>
+                        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Upcoming Contests</h2>
+                        <p style={{ color: 'var(--text-tertiary)' }}>Join live competitions and test your skills</p>
                     </div>
                     <Link to="/leaderboard" className="text-brand-blue hover:text-blue-400 text-sm font-medium transition-colors">
                         View all →
@@ -428,12 +431,12 @@ const Home = () => {
                                     }`}>
                                     {contest.difficulty}
                                 </span>
-                                <span className="text-dark-text-tertiary text-xs">{contest.duration}</span>
+                                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{contest.duration}</span>
                             </div>
-                            <h3 className="text-white font-semibold mb-1">{contest.name}</h3>
-                            <p className="text-dark-text-tertiary text-sm mb-4">{contest.time}</p>
+                            <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{contest.name}</h3>
+                            <p className="text-sm mb-4" style={{ color: 'var(--text-tertiary)' }}>{contest.time}</p>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1 text-dark-text-tertiary text-xs">
+                                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
@@ -453,36 +456,36 @@ const Home = () => {
                 <div className="focus-card p-8 md:p-12">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                            <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                                 Code in your favorite language
                             </h2>
-                            <p className="text-dark-text-secondary mb-6">
+                            <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
                                 We support all major programming languages with optimized runtimes and accurate test results.
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 {['Python', 'JavaScript', 'Java', 'C++', 'Go', 'Rust', 'TypeScript', 'C#'].map(lang => (
-                                    <span key={lang} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-dark-text-secondary text-sm">
+                                    <span key={lang} className="px-3 py-1.5 rounded-lg text-sm" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                                         {lang}
                                     </span>
                                 ))}
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-3xl font-bold text-white mb-1">~50ms</div>
-                                <div className="text-dark-text-tertiary text-sm">Avg. compile time</div>
+                            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>~50ms</div>
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Avg. compile time</div>
                             </div>
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-3xl font-bold text-white mb-1">99.9%</div>
-                                <div className="text-dark-text-tertiary text-sm">Uptime</div>
+                            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>99.9%</div>
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Uptime</div>
                             </div>
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-3xl font-bold text-white mb-1">8+</div>
-                                <div className="text-dark-text-tertiary text-sm">Languages</div>
+                            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>8+</div>
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Languages</div>
                             </div>
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-3xl font-bold text-white mb-1">24/7</div>
-                                <div className="text-dark-text-tertiary text-sm">Available</div>
+                            <div className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>24/7</div>
+                                <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Available</div>
                             </div>
                         </div>
                     </div>
@@ -492,8 +495,8 @@ const Home = () => {
             {/* Community Section */}
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-white mb-4">Loved by developers</h2>
-                    <p className="text-dark-text-secondary">Join thousands of coders improving every day</p>
+                    <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Loved by developers</h2>
+                    <p style={{ color: 'var(--text-secondary)' }}>Join thousands of coders improving every day</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -508,11 +511,11 @@ const Home = () => {
                                     {testimonial.avatar}
                                 </div>
                                 <div>
-                                    <div className="text-white font-medium">{testimonial.name}</div>
-                                    <div className="text-dark-text-tertiary text-sm">{testimonial.role}</div>
+                                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{testimonial.name}</div>
+                                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{testimonial.role}</div>
                                 </div>
                             </div>
-                            <p className="text-dark-text-secondary text-sm italic">"{testimonial.quote}"</p>
+                            <p className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>"{testimonial.quote}"</p>
                         </div>
                     ))}
                 </div>
@@ -521,10 +524,10 @@ const Home = () => {
             {/* CTA Footer Section */}
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="focus-card p-8 md:p-12 text-center bg-gradient-to-br from-brand-blue/10 to-purple-500/10 border-brand-blue/20">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                         Ready to start coding?
                     </h2>
-                    <p className="text-dark-text-secondary text-lg mb-8 max-w-xl mx-auto">
+                    <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
                         Join CodeArena today and start your journey to becoming a better developer.
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-4">
@@ -539,7 +542,8 @@ const Home = () => {
                         </Link>
                         <Link
                             to="/discuss"
-                            className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+                            className="inline-flex items-center gap-2 px-8 py-3 rounded-full font-medium transition-all"
+                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                         >
                             Join the community
                         </Link>
@@ -548,20 +552,20 @@ const Home = () => {
             </div>
 
             {/* Footer */}
-            <footer className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-white/5">
+            <footer className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-2">
                         <img src="/logo.png" alt="CodeArena" className="w-8 h-8" />
                         <div>
-                            <div className="text-white font-semibold">CodeArena</div>
-                            <div className="text-dark-text-tertiary text-xs">Fast, minimal competitive coding.</div>
+                            <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>CodeArena</div>
+                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Fast, minimal competitive coding.</div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-8 text-dark-text-secondary text-sm">
-                        <Link to="/problems" className="hover:text-white transition-colors">Problems</Link>
-                        <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
-                        <Link to="/discuss" className="hover:text-white transition-colors">Discuss</Link>
-                        <a href="#" className="hover:text-white transition-colors">Docs</a>
+                    <div className="flex items-center gap-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <Link to="/problems" className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Problems</Link>
+                        <Link to="/leaderboard" className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Leaderboard</Link>
+                        <Link to="/discuss" className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Discuss</Link>
+                        <a href="#" className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Docs</a>
                         <a href="https://github.com/krupakargurije?tab=overview&from=2026-01-01&to=2026-01-31" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -570,7 +574,7 @@ const Home = () => {
                         </a>
                     </div>
                 </div>
-                <div className="text-center mt-8 text-dark-text-tertiary text-sm">
+                <div className="text-center mt-8 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                     © 2024 CodeArena. All rights reserved.
                 </div>
             </footer>
