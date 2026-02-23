@@ -21,7 +21,7 @@ const AdminDashboard = () => {
     // Filter state
     const [searchQuery, setSearchQuery] = useState('');
     const [difficultyFilter, setDifficultyFilter] = useState('ALL');
-    const [sortBy, setSortBy] = useState('newest');
+    const [sortBy, setSortBy] = useState('id'); // Changed default to 'id'
 
     // Users state
     const [users, setUsers] = useState([]);
@@ -32,17 +32,23 @@ const AdminDashboard = () => {
     const [success, setSuccess] = useState('');
     const [revokeConfirm, setRevokeConfirm] = useState(null); // email of user to revoke
 
+    // Auth check
     useEffect(() => {
-        if (!isAdmin) {
+        if (isAdmin === false) { // explicitly false means we know they aren't admin, not just loading
             navigate('/problems');
-        } else {
-            if (activeTab === 'problems') {
-                fetchProblems();
-            } else if (activeTab === 'users') {
-                fetchUsers();
-            }
         }
-    }, [isAdmin, navigate, activeTab]);
+    }, [isAdmin, navigate]);
+
+    // Data fetching when tab changes
+    useEffect(() => {
+        if (!isAdmin) return; // wait until we know they are admin
+
+        if (activeTab === 'problems') {
+            fetchProblems();
+        } else if (activeTab === 'users') {
+            fetchUsers();
+        }
+    }, [activeTab, isAdmin]);
 
     // Problems functions
     const fetchProblems = async () => {
@@ -140,17 +146,16 @@ const AdminDashboard = () => {
         }
     };
 
-    const admins = users.filter(u => u.is_admin);
-
-    // Filtered and sorted problems (logic unchanged)
+    // Filtered and sorted problems
     const filteredProblems = problems
         .filter(p => {
-            if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+            if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !p.id.toString().includes(searchQuery)) return false;
             if (difficultyFilter !== 'ALL' && p.difficulty !== difficultyFilter) return false;
             return true;
         })
         .sort((a, b) => {
             switch (sortBy) {
+                case 'id': return a.id - b.id; // added sorting by id number natively
                 case 'newest': return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
                 case 'oldest': return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
                 case 'title': return (a.title || '').localeCompare(b.title || '');
@@ -283,7 +288,7 @@ const AdminDashboard = () => {
                                     <select
                                         value={difficultyFilter}
                                         onChange={(e) => setDifficultyFilter(e.target.value)}
-                                        className="input py-2 bg-dark-bg-tertiary/50 border-white/5"
+                                        className="py-2 px-3 bg-dark-bg-tertiary/50 border border-white/5 rounded-lg text-white text-sm focus:outline-none focus:border-brand-blue/50 appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7em] bg-[position:calc(100%-0.6em)_center] bg-no-repeat"
                                     >
                                         <option value="ALL">All</option>
                                         <option value="CAKEWALK">Cakewalk</option>
@@ -298,8 +303,9 @@ const AdminDashboard = () => {
                                     <select
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
-                                        className="input py-2 bg-dark-bg-tertiary/50 border-white/5"
+                                        className="py-2 px-3 bg-dark-bg-tertiary/50 border border-white/5 rounded-lg text-white text-sm focus:outline-none focus:border-brand-blue/50 appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7em] bg-[position:calc(100%-0.6em)_center] bg-no-repeat"
                                     >
+                                        <option value="id">ID (1-N)</option>
                                         <option value="newest">Newest First</option>
                                         <option value="oldest">Oldest First</option>
                                         <option value="title">Title (A-Z)</option>
@@ -307,12 +313,12 @@ const AdminDashboard = () => {
                                     </select>
                                 </div>
 
-                                {(searchQuery || difficultyFilter !== 'ALL' || sortBy !== 'newest') && (
+                                {(searchQuery || difficultyFilter !== 'ALL' || sortBy !== 'id') && (
                                     <button
                                         onClick={() => {
                                             setSearchQuery('');
                                             setDifficultyFilter('ALL');
-                                            setSortBy('newest');
+                                            setSortBy('id');
                                         }}
                                         className="text-brand-orange hover:text-brand-orange/80 text-sm flex items-center gap-1 font-medium"
                                     >

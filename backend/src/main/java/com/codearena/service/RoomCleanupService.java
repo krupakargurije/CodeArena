@@ -21,8 +21,8 @@ public class RoomCleanupService {
     @Scheduled(fixedRate = 60000) // Run every minute
     @Transactional
     public void cleanupExpiredRooms() {
-        // Expiry time: 1 hour 15 minutes = 75 minutes
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(75);
+        // Expiry time: 1 hour 45 minutes = 105 minutes
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(105);
 
         long deletedCount = roomRepository.deleteByCreatedAtBefore(cutoffTime);
 

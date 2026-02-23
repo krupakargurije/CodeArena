@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { supabase } from './services/supabaseClient';
 import { getCurrentUser } from './services/authService';
 import { checkIsAdmin } from './services/userService';
-import { loadUser, loginSuccess, logout, setAdminStatus } from './store/authSlice';
+import { loadUser, loginSuccess, logout, setAdminStatus, setLoading } from './store/authSlice';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -53,61 +53,52 @@ function AppContent() {
 
                     console.log('User from session:', user);
 
-                    // Dispatch login immediately with OAuth data
+                    // 1. Fetch profile picture and admin status to prevent UI jumping
+                    let isAdmin = false;
+                    try {
+                        const { getUserProfile } = await import('./services/userService');
+                        const result = await getUserProfile(supabaseUser.id);
+                        if (result?.data) {
+                            const profile = result.data;
+                            isAdmin = profile.is_admin === true || profile.isAdmin === true; // Handle mapped naming
+
+                            user = {
+                                ...user,
+                                username: profile.username || user.username,
+                                rating: profile.rating || user.rating,
+                                problemsSolved: profile.problemsSolved || user.problemsSolved,
+                                avatarUrl: profile.avatarUrl || user.avatarUrl,
+                                bio: profile.bio,
+                                country: profile.country,
+                                organization: profile.organization,
+                            };
+                            console.log('Updated user with profile data:', user);
+                        }
+                    } catch (err) {
+                        console.warn('Profile fetch failed, using OAuth data:', err.message);
+                    }
+
+                    // 3. Dispatch single atomic update
                     dispatch(loginSuccess({
                         token: session.access_token,
                         user: user,
-                        isAdmin: false
+                        isAdmin: isAdmin || false
                     }));
 
-                    // Fetch user's profile from database to get custom avatar (non-blocking)
-                    import('./services/userService').then(({ getUserProfile }) => {
-                        getUserProfile(supabaseUser.id).then(result => {
-                            if (result?.data) {
-                                const profile = result.data;
-                                // Update user with profile data (including custom avatar)
-                                const updatedUser = {
-                                    ...user,
-                                    username: profile.username || user.username,
-                                    rating: profile.rating || user.rating,
-                                    problemsSolved: profile.problemsSolved || user.problemsSolved,
-                                    avatarUrl: profile.avatarUrl || user.avatarUrl, // Prefer profile avatar over OAuth
-                                    bio: profile.bio,
-                                    country: profile.country,
-                                    organization: profile.organization,
-                                };
-                                console.log('Updated user with profile data:', updatedUser);
-                                dispatch(loginSuccess({
-                                    token: session.access_token,
-                                    user: updatedUser,
-                                    isAdmin: false
-                                }));
-                                user = updatedUser; // Update for admin check
-                            }
-                        }).catch(err => {
-                            console.warn('Profile fetch failed, using OAuth data:', err.message);
-                        });
-                    });
-
-                    // Check admin status in background (non-blocking)
-                    checkIsAdmin().then(isAdmin => {
-                        console.log('Admin check result:', isAdmin);
-                        if (isAdmin) {
-                            dispatch(loginSuccess({
-                                token: session.access_token,
-                                user: user,
-                                isAdmin: true
-                            }));
-                        }
-                    }).catch(err => {
-                        console.warn('Admin check failed:', err.message);
-                    });
+                    // Stop loading screen
+                    dispatch(setLoading(false));
 
                 } catch (error) {
                     console.error('Error syncing auth state:', error);
+                    dispatch(setLoading(false));
                 }
             } else if (event === 'SIGNED_OUT') {
                 dispatch(logout());
+                dispatch(setLoading(false));
+            } else if (event === 'INITIAL_SESSION') {
+                if (!session) {
+                    dispatch(setLoading(false));
+                }
             }
         });
 

@@ -243,20 +243,27 @@ export const getLeaderboard = async () => {
 
 // Admin Functions
 
-export const checkIsAdmin = async () => {
+export const checkIsAdmin = async (userId = null) => {
     try {
         console.log('checkIsAdmin: Checking admin status via Supabase (Direct DB)...');
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-            console.warn('checkIsAdmin: No active session');
-            return false;
+        let targetUserId = userId;
+
+        // Only call getSession if we weren't passed a userId directly.
+        // Calling getSession() from inside onAuthStateChange causes a deadlock in the SDK.
+        if (!targetUserId) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+                console.warn('checkIsAdmin: No active session');
+                return false;
+            }
+            targetUserId = session.user.id;
         }
 
         const { data, error } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', session.user.id)
+            .eq('id', targetUserId)
             .single();
 
         if (error) {

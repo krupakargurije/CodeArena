@@ -35,11 +35,15 @@ const Rooms = () => {
 
     const getExpiryTime = (createdAt) => {
         if (!createdAt) return null;
-        // Strip any timezone info ('Z' or '+') so the browser parses it strictly in local time.
-        // This ensures that if the server generates '2026-02-23T14:50', the browser interprets it
-        // exactly as '14:50' local time, avoiding any UTC offset shifts.
-        const cleanStr = createdAt.split('Z')[0].split('+')[0];
-        const created = new Date(cleanStr).getTime();
+
+        // Ensure the string is treated as UTC by appending 'Z' if it doesn't already have time zone info.
+        // Spring Boot returns standard ISO strings like "2026-02-23T14:50:00.000"
+        let utcStr = createdAt;
+        if (!utcStr.endsWith('Z') && !utcStr.includes('+')) {
+            utcStr += 'Z';
+        }
+
+        const created = new Date(utcStr).getTime();
         const expires = created + 105 * 60 * 1000; // 1 hour 45 minutes
         const diff = expires - currentTime;
 

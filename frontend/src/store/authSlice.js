@@ -4,18 +4,23 @@ const initialState = {
     user: null,
     token: localStorage.getItem('token'),
     isAuthenticated: !!localStorage.getItem('token'),
-    isAdmin: false,
+    isAdmin: localStorage.getItem('isAdmin') === 'true',
+    isLoading: true, // Start in loading state until Supabase confirms
 };
 
 const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
+        setLoading: (state, action) => {
+            state.isLoading = action.payload;
+        },
         loginSuccess: (state, action) => {
             state.isAuthenticated = true;
             state.user = action.payload.user;
             state.token = action.payload.token;
             state.isAdmin = action.payload.isAdmin || false;
+            state.isLoading = false;
             localStorage.setItem('token', action.payload.token);
             localStorage.setItem('user', JSON.stringify(action.payload.user));
             localStorage.setItem('isAdmin', action.payload.isAdmin || false);
@@ -49,5 +54,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { loginSuccess, logout, loadUser, setAdminStatus } = authSlice.actions;
+export const { loginSuccess, logout, loadUser, setAdminStatus, setLoading } = authSlice.actions;
 export default authSlice.reducer;
