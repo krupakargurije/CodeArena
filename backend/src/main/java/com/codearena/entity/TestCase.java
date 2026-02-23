@@ -18,6 +18,7 @@ public class TestCase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "problem_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Problem problem;
 
     @Column(nullable = false, columnDefinition = "TEXT")

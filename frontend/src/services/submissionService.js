@@ -7,17 +7,20 @@ const mapSubmission = (submission) => ({
     problemId: submission.problem_id,
     executionTime: submission.execution_time,
     memoryUsed: submission.memory_used,
+    failedTestCaseInput: submission.failed_test_case_input ?? submission.failedTestCaseInput,
+    expectedOutput: submission.expected_output ?? submission.expectedOutput,
+    actualOutput: submission.actual_output ?? submission.actualOutput ?? '',
     submittedAt: submission.submitted_at,
     problemTitle: submission.problems?.title,
     problemDifficulty: submission.problems?.difficulty
 });
 
-// Map frontend language names to Piston runtime identifiers
+// Map frontend language names to Judge0 language IDs
 const languageMap = {
-    'javascript': 'javascript',
-    'python': 'python',
-    'java': 'java',
-    'cpp': 'c++'
+    'javascript': 63, // JavaScript (Node.js 12.14.0)
+    'python': 71,     // Python (3.8.1)
+    'java': 62,       // Java (OpenJDK 13.0.1)
+    'cpp': 54         // C++ (GCC 9.2.0)
 };
 
 // Get user's solved problem IDs (for showing "Solved" badge)
@@ -58,54 +61,49 @@ const normalizeOutput = (output) => {
         .join('\n');
 };
 
-// Execute code using Piston API
+// Execute code using Judge0 API
 const executeCode = async (code, language, stdin = '') => {
-    const pistonLanguage = languageMap[language] || 'javascript';
+    const languageId = languageMap[language] || 63;
 
     try {
-        const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        // 1. Create Submission
+        const createResponse = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                language: pistonLanguage,
-                version: '*', // Use latest version
-                files: [{
-                    content: code
-                }],
-                stdin: stdin,
-                args: [],
-                compile_timeout: 10000,
-                run_timeout: 3000,
-                compile_memory_limit: -1,
-                run_memory_limit: -1
+                source_code: code,
+                language_id: languageId,
+                stdin: stdin
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`Piston API error: ${response.status}`);
+        if (!createResponse.ok) {
+            throw new Error(`Judge0 API error: ${createResponse.status}`);
         }
 
-        const result = await response.json();
+        const result = await createResponse.json();
 
-        // Parse execution results
-        const hasCompileError = result.compile && result.compile.code !== 0;
-        const hasRuntimeError = result.run && result.run.code !== 0;
-        const stdout = result.run?.stdout || '';
-        const stderr = result.run?.stderr || result.compile?.stderr || '';
+        // Parse execution results from Judge0
+        // Judge0 Status IDs: 3 (Accepted), 4 (Wrong Answer), 5 (Time Limit Exceeded), 6 (Compilation Error), 7-12 (Runtime Errors)
+        const hasCompileError = result.status?.id === 6;
+        const hasRuntimeError = result.status?.id >= 7 && result.status?.id <= 12;
+
+        const stdout = result.stdout || '';
+        const stderr = result.stderr || result.compile_output || result.message || '';
 
         return {
             stdout,
             stderr,
             hasCompileError,
             hasRuntimeError,
-            execution_time: Math.floor(Math.random() * 100), // Piston doesn't provide exact time
-            memory_used: Math.floor(Math.random() * 50000), // Piston doesn't provide exact memory
-            compile_output: result.compile?.stdout || '',
-            compile_error: result.compile?.stderr || '',
-            executionTime: Math.floor(Math.random() * 100),
-            memoryUsed: Math.floor(Math.random() * 50000)
+            execution_time: parseFloat(result.time || 0) * 1000,
+            memory_used: result.memory || 0,
+            compile_output: result.compile_output || '',
+            compile_error: result.status?.id === 6 ? (result.compile_output || result.message) : '',
+            executionTime: parseFloat(result.time || 0) * 1000,
+            memoryUsed: result.memory || 0
         };
     } catch (error) {
         console.error('Code execution error:', error);
@@ -228,22 +226,85 @@ const getProblemDetails = async (problemId) => {
 // Run code without saving to database (for "Run Code" button)
 export const runCode = async (codeData) => {
     try {
-        // Fetch problem to get sample input
-        const problem = await getProblemDetails(codeData.problemId);
-        const stdin = problem?.sample_input || '';
+        let testCases = codeData.sampleTestCases || [];
 
-        const executionResult = await executeCode(codeData.code, codeData.language, stdin);
+        // Fallback to basic problem sample input if no sample test cases provided
+        if (testCases.length === 0) {
+            const problem = await getProblemDetails(codeData.problemId);
+            if (problem) {
+                testCases = [{
+                    input: problem.sample_input || '',
+                    expectedOutput: problem.sample_output || ''
+                }];
+            } else {
+                testCases = [{ input: '', expectedOutput: '' }];
+            }
+        }
 
-        // Determine status based on expected output
-        const expectedOutput = problem?.sample_output || '';
-        const status = determineStatus(executionResult, expectedOutput);
+        // Run all sample test cases concurrently
+        const executionPromises = testCases.map(tc =>
+            executeCode(codeData.code, codeData.language, tc.input)
+        );
+
+        const results = await Promise.all(executionPromises);
+
+        let allPassed = true;
+        let testCasesPassed = 0;
+        let firstFailedCase = null;
+        let maxExecutionTime = 0;
+        let globalStatus = 'ACCEPTED';
+        let compileErrorMsg = null;
+        let runtimeErrorMsg = null;
+
+        const testCaseResults = results.map((execResult, index) => {
+            const tc = testCases[index];
+            const expected = normalizeOutput(tc.expectedOutput);
+            const status = determineStatus(execResult, tc.expectedOutput);
+            const passed = status === 'ACCEPTED';
+
+            if (passed) testCasesPassed++;
+            else allPassed = false;
+
+            if (!passed && !firstFailedCase) {
+                firstFailedCase = { ...tc, actualOutput: execResult.stdout };
+            }
+
+            if (execResult.executionTime) {
+                const time = parseFloat(execResult.executionTime);
+                if (time > maxExecutionTime) maxExecutionTime = time;
+            }
+
+            if (status === 'COMPILATION_ERROR' && !compileErrorMsg) {
+                compileErrorMsg = execResult.stderr;
+                globalStatus = 'COMPILATION_ERROR';
+            } else if (status === 'RUNTIME_ERROR' && !runtimeErrorMsg) {
+                runtimeErrorMsg = execResult.stderr;
+                if (globalStatus !== 'COMPILATION_ERROR') globalStatus = 'RUNTIME_ERROR';
+            } else if (status !== 'ACCEPTED' && globalStatus === 'ACCEPTED') {
+                globalStatus = status; // E.g. WRONG_ANSWER
+            }
+
+            return {
+                input: tc.input,
+                expectedOutput: expected,
+                actualOutput: normalizeOutput(execResult.stdout),
+                passed,
+                status,
+                executionTime: execResult.executionTime
+            };
+        });
 
         return {
             data: {
-                ...executionResult,
-                status,
-                expectedOutput: normalizeOutput(expectedOutput),
-                actualOutput: normalizeOutput(executionResult.stdout)
+                status: globalStatus,
+                executionTime: maxExecutionTime.toString(),
+                errorMessage: compileErrorMsg || runtimeErrorMsg || null,
+                testCasesPassed,
+                totalTestCases: testCases.length,
+                failedTestCaseInput: firstFailedCase ? firstFailedCase.input : null,
+                expectedOutput: firstFailedCase ? normalizeOutput(firstFailedCase.expectedOutput) : null,
+                actualOutput: firstFailedCase ? normalizeOutput(firstFailedCase.actualOutput) : null,
+                testCaseResults // New field for UI rendering
             }
         };
     } catch (error) {
@@ -252,7 +313,7 @@ export const runCode = async (codeData) => {
 };
 
 // Submit code and save to database (for "Submit" button)
-// Submit code to Backend API
+// Submit code to Backend API (returns PENDING, then polls for result)
 export const submitCode = async (submissionData) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) throw new Error('No user logged in');
@@ -260,11 +321,12 @@ export const submitCode = async (submissionData) => {
     const token = session.access_token;
 
     const payload = {
-        problemId: Number(submissionData.problemId), // Ensure ID is number if backend expects Long
+        problemId: Number(submissionData.problemId),
         code: submissionData.code,
         language: submissionData.language
     };
 
+    // 1. Queue the submission (returns immediately with PENDING status)
     const response = await fetch(`${BACKEND_URL}/api/submissions`, {
         method: 'POST',
         headers: {
@@ -279,19 +341,41 @@ export const submitCode = async (submissionData) => {
         throw new Error(`Submission failed: ${err}`);
     }
 
-    const result = await response.json();
+    const queuedResult = await response.json();
+    const submissionId = queuedResult.id;
+    console.log('[Submit] Queued as PENDING, id:', submissionId);
 
-    // Map backend response to frontend expected format
-    return {
-        data: {
-            ...result,
-            // Add fields to prevent UI crashes if it expects them
-            stdout: result.errorMessage || '',
-            stderr: '',
-            expectedOutput: '', // Backend doesn't return this for hidden cases
-            actualOutput: result.errorMessage || ''
+    // 2. Poll until the worker finishes processing
+    const MAX_POLLS = 60; // 60 * 2s = 2 minutes max wait
+    const POLL_INTERVAL = 2000; // 2 seconds
+
+    for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+
+        const pollResponse = await fetch(`${BACKEND_URL}/api/submissions/${submissionId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!pollResponse.ok) continue;
+
+        const result = await pollResponse.json();
+        console.log(`[Submit] Poll ${i + 1}: status = ${result.status}`);
+
+        if (result.status !== 'PENDING' && result.status !== 'RUNNING') {
+            // Final result received!
+            return {
+                data: {
+                    ...result,
+                    failedTestCaseInput: result.failedTestCaseInput ?? null,
+                    expectedOutput: result.expectedOutput ?? null,
+                    actualOutput: result.actualOutput ?? ''
+                }
+            };
         }
-    };
+    }
+
+    // Timeout
+    throw new Error('Submission timed out. Please try again.');
 };
 
 export const getUserSubmissions = async (userId) => {

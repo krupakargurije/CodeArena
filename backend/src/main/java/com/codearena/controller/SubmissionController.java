@@ -24,13 +24,17 @@ public class SubmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<SubmissionResponse> submitCode(
+    public ResponseEntity<?> submitCode(
             @Valid @RequestBody SubmissionRequest request,
             Authentication authentication) {
         System.out.println("Submission Endpoint HIT!");
         System.out.println("Request: ProblemID=" + request.getProblemId() + ", Language=" + request.getLanguage());
-        String username = authentication.getName();
-        return ResponseEntity.ok(submissionService.submitCode(request, username));
+        try {
+            String username = authentication.getName();
+            return ResponseEntity.ok(submissionService.submitCode(request, username));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error during execution: " + e.getMessage());
+        }
     }
 
     @GetMapping("/ping")

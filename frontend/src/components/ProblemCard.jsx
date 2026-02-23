@@ -60,12 +60,13 @@ const ProblemCard = ({ problem, isSolved = false }) => {
                         ))}
                     </div>
 
+                    {/* Acceptance Rate — LeetCode style */}
                     <div className="flex items-center gap-2">
                         {isSolved && (
                             <span className="text-xs text-green-500 font-medium">✓ Completed</span>
                         )}
-                        <span className="text-sm dark:text-dark-text-tertiary text-light-text-tertiary">
-                            {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}%` : '0%'}
+                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                            {(problem.acceptanceRate ?? 0).toFixed(1)}%
                         </span>
                     </div>
                 </div>

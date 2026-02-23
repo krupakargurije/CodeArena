@@ -61,14 +61,11 @@ const ProblemRow = ({ problem, isSolved = false, index }) => {
                     ))}
                 </div>
 
-                {/* Acceptance Rate & Points */}
-                <div className="w-32 text-right flex-shrink-0 hidden md:block">
-                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}% acceptance` : '—'}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {problem.points || (index + 1) * 100} pts
-                    </div>
+                {/* Acceptance Rate */}
+                <div className="w-28 flex-shrink-0 hidden md:flex justify-end">
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {(problem.acceptanceRate ?? 0).toFixed(1)}%
+                    </span>
                 </div>
 
                 {/* Open Button */}

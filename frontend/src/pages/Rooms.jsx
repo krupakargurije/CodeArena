@@ -35,8 +35,12 @@ const Rooms = () => {
 
     const getExpiryTime = (createdAt) => {
         if (!createdAt) return null;
-        const created = new Date(createdAt).getTime();
-        const expires = created + 75 * 60 * 1000; // 75 minutes
+        // Strip any timezone info ('Z' or '+') so the browser parses it strictly in local time.
+        // This ensures that if the server generates '2026-02-23T14:50', the browser interprets it
+        // exactly as '14:50' local time, avoiding any UTC offset shifts.
+        const cleanStr = createdAt.split('Z')[0].split('+')[0];
+        const created = new Date(cleanStr).getTime();
+        const expires = created + 105 * 60 * 1000; // 1 hour 45 minutes
         const diff = expires - currentTime;
 
         if (diff <= 0) return 'Expired';

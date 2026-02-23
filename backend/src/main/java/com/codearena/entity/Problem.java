@@ -57,6 +57,9 @@ public class Problem {
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TestCase> testCases = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
+    private String testCasesUrl;
+
     @Column(nullable = false)
     private Integer totalSubmissions = 0;
 

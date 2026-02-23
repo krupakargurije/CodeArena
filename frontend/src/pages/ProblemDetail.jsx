@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { getProblem } from '../services/problemService';
+import { getProblem, getSampleTestCases } from '../services/problemService';
 import { getUserSolvedProblemIds, getUserSubmissions } from '../services/submissionService';
 import { submitCodeThunk, runCodeThunk } from '../store/submissionSlice';
 import CodeEditor from '../components/CodeEditor';
@@ -73,8 +73,11 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
         if (roomData.status === 'COMPLETED') return;
 
         const updateTimer = () => {
-            const start = new Date(roomData.startedAt).getTime();
-            const now = new Date().getTime();
+            // Strip any timezone info ('Z' or '+') so the browser parses it strictly in local time.
+            let startStr = roomData.startedAt;
+            if (startStr) startStr = startStr.split('Z')[0].split('+')[0];
+            const start = new Date(startStr).getTime();
+            const now = Date.now();
             const diff = Math.max(0, now - start);
             const hours = Math.floor(diff / 3600000);
             const minutes = Math.floor((diff % 3600000) / 60000);
@@ -105,6 +108,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
     const [loadingSubmissions, setLoadingSubmissions] = useState(false);
     const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
     const [showResetModal, setShowResetModal] = useState(false);
+    const [selectedCase, setSelectedCase] = useState(0); // which case tab is active
+    const [sampleTestCases, setSampleTestCases] = useState([]);
 
     // Panel sizing
     const [leftPanelWidth, setLeftPanelWidth] = useState(45); // percentage
@@ -138,6 +143,13 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
             try {
                 const response = await getProblem(id);
                 setProblem(response.data);
+
+                try {
+                    const sampleRes = await getSampleTestCases(id);
+                    setSampleTestCases(sampleRes.data || []);
+                } catch (err) {
+                    console.error('Failed to fetch sample test cases:', err);
+                }
             } catch (error) {
                 console.error('Failed to fetch problem:', error);
             } finally {
@@ -160,6 +172,17 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
         };
         checkIfSolved();
     }, [user, id, submissionResult]);
+
+    // Auto-select the failing case tab when a new submission arrives
+    useEffect(() => {
+        if (submissionResult) {
+            if (submissionResult.status === 'WRONG_ANSWER' && submissionResult.testCasesPassed !== undefined) {
+                setSelectedCase(submissionResult.testCasesPassed); // select the failing case
+            } else {
+                setSelectedCase(0); // default to first case
+            }
+        }
+    }, [submissionResult]);
 
     // Fetch submissions for this problem when tab switches or after a new submission
     useEffect(() => {
@@ -234,7 +257,7 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
             setIsBottomCollapsed(false);
             setBottomPanelHeight(prevBottomHeight);
         }
-        dispatch(submitCodeThunk({ problemId: parseInt(id), code, language, isSubmit: true }));
+        dispatch(submitCodeThunk({ problemId: parseInt(id), code, language, isSubmit: true, testCasesUrl: problem?.testCasesUrl }));
     };
 
     const handleRun = () => {
@@ -243,7 +266,7 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
             setIsBottomCollapsed(false);
             setBottomPanelHeight(prevBottomHeight);
         }
-        dispatch(runCodeThunk({ problemId: parseInt(id), code, language }));
+        dispatch(runCodeThunk({ problemId: parseInt(id), code, language, sampleTestCases, testCasesUrl: problem?.testCasesUrl }));
     };
 
     const toggleBottomPanel = () => {
@@ -501,11 +524,11 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                     <div className="border rounded-lg p-3 space-y-2" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)' }}>
                                         <div>
                                             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Input: </span>
-                                            <span className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{problem.sampleInput || ''}</span>
+                                            <pre className="text-xs font-mono mt-1 whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{(problem.sampleInput || '').replace(/\\n/g, '\n')}</pre>
                                         </div>
                                         <div>
                                             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Output: </span>
-                                            <span className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>{problem.sampleOutput || ''}</span>
+                                            <pre className="text-xs font-mono mt-1 whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{(problem.sampleOutput || '').replace(/\\n/g, '\n')}</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -689,19 +712,52 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                             {!isBottomCollapsed && (
                                 <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                                     {bottomTab === 'testcase' && (
-                                        <div className="space-y-3">
-                                            <div>
-                                                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Input:</div>
-                                                <pre className="rounded-lg p-3 text-xs font-mono" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
-                                                    {problem.sampleInput || 'No sample input'}
-                                                </pre>
-                                            </div>
-                                            <div>
-                                                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Expected Output:</div>
-                                                <pre className="rounded-lg p-3 text-xs font-mono" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
-                                                    {problem.sampleOutput || 'No sample output'}
-                                                </pre>
-                                            </div>
+                                        <div>
+                                            {sampleTestCases && sampleTestCases.length > 0 ? (
+                                                <>
+                                                    <div className="flex items-center gap-2 mb-4 flex-wrap">
+                                                        {sampleTestCases.map((_, i) => (
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => setSelectedCase(i)}
+                                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedCase === i ? 'ring-1 ring-white/20' : 'hover:opacity-80'}`}
+                                                                style={{ background: selectedCase === i ? 'var(--bg-tertiary)' : 'transparent', color: selectedCase === i ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                                                            >
+                                                                Case {i + 1}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Input:</div>
+                                                            <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
+                                                                {(sampleTestCases[selectedCase]?.input || '').replace(/\\n/g, '\n')}
+                                                            </pre>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Expected Output:</div>
+                                                            <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
+                                                                {(sampleTestCases[selectedCase]?.expectedOutput || '').replace(/\\n/g, '\n')}
+                                                            </pre>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Input:</div>
+                                                        <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
+                                                            {(problem?.sampleInput || 'No sample input').replace(/\\n/g, '\n')}
+                                                        </pre>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Expected Output:</div>
+                                                        <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
+                                                            {(problem?.sampleOutput || 'No sample output').replace(/\\n/g, '\n')}
+                                                        </pre>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -713,16 +769,13 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                     Running...
                                                 </div>
                                             ) : submissionResult ? (
-                                                <div className="space-y-4">
-                                                    {/* Status Badge */}
-                                                    <div className="flex items-center gap-2">
-                                                        {submissionResult.status === 'ACCEPTED' ? (
-                                                            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                                        ) : (
-                                                            <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        )}
+                                                <div>
+                                                    {/* ── Status + Runtime ── */}
+                                                    <div className="flex items-center gap-3 mb-4">
                                                         <span className={`font-bold text-lg ${submissionResult.status === 'ACCEPTED' ? 'text-green-400' :
-                                                            submissionResult.status === 'WRONG_ANSWER' ? 'text-red-400' : 'text-yellow-400'
+                                                            submissionResult.status === 'WRONG_ANSWER' ? 'text-red-400' :
+                                                                submissionResult.status === 'RUNTIME_ERROR' ? 'text-red-400' :
+                                                                    submissionResult.status === 'COMPILATION_ERROR' ? 'text-orange-400' : 'text-yellow-400'
                                                             }`}>
                                                             {submissionResult.status === 'ACCEPTED' ? 'Accepted' :
                                                                 submissionResult.status === 'WRONG_ANSWER' ? 'Wrong Answer' :
@@ -730,48 +783,119 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                                                         submissionResult.status === 'COMPILATION_ERROR' ? 'Compilation Error' :
                                                                             submissionResult.status?.replace(/_/g, ' ')}
                                                         </span>
-                                                    </div>
-
-                                                    {/* Stats Row */}
-                                                    <div className="flex items-center gap-4 text-xs">
                                                         {submissionResult.executionTime !== undefined && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                                                                <svg className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                <span style={{ color: 'var(--text-secondary)' }}>Runtime</span>
-                                                                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{submissionResult.executionTime} ms</span>
-                                                            </div>
-                                                        )}
-                                                        {submissionResult.testCasesPassed !== undefined && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                                                                <svg className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                                                                <span style={{ color: 'var(--text-secondary)' }}>Test Cases</span>
-                                                                <span className={`font-medium ${submissionResult.testCasesPassed === submissionResult.totalTestCases ? 'text-green-400' : 'text-red-400'}`}>
-                                                                    {submissionResult.testCasesPassed}/{submissionResult.totalTestCases}
-                                                                </span>
-                                                            </div>
+                                                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                                                Runtime: {submissionResult.executionTime} ms
+                                                            </span>
                                                         )}
                                                     </div>
 
-                                                    {/* Error Message */}
-                                                    {submissionResult.errorMessage && (
+                                                    {/* ── Case Tabs ── */}
+                                                    {submissionResult.totalTestCases > 0 && (
+                                                        <div className="flex items-center gap-2 mb-5 flex-wrap">
+                                                            {Array.from({ length: submissionResult.totalTestCases }, (_, i) => {
+                                                                const isPassed = i < submissionResult.testCasesPassed;
+                                                                const isFailingCase = i === submissionResult.testCasesPassed && submissionResult.status === 'WRONG_ANSWER';
+                                                                const isSelected = selectedCase === i;
+                                                                return (
+                                                                    <button
+                                                                        key={i}
+                                                                        onClick={() => setSelectedCase(i)}
+                                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isSelected
+                                                                            ? 'ring-1 ring-white/20'
+                                                                            : 'hover:opacity-80'
+                                                                            }`}
+                                                                        style={{
+                                                                            background: isSelected ? 'var(--bg-tertiary)' : 'transparent',
+                                                                            color: isPassed ? '#4ade80' : isFailingCase ? '#f87171' : 'var(--text-secondary)'
+                                                                        }}
+                                                                    >
+                                                                        {isPassed ? (
+                                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                                        ) : isFailingCase ? (
+                                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                                        ) : (
+                                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="4" /></svg>
+                                                                        )}
+                                                                        Case {i + 1}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {/* ── Compilation / Runtime Error ── */}
+                                                    {(submissionResult.status === 'COMPILATION_ERROR' || submissionResult.status === 'RUNTIME_ERROR') && submissionResult.errorMessage && (
                                                         <div>
-                                                            <div className="text-xs text-red-400 font-medium mb-1.5 flex items-center gap-1.5">
-                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                                                                Error
-                                                            </div>
-                                                            <pre className="bg-red-500/5 border border-red-500/20 rounded-lg p-3 text-red-300 text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+                                                            <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Error</div>
+                                                            <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto text-red-300" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
                                                                 {submissionResult.errorMessage}</pre>
                                                         </div>
                                                     )}
 
-                                                    {/* Stdout */}
-                                                    {submissionResult.stdout && (
-                                                        <div>
-                                                            <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Stdout</div>
-                                                            <pre className="rounded-lg p-3 text-xs font-mono whitespace-pre-wrap overflow-x-auto" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>
-                                                                {submissionResult.stdout}</pre>
-                                                        </div>
-                                                    )}
+                                                    {/* Test Case Details (Input / Output / Expected) */}
+                                                    {(() => {
+                                                        // Fallback structure
+                                                        const isFailingCaseSubmit = selectedCase === submissionResult.testCasesPassed && submissionResult.failedTestCaseInput;
+                                                        const isAcceptedWithDataSubmit = submissionResult.status === 'ACCEPTED' && submissionResult.expectedOutput != null;
+
+                                                        // Use testCaseResults array if available (Run mode)
+                                                        if (submissionResult.testCaseResults && submissionResult.testCaseResults[selectedCase]) {
+                                                            const result = submissionResult.testCaseResults[selectedCase];
+                                                            return (
+                                                                <div className="space-y-4">
+                                                                    {result.input && (
+                                                                        <div>
+                                                                            <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Input</div>
+                                                                            <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{result.input}</pre>
+                                                                        </div>
+                                                                    )}
+                                                                    <div>
+                                                                        <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Output</div>
+                                                                        <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{result.actualOutput || '(no output)'}</pre>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Expected</div>
+                                                                        <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{result.expectedOutput}</pre>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (isFailingCaseSubmit || isAcceptedWithDataSubmit) {
+                                                            const inputText = isFailingCaseSubmit
+                                                                ? submissionResult.failedTestCaseInput
+                                                                : (problem?.sampleInput || '');
+                                                            return (
+                                                                <div className="space-y-4">
+                                                                    {inputText && (
+                                                                        <div>
+                                                                            <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Input</div>
+                                                                            <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{inputText}</pre>
+                                                                        </div>
+                                                                    )}
+                                                                    <div>
+                                                                        <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Output</div>
+                                                                        <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{submissionResult.actualOutput || '(no output)'}</pre>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Expected</div>
+                                                                        <pre className="rounded-lg p-3 text-sm font-mono whitespace-pre-wrap overflow-y-auto max-h-[150px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{submissionResult.expectedOutput}</pre>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (selectedCase < submissionResult.testCasesPassed && submissionResult.status !== 'COMPILATION_ERROR' && submissionResult.status !== 'RUNTIME_ERROR') {
+                                                            return (
+                                                                <div className="text-sm py-4" style={{ color: 'var(--text-tertiary)' }}>
+                                                                    ✓ Test case {selectedCase + 1} passed.
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        return null;
+                                                    })()}
                                                 </div>
                                             ) : (
                                                 <div className="text-gray-500 text-sm">

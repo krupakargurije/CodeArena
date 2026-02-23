@@ -43,6 +43,7 @@ public class ProblemService {
         problem.setSampleInput(problemDetails.getSampleInput());
         problem.setSampleOutput(problemDetails.getSampleOutput());
         problem.setExplanation(problemDetails.getExplanation());
+        problem.setTestCasesUrl(problemDetails.getTestCasesUrl());
 
         return problemRepository.save(problem);
     }

@@ -40,6 +40,15 @@ public class Submission {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(columnDefinition = "TEXT")
+    private String failedTestCaseInput;
+
+    @Column(columnDefinition = "TEXT")
+    private String expectedOutput;
+
+    @Column(columnDefinition = "TEXT")
+    private String actualOutput;
+
     private Integer executionTime; // in milliseconds
 
     private Integer memoryUsed; // in KB

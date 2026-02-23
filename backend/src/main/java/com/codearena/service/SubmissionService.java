@@ -4,211 +4,383 @@ import com.codearena.dto.SubmissionRequest;
 import com.codearena.dto.SubmissionResponse;
 import com.codearena.entity.Problem;
 import com.codearena.entity.Submission;
-import com.codearena.entity.TestCase;
 import com.codearena.entity.User;
 import com.codearena.repository.ProblemRepository;
 import com.codearena.repository.SubmissionRepository;
 import com.codearena.repository.UserRepository;
-import com.codearena.repository.RoomParticipantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
-    private final UserRepository userRepository;
     private final ProblemRepository problemRepository;
-    private final CodeRunnerService codeRunnerService;
-    private final RoomService roomService;
-    private final RoomParticipantRepository roomParticipantRepository;
+    private final UserRepository userRepository;
+
+    @Value("${judge0.api.url:https://ce.judge0.com}")
+    private String judge0Url;
+
+    // ─── In-Memory Test Case Cache ───
+    private static final ConcurrentHashMap<Long, TestCaseBundle> testCaseCache = new ConcurrentHashMap<>();
+
+    public static void invalidateCache(Long problemId) {
+        testCaseCache.remove(problemId);
+        System.out.println("[Cache] Invalidated test case cache for problem " + problemId);
+    }
+
+    private static class TestCaseBundle {
+        final Map<String, String> inputs;
+        final Map<String, String> expectedOutputs;
+
+        TestCaseBundle(Map<String, String> inputs, Map<String, String> expectedOutputs) {
+            this.inputs = inputs;
+            this.expectedOutputs = expectedOutputs;
+        }
+    }
 
     @Transactional
-    public SubmissionResponse submitCode(SubmissionRequest request, String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
+    public SubmissionResponse submitCode(SubmissionRequest request, String username) {
+        // Note: 'username' here is actually the Supabase user UUID (JWT subject)
+        User user = userRepository.findById(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         Problem problem = problemRepository.findById(request.getProblemId())
                 .orElseThrow(() -> new RuntimeException("Problem not found"));
 
+        // Just queue it — return immediately
         Submission submission = new Submission();
         submission.setUser(user);
         submission.setProblem(problem);
         submission.setCode(request.getCode());
         submission.setLanguage(request.getLanguage());
         submission.setStatus(Submission.Status.PENDING);
+        submission.setTestCasesPassed(0);
+        submission.setTotalTestCases(0);
 
-        submission = submissionRepository.save(submission);
+        Submission saved = submissionRepository.save(submission);
+        System.out.println("[Queue] Submission " + saved.getId() + " queued as PENDING");
 
-        // Run code against test cases
-        List<TestCase> testCases = problem.getTestCases();
-        int passed = 0;
-        int total = testCases.size();
+        return mapToResponse(saved);
+    }
+
+    /**
+     * Called by the background worker to actually execute the submission.
+     */
+    @Transactional
+    public void processSubmission(Long submissionId) {
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new RuntimeException("Submission not found"));
 
         submission.setStatus(Submission.Status.RUNNING);
         submissionRepository.save(submission);
 
-        for (TestCase testCase : testCases) {
-            CodeRunnerService.ExecutionResult result = codeRunnerService.executeCode(
-                    request.getCode(),
-                    request.getLanguage(),
-                    testCase.getInput());
+        Problem problem = submission.getProblem();
+        User user = submission.getUser();
 
-            // If there was a runtime/compilation error, fail immediately
-            if (result.getStatus() == Submission.Status.RUNTIME_ERROR
-                    || result.getStatus() == Submission.Status.COMPILATION_ERROR) {
-                submission.setStatus(result.getStatus());
-                submission.setErrorMessage(result.getErrorMessage());
-                submission.setExecutionTime(result.getExecutionTime());
-                submission.setMemoryUsed(result.getMemoryUsed());
-                break;
+        try {
+            if (problem.getTestCasesUrl() != null && !problem.getTestCasesUrl().isEmpty()) {
+                evaluateUsingZip(submission, problem.getTestCasesUrl());
+            } else {
+                evaluateSingleTest(submission, problem.getSampleInput(), problem.getSampleOutput());
             }
-
-            // Compare actual output with expected output
-            String actualOutput = normalizeOutput(result.getOutput());
-            String expectedOutput = normalizeOutput(testCase.getExpectedOutput());
-
-            if (!actualOutput.equals(expectedOutput)) {
-                submission.setStatus(Submission.Status.WRONG_ANSWER);
-                submission.setErrorMessage(
-                        "Wrong Answer on test case " + (passed + 1) +
-                                "\nExpected: " + expectedOutput +
-                                "\nGot: " + actualOutput);
-                submission.setExecutionTime(result.getExecutionTime());
-                submission.setMemoryUsed(result.getMemoryUsed());
-                break;
-            }
-
-            passed++;
-            submission.setExecutionTime(result.getExecutionTime());
-            submission.setMemoryUsed(result.getMemoryUsed());
+        } catch (Exception e) {
+            submission.setStatus(Submission.Status.RUNTIME_ERROR);
+            submission.setErrorMessage("Failed to execute: " + e.getMessage());
+            submission.setTestCasesPassed(0);
+            submission.setTotalTestCases(1);
+            submission.setExecutionTime(0);
         }
 
-        submission.setTestCasesPassed(passed);
-        submission.setTotalTestCases(total);
+        submissionRepository.save(submission);
 
-        if (passed == total && submission.getStatus() == Submission.Status.RUNNING) {
-            submission.setStatus(Submission.Status.ACCEPTED);
-
-            // Update problem stats
-            problem.setTotalSubmissions(problem.getTotalSubmissions() + 1);
-            problem.setAcceptedSubmissions(problem.getAcceptedSubmissions() + 1);
-
-            // Update user stats if first time solving
-            List<Submission> previousAccepted = submissionRepository.findByUserIdAndProblemId(
-                    user.getId(), problem.getId())
-                    .stream().filter(s -> s.getStatus() == Submission.Status.ACCEPTED)
-                    .toList();
-
-            if (previousAccepted.isEmpty()) { // Only this submission (it's the first one)
+        // Update statistics
+        if (submission.getStatus() == Submission.Status.ACCEPTED) {
+            if (!hasUserSolvedProblem(user, problem)) {
                 user.setProblemsSolved(user.getProblemsSolved() + 1);
-
-                // Calculate rating based on difficulty AND execution time
-                int ratingDetails = getRatingIncrease(problem.getDifficulty(), submission.getExecutionTime());
-                user.setRating(user.getRating() + ratingDetails);
+                user.setRating(user.getRating() + 10);
                 userRepository.save(user);
-                System.out.println("Rating Updated: +" + ratingDetails + " for user " + user.getUsername());
             }
-
-            // CHECK FOR ROOM COMPLETION
-            // Find if this user is in an active room for this problem
-            // Use findActiveRoomsByUserId to ensure we only check currently joined rooms
-            System.out.println("Checking for active room for user: " + user.getId());
-            roomParticipantRepository.findActiveRoomsByUserId(user.getId()).stream()
-                    .map(participant -> participant.getRoom())
-                    .filter(room -> room.getStatus() == com.codearena.entity.Room.RoomStatus.ACTIVE)
-                    .filter(room -> String.valueOf(room.getProblemId()).equals(String.valueOf(problem.getId())))
-                    .findFirst()
-                    .ifPresent(room -> {
-                        System.out.println("Completing room: " + room.getId());
-                        roomService.completeRoom(room.getId(), user.getId());
-                    });
-        } else if (submission.getStatus() == Submission.Status.RUNNING) {
-            submission.setStatus(Submission.Status.WRONG_ANSWER);
-            problem.setTotalSubmissions(problem.getTotalSubmissions() + 1);
+            problem.setAcceptedSubmissions(problem.getAcceptedSubmissions() + 1);
         }
-
+        problem.setTotalSubmissions(problem.getTotalSubmissions() + 1);
+        if (problem.getTotalSubmissions() > 0) {
+            problem.setAcceptanceRate((double) problem.getAcceptedSubmissions() / problem.getTotalSubmissions() * 100);
+        }
         problemRepository.save(problem);
-        submission = submissionRepository.save(submission);
 
-        return toResponse(submission);
+        System.out.println("[Worker] Submission " + submissionId + " processed → " + submission.getStatus());
     }
 
+    @Transactional(readOnly = true)
     public List<SubmissionResponse> getUserSubmissions(String userId) {
-        return submissionRepository.findByUserId(userId)
-                .stream()
-                .map(this::toResponse)
+        return submissionRepository.findByUserId(userId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public SubmissionResponse getSubmission(Long id) {
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Submission not found"));
-        return toResponse(submission);
+        return mapToResponse(submission);
     }
 
-    private int getRatingIncrease(Problem.Difficulty difficulty, int executionTime) {
-        int basePoints = switch (difficulty) {
-            case CAKEWALK -> 10;
-            case EASY -> 20;
-            case MEDIUM -> 40;
-            case HARD -> 70;
-        };
+    // ─── ZIP Evaluation ───
 
-        int maxBonus = switch (difficulty) {
-            case CAKEWALK -> 5;
-            case EASY -> 10;
-            case MEDIUM -> 20;
-            case HARD -> 30;
-        };
+    private void evaluateUsingZip(Submission submission, String zipUrl) throws Exception {
+        Long problemId = submission.getProblem().getId();
 
-        double multiplier = 0.0;
-        if (executionTime < 20)
-            multiplier = 1.0; // Ultra fast
-        else if (executionTime < 50)
-            multiplier = 0.75; // Fast
-        else if (executionTime < 100)
-            multiplier = 0.5; // Good
+        // Check cache first
+        TestCaseBundle bundle = testCaseCache.get(problemId);
+        if (bundle == null) {
+            System.out.println("[Cache] MISS for problem " + problemId + " — downloading ZIP");
+            bundle = downloadAndExtractZip(zipUrl);
+            testCaseCache.put(problemId, bundle);
+        } else {
+            System.out.println("[Cache] HIT for problem " + problemId + " — using cached test cases");
+        }
 
-        return basePoints + (int) (maxBonus * multiplier);
+        Map<String, String> inputs = bundle.inputs;
+        Map<String, String> expectedOutputs = bundle.expectedOutputs;
+
+        int totalCases = inputs.size();
+        String code = submission.getCode();
+        String language = submission.getLanguage();
+
+        // Run ALL test cases in parallel
+        List<String> keys = new ArrayList<>(inputs.keySet());
+        List<CompletableFuture<JudgeResult>> futures = keys.stream()
+                .map(key -> CompletableFuture.supplyAsync(() -> runAgainstJudge0(code, language, inputs.get(key))))
+                .collect(Collectors.toList());
+
+        // Wait for all to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Evaluate results in order
+        int passedCases = 0;
+        double maxTime = 0;
+        Submission.Status finalStatus = Submission.Status.ACCEPTED;
+        String failedInput = null;
+        String failedExpected = null;
+        String failedActual = null;
+        String errorMsg = null;
+
+        for (int i = 0; i < keys.size(); i++) {
+            String key = keys.get(i);
+            JudgeResult result = futures.get(i).get();
+            String expected = expectedOutputs.get(key);
+
+            if (result.time > maxTime)
+                maxTime = result.time;
+
+            if (result.statusEnum == Submission.Status.COMPILATION_ERROR
+                    || result.statusEnum == Submission.Status.RUNTIME_ERROR) {
+                finalStatus = result.statusEnum;
+                errorMsg = result.stderr;
+                break;
+            }
+
+            if (matches(result.stdout, expected)) {
+                passedCases++;
+            } else {
+                finalStatus = Submission.Status.WRONG_ANSWER;
+                failedInput = inputs.get(key);
+                failedExpected = expected;
+                failedActual = result.stdout;
+                break;
+            }
+        }
+
+        submission.setStatus(finalStatus);
+        submission.setExecutionTime((int) maxTime);
+        submission.setTestCasesPassed(passedCases);
+        submission.setTotalTestCases(totalCases);
+        if (failedInput != null)
+            submission.setFailedTestCaseInput(failedInput);
+        if (failedExpected != null)
+            submission.setExpectedOutput(failedExpected);
+        if (failedActual != null)
+            submission.setActualOutput(failedActual);
+        if (errorMsg != null)
+            submission.setErrorMessage(errorMsg);
     }
 
-    /**
-     * Normalize output for comparison: trim, normalize line endings, trim each
-     * line.
-     */
-    private String normalizeOutput(String output) {
-        if (output == null)
-            return "";
-        return output
-                .trim()
-                .replace("\r\n", "\n")
-                .replace("\r", "\n")
-                .lines()
-                .map(String::trim)
-                .reduce((a, b) -> a + "\n" + b)
-                .orElse("");
+    // ─── Single Test Fallback ───
+
+    private void evaluateSingleTest(Submission submission, String input, String expected) {
+        JudgeResult result = runAgainstJudge0(submission.getCode(), submission.getLanguage(), input);
+        submission.setExecutionTime((int) result.time);
+        if (result.statusEnum == Submission.Status.COMPILATION_ERROR
+                || result.statusEnum == Submission.Status.RUNTIME_ERROR) {
+            submission.setStatus(result.statusEnum);
+            submission.setTestCasesPassed(0);
+            submission.setErrorMessage(result.stderr);
+        } else if (matches(result.stdout, expected)) {
+            submission.setStatus(Submission.Status.ACCEPTED);
+            submission.setTestCasesPassed(1);
+        } else {
+            submission.setStatus(Submission.Status.WRONG_ANSWER);
+            submission.setTestCasesPassed(0);
+            submission.setFailedTestCaseInput(input);
+            submission.setExpectedOutput(expected);
+            submission.setActualOutput(result.stdout);
+        }
+        submission.setTotalTestCases(1);
     }
 
-    private SubmissionResponse toResponse(Submission submission) {
+    // ─── Judge0 Interaction ───
+
+    @SuppressWarnings("unchecked")
+    private JudgeResult runAgainstJudge0(String code, String language, String input) {
+        int languageId = mapLanguage(language);
+        String submitUrl = judge0Url + "/submissions?base64_encoded=false&wait=true";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("source_code", code);
+        body.put("language_id", languageId);
+        body.put("stdin", input);
+
+        RestTemplate rt = new RestTemplate();
+        ResponseEntity<Map<String, Object>> response = rt.exchange(
+                submitUrl, HttpMethod.POST, new HttpEntity<>(body, headers),
+                (Class<Map<String, Object>>) (Class<?>) Map.class);
+        Map<String, Object> respBody = response.getBody();
+
+        JudgeResult result = new JudgeResult();
+        if (respBody != null) {
+            Map<String, Object> statusObj = (Map<String, Object>) respBody.get("status");
+            int statusCode = (int) statusObj.get("id");
+
+            if (statusCode == 3)
+                result.statusEnum = Submission.Status.ACCEPTED;
+            else if (statusCode == 6)
+                result.statusEnum = Submission.Status.COMPILATION_ERROR;
+            else
+                result.statusEnum = Submission.Status.RUNTIME_ERROR;
+
+            result.stdout = (String) respBody.get("stdout");
+            result.stderr = (String) respBody.get("stderr");
+            Object timeObj = respBody.get("time");
+            result.time = timeObj != null ? Double.parseDouble(timeObj.toString()) * 1000 : 0.0;
+        }
+        return result;
+    }
+
+    // ─── Helpers ───
+
+    private boolean matches(String actual, String expected) {
+        if (expected == null)
+            expected = "";
+        if (actual == null)
+            actual = "";
+        return actual.trim().equals(expected.trim());
+    }
+
+    private TestCaseBundle downloadAndExtractZip(String zipUrl) throws Exception {
+        RestTemplate rt = new RestTemplate();
+        byte[] zipBytes = rt.getForObject(zipUrl, byte[].class);
+        if (zipBytes == null)
+            throw new RuntimeException("Failed to download zip from " + zipUrl);
+
+        Map<String, String> inputs = new TreeMap<>();
+        Map<String, String> expectedOutputs = new TreeMap<>();
+
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory())
+                    continue;
+                String name = entry.getName();
+                if (name.contains("/"))
+                    name = name.substring(name.lastIndexOf('/') + 1);
+
+                String content = readZipEntry(zis);
+                // Strip sample_ prefix (used to mark sample test cases in admin UI)
+                if (name.startsWith("sample_"))
+                    name = name.substring(7);
+                if (name.endsWith(".in")) {
+                    inputs.put(name.substring(0, name.length() - 3), content);
+                } else if (name.endsWith(".out")) {
+                    expectedOutputs.put(name.substring(0, name.length() - 4), content);
+                }
+                zis.closeEntry();
+            }
+        }
+        return new TestCaseBundle(inputs, expectedOutputs);
+    }
+
+    private String readZipEntry(ZipInputStream zis) throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] data = new byte[1024];
+        int count;
+        while ((count = zis.read(data, 0, 1024)) != -1) {
+            buffer.write(data, 0, count);
+        }
+        return buffer.toString("UTF-8");
+    }
+
+    private int mapLanguage(String lang) {
+        switch (lang.toLowerCase()) {
+            case "python":
+                return 71;
+            case "javascript":
+                return 63;
+            case "java":
+                return 62;
+            case "cpp":
+                return 54;
+            default:
+                return 71;
+        }
+    }
+
+    private boolean hasUserSolvedProblem(User user, Problem problem) {
+        return submissionRepository.findByUserId(user.getId()).stream()
+                .anyMatch(s -> s.getProblem().getId().equals(problem.getId())
+                        && s.getStatus() == Submission.Status.ACCEPTED);
+    }
+
+    private SubmissionResponse mapToResponse(Submission s) {
         return new SubmissionResponse(
-                submission.getId(),
-                submission.getUser().getId(),
-                submission.getUser().getUsername(),
-                submission.getProblem().getId(),
-                submission.getProblem().getTitle(),
-                submission.getLanguage(),
-                submission.getStatus(),
-                submission.getErrorMessage(),
-                submission.getExecutionTime(),
-                submission.getMemoryUsed(),
-                submission.getTestCasesPassed(),
-                submission.getTotalTestCases(),
-                submission.getSubmittedAt());
+                s.getId(),
+                s.getUser().getId(),
+                s.getUser().getUsername(),
+                s.getProblem().getId(),
+                s.getProblem().getTitle(),
+                s.getLanguage(),
+                s.getStatus(),
+                s.getErrorMessage(),
+                s.getExecutionTime(),
+                s.getMemoryUsed(),
+                s.getTestCasesPassed(),
+                s.getTotalTestCases(),
+                s.getFailedTestCaseInput(),
+                s.getExpectedOutput(),
+                s.getActualOutput(),
+                s.getSubmittedAt());
+    }
+
+    private static class JudgeResult {
+        Submission.Status statusEnum = Submission.Status.RUNTIME_ERROR;
+        String stdout = "";
+        String stderr = "";
+        double time = 0.0;
     }
 }

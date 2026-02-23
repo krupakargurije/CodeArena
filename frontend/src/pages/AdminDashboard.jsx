@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import CreateProblemForm from '../components/CreateProblemForm';
+import TestCaseManager from '../components/admin/TestCaseManager';
 import { getProblems, deleteProblem } from '../services/problemService';
 import { getAllUsers, grantAdminPermission, revokeAdminPermission } from '../services/userService';
 
@@ -12,6 +13,7 @@ const AdminDashboard = () => {
 
     // Problems state
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [selectedProblemForTestCases, setSelectedProblemForTestCases] = useState(null);
     const [problems, setProblems] = useState([]);
     const [problemsLoading, setProblemsLoading] = useState(true);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -369,26 +371,49 @@ const AdminDashboard = () => {
                                                     {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}%` : '0%'}
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => navigate(`/problems/${problem.id}`)}
-                                                            className="text-brand-blue hover:text-brand-blue/80 p-2 rounded-lg hover:bg-brand-blue/10 transition-colors"
-                                                            title="View"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setDeleteConfirm(problem.id)}
-                                                            className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
+                                                    <div className="flex items-center justify-end">
+                                                        <div className="relative group">
+                                                            <button className="text-secondary hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                                </svg>
+                                                            </button>
+
+                                                            {/* Dropdown Menu */}
+                                                            <div className="absolute right-0 mt-2 w-48 bg-dark-bg-secondary border border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                                                                <div className="p-1">
+                                                                    <button
+                                                                        onClick={() => navigate(`/problems/${problem.id}`)}
+                                                                        className="w-full text-left px-4 py-2 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                                                    >
+                                                                        <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                        </svg>
+                                                                        View Problem
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setSelectedProblemForTestCases(problem)}
+                                                                        className="w-full text-left px-4 py-2 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                                                    >
+                                                                        <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                                                        </svg>
+                                                                        Manage Test Cases
+                                                                    </button>
+                                                                    <div className="h-px bg-white/10 my-1 mx-2"></div>
+                                                                    <button
+                                                                        onClick={() => setDeleteConfirm(problem.id)}
+                                                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors flex items-center gap-2"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -595,6 +620,14 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Test Case Manager Modal */}
+                {selectedProblemForTestCases && (
+                    <TestCaseManager
+                        problem={selectedProblemForTestCases}
+                        onClose={() => setSelectedProblemForTestCases(null)}
+                    />
                 )}
             </div>
         </div>

@@ -21,5 +21,8 @@ public class SubmissionResponse {
     private Integer memoryUsed;
     private Integer testCasesPassed;
     private Integer totalTestCases;
+    private String failedTestCaseInput;
+    private String expectedOutput;
+    private String actualOutput;
     private LocalDateTime submittedAt;
 }

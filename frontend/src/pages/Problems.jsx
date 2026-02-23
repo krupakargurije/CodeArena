@@ -44,9 +44,11 @@ const Problems = () => {
             matchesStatus = !solvedProblemIds.includes(problem.id);
         }
 
-        // Search Filter
+        // Search Filter — match title or ID
         const title = problem.title || '';
-        const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase());
+        const idStr = String(problem.id);
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = title.toLowerCase().includes(searchLower) || idStr.includes(searchTerm);
 
         return matchesDifficulty && matchesStatus && matchesSearch;
     }).sort((a, b) => a.id - b.id);

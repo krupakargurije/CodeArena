@@ -132,9 +132,52 @@ const SubmissionResult = ({ result }) => {
             )}
 
             {/* Error Message (legacy) */}
-            {result.errorMessage && !result.stderr && !result.compile_error && (
+            {result.errorMessage && !result.stderr && !result.compile_error && !result.failedTestCaseInput && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mt-4 animate-slide-up">
                     <p className="text-sm font-mono text-red-400 whitespace-pre-wrap">{result.errorMessage}</p>
+                </div>
+            )}
+
+            {/* Failing Test Case Details */}
+            {result.status === 'WRONG_ANSWER' && result.failedTestCaseInput && (
+                <div className="mt-8 animate-slide-up">
+                    <h4 className="text-red-400 font-semibold mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+                        <span>✗</span> Failing Test Case Details
+                    </h4>
+
+                    <div className="space-y-4">
+                        {/* Input */}
+                        <div>
+                            <div className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">Input:</div>
+                            <div className="bg-[#1e1e1e] border border-white/10 rounded-lg p-3 overflow-hidden">
+                                <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent max-h-[150px] overflow-y-auto">
+                                    {result.failedTestCaseInput}
+                                </pre>
+                            </div>
+                        </div>
+
+                        {/* Output Comparison */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">Expected Output:</div>
+                                <div className="bg-[#1e1e1e] border border-green-500/20 rounded-lg p-3 overflow-hidden relative">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-green-500/50"></div>
+                                    <pre className="text-sm font-mono text-green-300 whitespace-pre-wrap overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent max-h-[150px] overflow-y-auto">
+                                        {result.expectedOutput}
+                                    </pre>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">Actual Output:</div>
+                                <div className="bg-[#1e1e1e] border border-red-500/20 rounded-lg p-3 overflow-hidden relative">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
+                                    <pre className="text-sm font-mono text-red-300 whitespace-pre-wrap overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent max-h-[150px] overflow-y-auto">
+                                        {result.actualOutput}
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
