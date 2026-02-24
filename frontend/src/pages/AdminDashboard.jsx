@@ -146,6 +146,8 @@ const AdminDashboard = () => {
         }
     };
 
+    const admins = users.filter(u => u.is_admin);
+
     // Filtered and sorted problems
     const filteredProblems = problems
         .filter(p => {
