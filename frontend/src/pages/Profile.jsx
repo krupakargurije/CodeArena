@@ -105,17 +105,8 @@ const Profile = () => {
             let avatarUrl = profileData.avatarUrl;
 
             if (avatarFile) {
-                const fileName = `avatars/${user.id}/${Date.now()}-${avatarFile.name}`;
-                const { error: uploadError } = await supabase.storage
-                    .from('avatars')
-                    .upload(fileName, avatarFile, { upsert: true });
-
-                if (!uploadError) {
-                    const { data: urlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(fileName);
-                    avatarUrl = urlData.publicUrl;
-                }
+                const uploadResult = await userService.uploadProfilePicture(avatarFile);
+                avatarUrl = uploadResult.data.url;
             }
 
             await userService.updateProfile({

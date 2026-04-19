@@ -1,280 +1,202 @@
-# CodeArena
-
-CodeArena is a web-based competitive programming and coding-practice platform that provides an interactive code editor, problem sets, timed contests, and progress tracking. This README explains the project's purpose, how to run it locally, deployment hints, and how to contribute.
-
-## Table of contents
-
-- [Demo](#demo)
-- [Features](#features)
-- [Architecture & Tech Stack](#architecture--tech-stack)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment variables](#environment-variables)
-  - [Running locally](#running-locally)
-- [Code Execution / Judge](#code-execution--judge)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [License](#license)
-- [Contact](#contact)
-
-## Demo
-
-Live demo: https://codearena-of33.onrender.com
-
-## Features
-
-- Problem catalog with categories, tags, and difficulty levels
-- Real-time web code editor with syntax highlighting and multi-language support
-- Submit & judge solutions against sample and hidden testcases
-- Timed contests with leaderboards and participant rankings
-- User accounts, profiles, and progress history
-- Admin panel to create/edit problems, contests, and testcases
-- Notifications, achievements, and simple analytics
-
-## Architecture & Tech Stack
-## 🖥 Frontend
-
-- **React 18**
-- **Vite** – Fast build and development tool
-- **JavaScript (ES6+)**
-- **Tailwind CSS** – Utility-first styling
-- **Redux** – State management
-- **React Router** – Client-side routing
-- **@supabase/supabase-js**
-  - Email/password authentication
-  - JWT session handling
-  - Real-time subscriptions (rooms, presence)
+<div align="center">
+  <h1>🏆 CodeArena</h1>
+  <p><strong>A Modern, Web-Based Competitive Programming and Code-Practice Platform</strong></p>
+  <p>
+    <a href="https://codearena-of33.onrender.com">Live Demo</a> •
+    <a href="#features">Features</a> •
+    <a href="#architecture--tech-stack">Tech Stack</a> •
+    <a href="#getting-started">Getting Started</a>
+  </p>
+</div>
 
 ---
 
-## ⚙️ Backend
+## 📖 Overview
 
-- **Java 17**
-- **Spring Boot 3.2**
-- **Spring Security**
-  - JWT-based API security
-  - Role-based authorization
-- **Spring Data JPA** – ORM & database access
-- **RestTemplate + Apache HttpClient 5**
-  - Used for Supabase API communication
-- **Maven** – Dependency management
+**CodeArena** is a comprehensive coding platform designed for competitive programmers and learners. It provides an intuitive, real-time code editor, timed contests with global leaderboards, and an extensive problem catalog—all powered by a fast, scalable tech stack. Code executions are safely handled through the **Judge0** API, ensuring accurate execution and instant feedback on users' submissions.
 
 ---
 
-## 🗄 Database
+## ✨ Features
 
-- **Supabase (PostgreSQL)**
-- **Row Level Security (RLS)**
-  - Authorization enforced at the database level
-- **Real-time subscriptions**
-  - Used for live rooms and data updates
-
----
-
-## 🔐 Authentication & Authorization
-
-- **Supabase Auth**
-  - Email & password login
-- **JWT tokens**
-  - Issued by Supabase
-  - Sent with frontend requests
-  - Verified by Spring Security
-- **Admin permissions**
-  - Controlled via `profiles.is_admin` column
+- **Problem Catalog**: Discover problems filtering by different categories, tags, and difficulty levels (Cakewalk, Easy, Medium, Hard).
+- **Interactive Code Editor**: Real-time coding interface via Monaco Editor, featuring syntax highlighting, code auto-completion, and multi-language support (Python, Java, C++, JavaScript).
+- **Automated Judging System**: Submissions are parsed and graded against hidden and sample test cases using the top-tier **Judge0** sandbox service.
+- **Timed Contests**: Participate in competitive coding contests, track progress via live leaderboards, and see rankings in real-time.
+- **User Accounts & Profiles**: Extensive tracking of progress, submissions history, user achievements, and personalized metrics.
+- **Admin Dashboard**: Manage platform problems, test cases, and administrative functions securely with role-based restrictions.
+- **Advanced Authentication & Security**: Complete end-to-end security architecture utilizing JWTs and Row Level Security.
 
 ---
 
-## 🔄 Application Flow
+## 🏗 Architecture & Tech Stack
 
-1. User logs in via Supabase Auth
-2. Supabase issues a JWT token
-3. Frontend sends JWT with API requests
-4. Spring Boot validates the token
-5. Business logic is executed securely
-6. Database access is protected by RLS policies
+CodeArena is split into a robust backend architecture built with **Java / Spring Boot** and an intuitive, lightning-fast frontend built with **React / Vite**. Both ecosystems are managed through a central **Supabase PostgreSQL** database.
+
+### 🖥 Frontend (Client)
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+- **State Management:** Redux Toolkit (`@reduxjs/toolkit`) & React Redux
+- **Editor Integration:** Monaco Editor
+- **Routing:** React Router DOM v6
+- **Real-Time & Auth:** Supabase JS Client
+
+### ⚙️ Backend (Server)
+- **Framework:** Java 17 & Spring Boot 3.2
+- **Security:** Spring Security (JWT-based API protection, Role-based Authorization)
+- **ORM:** Spring Data JPA
+- **API Client:** RestTemplate + Apache HttpClient 5 (for database/judge communication)
+- **Build Tool:** Maven
+
+### 🗄 Database & Infrastructure
+- **System:** Supabase (PostgreSQL)
+- **Security:** Row Level Security (RLS) directly enforced at the database level.
+- **Code Execution:** [Judge0 API](https://judge0.com/) for secure containerized code evaluation.
 
 ---
 
-## ✅ Key Features
+## 🚀 Getting Started
 
-- Secure JWT-based authentication
-- Database-level authorization using RLS
-- Real-time updates with Supabase
-- Clean separation of frontend and backend
-- Production-ready architecture
-
----
-
-
-- Frontend: React (Vite), JavaScript, Tailwind CSS
-- Backend: Java Spring Boot 3.2, Maven
-- API: REST
-- Database: Supabase (PostgreSQL)
-- Auth: Supabase Auth (JWT-based)
-- Code runner / sandbox: Not yet implemented (future: Docker sandbox or external judge service)
-- CI/CD: GitHub (manual push triggers Render auto-deploy)
-- Hosting: Render (Frontend: codearena-of33.onrender.com, Backend: codearena-backend-9bi1.onrender.com)
-
-## Getting Started
-
-These instructions will help you set up a development copy.
+Follow these instructions to set up a local development environment.
 
 ### Prerequisites
 
-- Node.js (16+ recommended)
-- npm or yarn
-- Docker (if running the judge locally)
-- PostgreSQL (or MongoDB) instance
-- Git
+- **Java 17** SDK
+- **Node.js** (v18 or higher recommended)
+- **npm** or **yarn**
+- **Maven** (for building backend dependencies)
+- A **Supabase** Project (for Database and Authentication)
 
 ### Installation
 
-1. Clone the repository
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/krupakargurije/CodeArena.git
+   cd CodeArena
+   ```
 
+2. **Frontend Setup:**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+3. **Backend Setup:**
+   ```bash
+   cd backend
+   mvn clean install -DskipTests
+   ```
+
+### Environment Configuration
+
+You'll need environment configurations for both the Frontend and the Backend.
+
+**Frontend (`frontend/.env.local`):**
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:8080/api
+```
+
+**Backend (`backend/.env` / `.env.template`):**
+```env
+DB_URL=jdbc:postgresql://<your-db-url>:5432/postgres
+DB_USERNAME=postgres
+APP_DB_PASSWORD=your_db_password
+JWT_SECRET=your_jwt_secret_from_supabase
+```
+
+*(Note: For PowerShell environments, you can manage vars by running `.\run_local.ps1`)*
+
+### 🏃 Running Locally
+
+Start the Backend and Frontend servers in separate terminals.
+
+**1. Start the Backend:**
 ```bash
-git clone https://github.com/krupakargurije/CodeArena.git
-cd CodeArena
+# From the backend directory
+mvn spring-boot:run
+# OR run the provided ps1 script locally (Windows):
+.\run_local.ps1
 ```
 
-2. Install dependencies
-
-Assuming a monorepo with `frontend/` and `backend/` directories. Adjust for your repo layout.
-
+**2. Start the Frontend:**
 ```bash
-# Frontend
-cd frontend
-npm install
-
-# New terminal: Backend
-cd ../backend
-npm install
-```
-
-3. Create environment files
-
-Create `.env` files for frontend/backend as needed. Example backend `.env`:
-
-```
-DATABASE_URL=postgres://user:password@localhost:5432/codearena
-JWT_SECRET=your_jwt_secret
-PORT=4000
-NODE_ENV=development
-CODE_RUNNER_URL=http://localhost:5000   # if you run a local judge
-```
-
-Example frontend `.env` (if needed):
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:4000/api
-```
-
-4. Database setup / migrations
-
-Run migrations or ORM setup (adjust to your stack):
-
-```bash
-# Example for TypeORM / Prisma
-# Prisma
-npx prisma migrate dev --name init
-# or TypeORM
-npm run migrate
-```
-
-### Running locally
-
-Start backend and frontend in separate terminals:
-
-```bash
-# Backend
-cd backend
-npm run dev
-
-# Frontend
-cd ../frontend
+# From the frontend directory
 npm run dev
 ```
 
-Open http://localhost:3000 (or the configured frontend port) in your browser.
+Your frontend will now be available at `http://localhost:5173` *(default Vite port)* and your backend typically at `http://localhost:8080`.
 
-## Code Execution / Judge
+---
 
-A secure sandbox is required to safely compile and run arbitrary submissions.
+## 👨‍⚖️ Code Execution Engine (Judge0)
 
-Options:
-- Use a Docker-based sandbox service (recommended for control and security).
-- Integrate a 3rd-party judge service / API.
-- Run the judge as a separate worker service communicating over REST / RPC / message queue.
+CodeArena intelligently bypasses local Docker configuration for code executions. It utilizes the **Judge0 API** natively via `CodeRunnerService.java` to asynchronously validate client algorithms.
 
-If you have a `judge/` folder with Dockerfile, build and run:
+Supported Languages:
+- Python (3.8+)
+- Java (OpenJDK 13+)
+- C++ (GCC 9.2+)
+- JavaScript (Node.js 12+)
 
+---
+
+## 🧪 Testing
+
+Quality assurance is key to our development flow.
+
+**Backend tests:**
 ```bash
-cd judge
-docker build -t codearena-judge .
-docker run --rm -p 5000:5000 codearena-judge
-```
-
-Configure the backend to point to the judge runner via `CODE_RUNNER_URL`.
-
-## Testing
-
-Add and run unit/integration tests for both frontend and backend.
-
-```bash
-# example
 cd backend
-npm test
-
-cd ../frontend
-npm test
+mvn test
 ```
 
-Use test containers or dedicated test DBs to isolate CI runs.
+## 🌍 Deployment
 
-## Deployment
+CodeArena is built to be deployed on serverless and scalable infrastructure:
 
-High-level steps:
-- Build and deploy frontend (Vercel, Netlify, S3 + CloudFront)
-- Deploy backend (Render, Heroku, DigitalOcean App Platform, AWS ECS)
-- Use managed DB (Supabase, AWS RDS, Atlas)
-- Deploy judge workers on isolated infrastructure (ECS, k8s, or dedicated VMs) with strict resource and seccomp profiles
-- Configure environment variables, secrets, and CORS settings
-- Add monitoring and error reporting (Sentry, Prometheus, Grafana)
+- **Frontend Hosting:** Render (Vercel or Netlify also recommended)
+  - *Production Link:* `https://codearena-of33.onrender.com`
+- **Backend Hosting:** Render Spring Boot deployment (or AWS ECS, Heroku)
+- **Database:** Supabase Managed Database
+- **Execution Service:** Judge0 Engine
 
-CI/CD recommendation: Use GitHub Actions to run tests, build artifacts, and deploy to your hosting provider.
+> **CI/CD Recommendation:** We recommend utilizing **GitHub Actions** workflows to automatically invoke build processes, run integration test validations, and push deployment artifacts.
 
-## Contributing
+---
 
-Contributions are welcome! Please follow:
+## 🤝 Contributing
 
-1. Fork the repo
-2. Create a branch: git checkout -b feat/short-description
-3. Commit changes with clear messages: git commit -m "feat: short description"
-4. Push and open a pull request
+Contributions are highly appreciated to help expand CodeArena's ecosystem!
 
-Please include tests for new features and follow the project's coding style. Optionally add an issue first to discuss larger changes.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes using Conventional Commits (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Suggested commit conventions: Conventional Commits (feat, fix, chore, docs, style, refactor, test).
+Please refer to the codebase styling standards and ensure your logic includes tests before submitting a PR.
 
-## Roadmap
+---
 
-Planned improvements:
-- Add more programming languages and improved runner resource limits
-- Richer analytics and suggestions for users
-- Team features and private contests
-- Plagiarism detection / similarity analysis
-- Mobile-friendly UI / PWA support
+## 🎯 Roadmap
 
-## License
+- [ ] Implement enhanced problem submission analytics.
+- [ ] Incorporate comprehensive testing endpoints.
+- [ ] Establish team and organization-based contest spaces.
+- [ ] Introduce real-time multiplayer code combat environments.
 
-N/A
+---
 
-## Contact
+## 📄 License
 
-Maintained by krupakargurije — open an issue or reach out via GitHub.
+This repo is closed-source / proprietary, unless specifically licensed by the primary maintainer.
 
-## Acknowledgements
+## ✉️ Contact
 
-Thanks to the open-source community and all contributors who help improve CodeArena.
+Architecture & Maintenance by **krupakargurije**
+- GitHub: [@krupakargurije](https://github.com/krupakargurije)
+
+<p align="center">Made with ❤️ for developers and competitive programmers.</p>
