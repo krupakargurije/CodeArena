@@ -133,18 +133,20 @@ Your frontend will now be available at `http://localhost:5173` *(default Vite po
 
 ## 📈 Performance & Load Testing
 
-CodeArena has undergone rigorous performance and load testing to ensure high availability and stability under heavy concurrent traffic. We utilized **k6** to simulate continuous, concurrent user traffic hitting our backend API endpoints.
+CodeArena has undergone rigorous baseline performance testing to evaluate its stability under heavy concurrent traffic. We utilized **k6** to simulate continuous, concurrent user traffic against our backend API.
 
 ### Load Test Results (3,000 Concurrent Users)
 
 **Test Parameters:**
 - **Target Endpoint:** `GET /api/problems`
+- **Database Backend:** In-memory H2 Database (Baseline test to isolate application processing performance; production PostgreSQL tests are next).
 - **Ramp Profile:** 0 to **3,000 Virtual Users (VUs)** over 2 minutes.
 
 **Key Findings:**
-- **Zero Dropped Requests:** The application successfully handled **28,126** requests with a **100.00% success rate**.
-- **Peak Throughput:** ~195 requests per second.
-- **Graceful Degradation:** When the concurrent users exceeded the server thread pool (500 threads), the server efficiently queued incoming requests rather than dropping connections.
+- **Reliability:** The application successfully handled **28,126** requests with a **100.00% success rate** (zero dropped connections).
+- **Throughput:** Maintained a sustained peak throughput of **195 req/s**.
+- **Latency & SLAs:** The p95 response time hit 17.11s under extreme load. Our target SLA for production is a **p99 < 2s**. This indicates that while the system is highly resilient and doesn't drop requests, further latency optimization is required to meet production targets.
+- **Architecture Constraints:** The degradation in latency is directly tied to Tomcat's thread-per-request blocking model (capped at 500 threads). When concurrent requests exceed the thread pool, requests are queued. To meet strict latency SLAs under massive concurrency, migrating to a non-blocking, reactive stack (e.g., Spring WebFlux) is under consideration.
 
 **k6 Output Proof:**
 ```text
@@ -165,8 +167,6 @@ CodeArena has undergone rigorous performance and load testing to ensure high ava
     vus............................: 3000   min=22         max=3000
     vus_max........................: 3000   min=3000       max=3000
 ```
-
-*This test proves that the architecture is exceptionally resilient and will not buckle under sudden traffic spikes, comfortably supporting tens of thousands of active users.*
 
 ---
 
