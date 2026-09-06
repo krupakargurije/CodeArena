@@ -17,6 +17,63 @@
 
 ---
 
+---
+
+## 📈 Scalability & High-Concurrency Performance Report
+
+**Project:** CodeArena | **Testing Suite:** k6 | **Database:** PostgreSQL 16 (Optimized)
+
+### 1. Executive Summary
+
+This report details the stress-testing of the CodeArena backend to ensure it meets enterprise-grade standards for latency and availability. By migrating from H2 to a tuned **PostgreSQL** instance and optimizing the **HikariCP** connection pool, the system achieved a **9x improvement** in P95 latency compared to baseline builds, maintaining stability at 3,000 concurrent virtual users.
+
+### 2. Test Environment & Configuration
+
+* **Backend:** Spring Boot 3.x (Embedded Tomcat)
+* **Database:** PostgreSQL 16 on AWS RDS (t3.medium)
+* **Optimization Layer:** HikariCP (Maximum pool size: 50), Composite Indexing on `problem_id` and `difficulty`.
+* **Test Profile:**
+  * **VUs (Virtual Users):** 3,000 constant
+  * **Duration:** 10 Minutes
+  * **Scenario:** High-frequency read-heavy load on the Problem Discovery API.
+
+### 3. Industry-Standard Performance Metrics
+
+| Metric | Result | Target (SLA) | Status |
+| --- | --- | --- | --- |
+| **Success Rate** | **100.00%** | > 99.9% | ✅ **Passed** |
+| **Peak Throughput** | **1,842 RPS** | 1,000 RPS | ✅ **Exceeded** |
+| **Average Latency** | **84ms** | < 200ms | ✅ **Excellent** |
+| **P95 Latency** | **142ms** | < 300ms | ✅ **Excellent** |
+| **P99 Latency** | **210ms** | < 500ms | ✅ **Excellent** |
+
+### 4. Deep Dive: Database & Architectural Optimizations
+
+To achieve these "Excellent" results on PostgreSQL rather than a simple in-memory database, the following engineering decisions were implemented:
+
+* **Connection Pool Tuning:** Optimized **HikariCP** `minimumIdle` and `maximumPoolSize` to prevent thread starvation during the 3,000 VU spike.
+* **Indexing Strategy:** Applied B-Tree indexes on frequently filtered columns. Reduced the query execution time from O(n) to O(log n), preventing the CPU spikes seen in previous H2-based runs.
+* **Read-Optimized DTOs:** Utilized Spring Data JPA Projections to fetch only required fields, significantly reducing the payload size and PostgreSQL buffer cache pressure.
+
+### 5. Final k6 Execution Proof (PostgreSQL Production-Ready)
+
+```text
+  █ TEST AGGREGATE RESULTS (PostgreSQL 16)
+
+    checks_total.......: 1,105,200  1,842.00/s
+    checks_succeeded...: 100.00%    1,105,200 out of 1,105,200
+    checks_failed......: 0.00%      0 out of 1,105,200
+
+    HTTP metrics:
+    http_req_duration..............: avg=84.12ms med=76.21ms p(90)=128.4ms p(95)=142.1ms p(99)=210.3ms
+    http_req_failed................: 0.00% (0 out of 1,105,200)
+    http_reqs......................: 1,105,200 (1,842/s)
+
+    Resource Usage:
+    CPU Utilization................: 42% (Stable)
+    DB Connection Wait Time........: 0.8ms (Avg)
+```
+
 ## ✨ Features
 
 - **Problem Catalog**: Discover problems filtering by different categories, tags, and difficulty levels (Cakewalk, Easy, Medium, Hard).
@@ -128,63 +185,6 @@ npm run dev
 ```
 
 Your frontend will now be available at `http://localhost:5173` *(default Vite port)* and your backend typically at `http://localhost:8080`.
-
----
-
-## 📈 Scalability & High-Concurrency Performance Report
-
-**Project:** CodeArena | **Testing Suite:** k6 | **Database:** PostgreSQL 16 (Optimized)
-
-### 1. Executive Summary
-
-This report details the stress-testing of the CodeArena backend to ensure it meets enterprise-grade standards for latency and availability. By migrating from H2 to a tuned **PostgreSQL** instance and optimizing the **HikariCP** connection pool, the system achieved a **9x improvement** in P95 latency compared to baseline builds, maintaining stability at 3,000 concurrent virtual users.
-
-### 2. Test Environment & Configuration
-
-* **Backend:** Spring Boot 3.x (Embedded Tomcat)
-* **Database:** PostgreSQL 16 on AWS RDS (t3.medium)
-* **Optimization Layer:** HikariCP (Maximum pool size: 50), Composite Indexing on `problem_id` and `difficulty`.
-* **Test Profile:**
-  * **VUs (Virtual Users):** 3,000 constant
-  * **Duration:** 10 Minutes
-  * **Scenario:** High-frequency read-heavy load on the Problem Discovery API.
-
-### 3. Industry-Standard Performance Metrics
-
-| Metric | Result | Target (SLA) | Status |
-| --- | --- | --- | --- |
-| **Success Rate** | **100.00%** | > 99.9% | ✅ **Passed** |
-| **Peak Throughput** | **1,842 RPS** | 1,000 RPS | ✅ **Exceeded** |
-| **Average Latency** | **84ms** | < 200ms | ✅ **Excellent** |
-| **P95 Latency** | **142ms** | < 300ms | ✅ **Excellent** |
-| **P99 Latency** | **210ms** | < 500ms | ✅ **Excellent** |
-
-### 4. Deep Dive: Database & Architectural Optimizations
-
-To achieve these "Excellent" results on PostgreSQL rather than a simple in-memory database, the following engineering decisions were implemented:
-
-* **Connection Pool Tuning:** Optimized **HikariCP** `minimumIdle` and `maximumPoolSize` to prevent thread starvation during the 3,000 VU spike.
-* **Indexing Strategy:** Applied B-Tree indexes on frequently filtered columns. Reduced the query execution time from O(n) to O(log n), preventing the CPU spikes seen in previous H2-based runs.
-* **Read-Optimized DTOs:** Utilized Spring Data JPA Projections to fetch only required fields, significantly reducing the payload size and PostgreSQL buffer cache pressure.
-
-### 5. Final k6 Execution Proof (PostgreSQL Production-Ready)
-
-```text
-  █ TEST AGGREGATE RESULTS (PostgreSQL 16)
-
-    checks_total.......: 1,105,200  1,842.00/s
-    checks_succeeded...: 100.00%    1,105,200 out of 1,105,200
-    checks_failed......: 0.00%      0 out of 1,105,200
-
-    HTTP metrics:
-    http_req_duration..............: avg=84.12ms med=76.21ms p(90)=128.4ms p(95)=142.1ms p(99)=210.3ms
-    http_req_failed................: 0.00% (0 out of 1,105,200)
-    http_reqs......................: 1,105,200 (1,842/s)
-
-    Resource Usage:
-    CPU Utilization................: 42% (Stable)
-    DB Connection Wait Time........: 0.8ms (Avg)
-```
 
 ---
 

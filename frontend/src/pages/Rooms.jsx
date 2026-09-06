@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { getUserRooms, deleteRoom, randomJoinRoom, getPublicRooms, joinRoom } from '../services/roomService';
 import CreateRoomModal from '../components/CreateRoomModal';
 import JoinRoomModal from '../components/JoinRoomModal';
+import NoRoomFoundModal from '../components/NoRoomFoundModal';
 
 const Rooms = () => {
     const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Rooms = () => {
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
+    const [showNoRoomModal, setShowNoRoomModal] = useState(false);
     const [deletingRoom, setDeletingRoom] = useState(null);
     const [roomToDelete, setRoomToDelete] = useState(null);
     const [joiningRandom, setJoiningRandom] = useState(false);
@@ -127,7 +129,7 @@ const Rooms = () => {
             const response = await randomJoinRoom();
             navigate(`/rooms/${response.data.id}/lobby`);
         } catch (error) {
-            alert('Failed to find a room. Please try again or create one.');
+            setShowNoRoomModal(true);
         } finally {
             setJoiningRandom(false);
         }
@@ -492,6 +494,21 @@ const Rooms = () => {
                 <JoinRoomModal
                     onClose={() => setShowJoinModal(false)}
                     onRoomJoined={handleRoomJoined}
+                />
+            )}
+
+            {showNoRoomModal && (
+                <NoRoomFoundModal
+                    onClose={() => setShowNoRoomModal(false)}
+                    onCreateRoom={() => {
+                        setShowNoRoomModal(false);
+                        setShowCreateModal(true);
+                    }}
+                    onRetry={() => {
+                        setShowNoRoomModal(false);
+                        handleRandomJoin();
+                    }}
+                    isRetrying={joiningRandom}
                 />
             )}
 

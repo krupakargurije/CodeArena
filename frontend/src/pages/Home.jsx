@@ -5,12 +5,14 @@ import { randomJoinRoom } from '../services/roomService';
 import { getGlobalStats } from '../services/statsService';
 import CreateRoomModal from '../components/CreateRoomModal';
 import JoinRoomModal from '../components/JoinRoomModal';
+import NoRoomFoundModal from '../components/NoRoomFoundModal';
 
 const Home = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useSelector((state) => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
+    const [showNoRoomModal, setShowNoRoomModal] = useState(false);
     const [joiningRandom, setJoiningRandom] = useState(false);
     const [stats, setStats] = useState({
         activePlayers: 0,
@@ -64,7 +66,7 @@ const Home = () => {
             navigate(`/rooms/${response.data.id}/lobby`);
         } catch (error) {
             console.error('Failed to random join:', error);
-            alert('Failed to find a room. Please try again or create one.');
+            setShowNoRoomModal(true);
         } finally {
             setJoiningRandom(false);
         }
@@ -591,6 +593,21 @@ const Home = () => {
                 <JoinRoomModal
                     onClose={() => setShowJoinModal(false)}
                     onRoomJoined={handleRoomJoined}
+                />
+            )}
+
+            {showNoRoomModal && (
+                <NoRoomFoundModal
+                    onClose={() => setShowNoRoomModal(false)}
+                    onCreateRoom={() => {
+                        setShowNoRoomModal(false);
+                        setShowCreateModal(true);
+                    }}
+                    onRetry={() => {
+                        setShowNoRoomModal(false);
+                        handleRandomJoin();
+                    }}
+                    isRetrying={joiningRandom}
                 />
             )}
         </div>

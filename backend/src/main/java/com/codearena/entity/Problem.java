@@ -32,11 +32,14 @@ public class Problem {
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
 
-    @Transient
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    @Column(name = "tags", columnDefinition = "text[]")
     private List<String> tags = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String inputFormat;
+
+    
 
     @Column(columnDefinition = "TEXT")
     private String outputFormat;
