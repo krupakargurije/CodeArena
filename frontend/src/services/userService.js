@@ -46,8 +46,6 @@ const mapProfile = (profile) => ({
 
 export const getUserProfile = async (userId) => {
     try {
-        console.log('getUserProfile: Starting with userId:', userId);
-
         if (!userId) {
             console.error('getUserProfile: No userId provided');
             throw new Error('No user ID provided');
@@ -58,7 +56,6 @@ export const getUserProfile = async (userId) => {
 
         try {
             // Try direct fetch first
-            console.log('getUserProfile: Attempting direct REST fetch...');
             const fetchResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=*`, {
                 headers: {
                     'apikey': supabaseAnonKey,
@@ -69,7 +66,6 @@ export const getUserProfile = async (userId) => {
             if (fetchResponse.ok) {
                 const fetchData = await fetchResponse.json();
                 if (fetchData && fetchData.length > 0) {
-                    console.log('getUserProfile: Direct fetch SUCCESS');
                     return { data: mapProfile(fetchData[0]) };
                 }
             }
@@ -78,7 +74,6 @@ export const getUserProfile = async (userId) => {
         }
 
         // Fallback to Supabase client
-        console.log('getUserProfile: Using Supabase client...');
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -86,7 +81,6 @@ export const getUserProfile = async (userId) => {
             .maybeSingle();
 
         if (!data) {
-            console.log('getUserProfile: Profile not found, returning empty');
             // Return a default profile structure
             return {
                 data: {
@@ -103,7 +97,6 @@ export const getUserProfile = async (userId) => {
             throw error;
         }
 
-        console.log('getUserProfile: SUCCESS');
         return { data: mapProfile(data) };
     } catch (error) {
         console.error('getUserProfile: Fatal error:', error);
@@ -113,8 +106,6 @@ export const getUserProfile = async (userId) => {
 
 export const updateProfile = async (profileData) => {
     try {
-        console.log('updateProfile: Starting update with data:', profileData);
-
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -127,8 +118,6 @@ export const updateProfile = async (profileData) => {
             console.error('updateProfile: No active session found');
             throw new Error('No user logged in. Please log in again.');
         }
-
-        console.log('updateProfile: Session found for user:', session.user.id);
 
         // Update the profile
         const { data, error } = await supabase
@@ -156,7 +145,6 @@ export const updateProfile = async (profileData) => {
             throw new Error('Profile update returned no data');
         }
 
-        console.log('updateProfile: Profile updated successfully:', data);
         return { data: mapProfile(data) };
     } catch (error) {
         console.error('updateProfile: Fatal error:', error);

@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/problems/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll() // Room endpoints
+                        .requestMatchers("/api/discussions/**").permitAll() // Discussion endpoints
                         .requestMatchers("/api/leaderboard/**").permitAll()
                         .requestMatchers("/api/stats/**").permitAll() // Global stats
                         .requestMatchers("/api/health").permitAll() // Health check for keep-alive

@@ -19,6 +19,7 @@ import RoomLobby from './pages/RoomLobby';
 import RoomProblem from './pages/RoomProblem';
 import AdminDashboard from './pages/AdminDashboard';
 import Discuss from './pages/Discuss';
+import DiscussionDetail from './pages/DiscussionDetail';
 
 function AppContent() {
     const dispatch = useDispatch();
@@ -33,8 +34,6 @@ function AppContent() {
 
         // Listen for Supabase auth changes (handles OAuth redirects)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event:', event);
-
             if (event === 'SIGNED_IN' && session) {
                 try {
                     // Extract user data directly from session to avoid hanging Supabase calls
@@ -50,8 +49,6 @@ function AppContent() {
                         avatarUrl: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || null,
                         roles: ['ROLE_USER'],
                     };
-
-                    console.log('User from session:', user);
 
                     // 1. Fetch profile picture and admin status to prevent UI jumping
                     let isAdmin = false;
@@ -72,7 +69,6 @@ function AppContent() {
                                 country: profile.country,
                                 organization: profile.organization,
                             };
-                            console.log('Updated user with profile data:', user);
                         }
                     } catch (err) {
                         console.warn('Profile fetch failed, using OAuth data:', err.message);
@@ -161,6 +157,7 @@ function AppContent() {
                     />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/discuss" element={<Discuss />} />
+                    <Route path="/discuss/:id" element={<DiscussionDetail />} />
                     <Route
                         path="/profile"
                         element={
