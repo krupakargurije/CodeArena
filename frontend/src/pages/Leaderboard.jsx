@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import * as userService from '../services/userService';
+import { getProblems } from '../services/problemService';
+import { mockProblems, mockLeaderboard } from '../utils/mockData';
 
 const Leaderboard = () => {
     const [leaderboard, setLeaderboard] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    // Sample problems data
-    const problems = [
-        { id: 901, difficulty: 'Easy', title: 'Two Sum (Streaming)', acceptance: '56.8%', points: 100, tags: ['arrays', 'hashmap'] },
-        { id: 814, difficulty: 'Easy', title: 'Balanced Brackets — Editor Mode', acceptance: '61.2%', points: 120, tags: ['stack', 'strings'] },
-        { id: 878, difficulty: 'Medium', title: 'Graph Paths: K Shortest', acceptance: '42.1%', points: 240, tags: ['graphs', 'dijkstra'] },
-        { id: 133, difficulty: 'Medium', title: 'Intervals: Merge + Min Removals', acceptance: '39.4%', points: 280, tags: ['greedy', 'sorting'] },
-        { id: 201, difficulty: 'Hard', title: 'Bitmask DP: Team Formation', acceptance: '21.9%', points: 420, tags: ['dp', 'bitmask'] },
-        { id: 258, difficulty: 'Hard', title: 'Persistent Segment Tree Queries', acceptance: '17.4%', points: 460, tags: ['segment tree', 'persistence'] },
-    ];
+    const [problems, setProblems] = useState([]);
+    const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+    const [loadingProblems, setLoadingProblems] = useState(true);
+    const [problemSearch, setProblemSearch] = useState('');
 
     // Sample contests data
     const contests = [
@@ -24,34 +19,63 @@ const Leaderboard = () => {
     ];
 
     useEffect(() => {
-        const fetchLeaderboard = async () => {
+        const fetchLeaderboardData = async () => {
             try {
                 const response = await userService.getLeaderboard();
-                setLeaderboard(response.data?.slice(0, 5) || []);
+                if (response?.data && response.data.length > 0) {
+                    setLeaderboard(response.data.slice(0, 10));
+                } else {
+                    setLeaderboard(mockLeaderboard.slice(0, 10));
+                }
             } catch (error) {
-                console.error('Failed to fetch leaderboard:', error);
-                // Fallback data
-                setLeaderboard([
-                    { id: 1, username: 'neo', problemsSolved: 1312, rating: 2710, streak: 19 },
-                    { id: 2, username: 'byteForge', problemsSolved: 1208, rating: 2634, streak: 11 },
-                    { id: 3, username: 'kotlin_kid', problemsSolved: 1104, rating: 2579, streak: 28 },
-                    { id: 4, username: 'segTree', problemsSolved: 1040, rating: 2492, streak: 9 },
-                    { id: 5, username: 'pointer', problemsSolved: 998, rating: 2448, streak: 15 },
-                ]);
+                console.warn('Failed to fetch leaderboard, using fallback:', error);
+                setLeaderboard(mockLeaderboard.slice(0, 10));
             } finally {
-                setLoading(false);
+                setLoadingLeaderboard(false);
             }
         };
-        fetchLeaderboard();
+
+        const fetchProblemsData = async () => {
+            try {
+                const response = await getProblems();
+                if (response?.data && response.data.length > 0) {
+                    setProblems(response.data);
+                } else {
+                    setProblems(mockProblems);
+                }
+            } catch (error) {
+                console.warn('Failed to fetch problems, using fallback:', error);
+                setProblems(mockProblems);
+            } finally {
+                setLoadingProblems(false);
+            }
+        };
+
+        fetchLeaderboardData();
+        fetchProblemsData();
     }, []);
 
+    const formatDifficulty = (difficulty) => {
+        if (!difficulty) return 'Medium';
+        const d = difficulty.toUpperCase();
+        if (d === 'EASY' || d === 'CAKEWALK') return 'Easy';
+        if (d === 'HARD') return 'Hard';
+        return 'Medium';
+    };
+
     const getDifficultyStyle = (difficulty) => {
+        const d = formatDifficulty(difficulty);
         const styles = {
             Easy: 'text-green-400 border-green-400/30 bg-green-400/10',
             Medium: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
             Hard: 'text-red-400 border-red-400/30 bg-red-400/10',
         };
-        return styles[difficulty] || styles.Medium;
+        return styles[d] || styles.Medium;
+    };
+
+    const formatAcceptance = (rate) => {
+        if (rate === undefined || rate === null || isNaN(rate)) return '50.0%';
+        return `${Number(rate).toFixed(1)}%`;
     };
 
     const getRankStyle = (index) => {
@@ -62,166 +86,259 @@ const Leaderboard = () => {
             'from-gray-600 to-gray-700',     // 4th
             'from-gray-600 to-gray-700',     // 5th
         ];
-        return styles[index] || styles[3];
+        return styles[index] || 'from-gray-700 to-gray-800';
     };
+
+    // Filter problems for the preview box
+    const filteredProblems = useMemo(() => {
+        return (problems || []).filter((problem) => {
+            if (!problem) return false;
+            const title = problem.title || '';
+            const idStr = String(problem.id);
+            const tags = Array.isArray(problem.tags) ? problem.tags.join(' ') : '';
+            const q = problemSearch.toLowerCase();
+            return title.toLowerCase().includes(q) || idStr.includes(q) || tags.toLowerCase().includes(q);
+        }).slice(0, 6);
+    }, [problems, problemSearch]);
 
     return (
         <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Problems Preview */}
+
+                    {/* ══════════════════════════════════════════════════════════
+                        BOX 1: Left Column (2/3 width) - LEADERBOARD
+                       ══════════════════════════════════════════════════════════ */}
                     <div className="lg:col-span-2">
-                        <div className="backdrop-blur-xl rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                        <div
+                            className="backdrop-blur-xl rounded-xl p-5"
+                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+                        >
                             {/* Header */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h2 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>Problems (preview)</h2>
-                                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Quick filter. Full list on the Problems page.</p>
-                                </div>
-                                <div className="relative">
-                                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                    <input
-                                        type="text"
-                                        placeholder="Try: graph, dp, CA-..."
-                                        className="pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-brand-blue/50 w-56"
-                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Problem List */}
-                            <div className="space-y-2">
-                                {problems.map((problem) => (
-                                    <div
-                                        key={problem.id}
-                                        className="flex items-center justify-between p-4 rounded-xl transition-all group"
-                                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
-                                    >
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-1.5">
-                                                <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>CA {problem.id}</span>
-                                                <span className={`px-2 py-0.5 rounded border text-xs font-medium ${getDifficultyStyle(problem.difficulty)}`}>
-                                                    {problem.difficulty}
-                                                </span>
-                                            </div>
-                                            <h3 className="font-medium text-sm mb-2 group-hover:text-brand-blue transition-colors" style={{ color: 'var(--text-primary)' }}>
-                                                {problem.id}. {problem.title}
-                                            </h3>
-                                            <div className="flex gap-2">
-                                                {problem.tags.map((tag, idx) => (
-                                                    <span key={idx} className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right">
-                                                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{problem.acceptance} acceptance</div>
-                                                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{problem.points} pts</div>
-                                            </div>
-                                            <Link
-                                                to={`/problems/${problem.id}`}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                                                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                                            >
-                                                Open
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                </svg>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* View All */}
-                            <div className="mt-6 text-center">
-                                <Link to="/problems" className="text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>
-                                    View all problems
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column - Contests & Leaderboard */}
-                    <div className="space-y-6">
-                        {/* Contests */}
-                        <div className="backdrop-blur-xl rounded-xl p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-                            <div className="mb-4">
-                                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Contests</h2>
-                                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Upcoming events and quick joins.</p>
-                            </div>
-
-                            <div className="space-y-3">
-                                {contests.map((contest) => (
-                                    <div key={contest.id} className="p-4 rounded-xl" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div>
-                                                <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{contest.name}</h3>
-                                                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                                    Starts {contest.startsIn} · {contest.duration}
-                                                </p>
-                                            </div>
-                                            <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{contest.code}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                </svg>
-                                                {contest.joined} joined
-                                            </div>
-                                            <button className="px-3 py-1 rounded-lg text-xs font-medium transition-colors" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
-                                                Join
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Leaderboard */}
-                        <div className="backdrop-blur-xl rounded-xl p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                             <div className="mb-4">
                                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Leaderboard</h2>
                                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Top performers this season.</p>
                             </div>
 
-                            {loading ? (
+                            {/* Leaderboard Table (Original size, no scroll view) */}
+                            {loadingLeaderboard ? (
                                 <div className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>Loading...</div>
                             ) : (
                                 <div className="space-y-2">
-                                    {leaderboard.map((user, index) => (
-                                        <div key={user.id || index} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
-                                            {/* Rank Badge */}
-                                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getRankStyle(index)} flex items-center justify-center text-white font-bold text-sm`}>
-                                                {index + 1}
-                                            </div>
+                                    {leaderboard.slice(0, 10).map((user, index) => {
+                                        const username = user.username || user.email?.split('@')[0] || 'Anonymous';
 
-                                            {/* User Info */}
-                                            <div className="flex-1">
-                                                <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>@{user.username}</div>
-                                                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                                    {user.problemsSolved} solved · {user.streak || 0} day streak
+                                        return (
+                                            <div
+                                                key={user.id || index}
+                                                className="flex items-center gap-3 p-3 rounded-xl"
+                                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                                            >
+                                                {/* Rank Badge */}
+                                                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getRankStyle(index)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                                                    {index + 1}
+                                                </div>
+
+                                                {/* User Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                                                            @{username}
+                                                        </span>
+                                                        {user.is_admin && (
+                                                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                                                STAFF
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                                                        {user.problemsSolved ?? user.problems_solved ?? 0} solved · {user.streak || 0} day streak
+                                                    </div>
+                                                </div>
+
+                                                {/* Rating */}
+                                                <div className="flex items-center gap-1 flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.312-.843-.416a1 1 0 10-1.114 1.662c.296.19.651.389 1.067.515A4.535 4.535 0 009.917 14.77V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C14.398 13.766 15 12.991 15 12c0-.99-.602-1.765-1.324-2.246A4.539 4.539 0 0012 9.092V7.151c.391.127.68.312.843.416a1 1 0 101.114-1.662A4.535 4.535 0 0012.083 5.23V5a1 1 0 10-1.083 0zM11 9.092c-.378-.066-.71-.186-.983-.357A2.126 2.126 0 019.5 8c0-.332.193-.574.458-.75.27-.18.67-.32 1.042-.39V9.092zm1.06 1.968v2.09c.378.066.71.186.983.358.265.176.458.418.458.75 0 .332-.193.574-.458.75-.27.18-.67.32-1.042.39v-2.188c-1.35 1.35-1.35 3.538 0 4.888a3.46 3.46 0 004.889 0l.001-.001a3.46 3.46 0 000-4.888zm-3.829 0a3.46 3.46 0 004.89 0 3.46 3.46 0 000-4.889L3.109 4.11a1 1 0 00-1.414 1.415L3.89 7.726a4.5 4.5 0 00-1.39 3.024 1 1 0 002 .01c.015-1.092.793-2.022 1.83-2.28.378-.066.71-.186.983-.357A2.126 2.126 0 018 7.5a2 2 0 011.025-1.733l3.036-3.035z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span className="font-semibold text-sm">{user.rating || 1200}</span>
                                                 </div>
                                             </div>
-
-                                            {/* Rating */}
-                                            <div className="flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.312-.843-.416a1 1 0 10-1.114 1.662c.296.19.651.389 1.067.515A4.535 4.535 0 009.917 14.77V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C14.398 13.766 15 12.991 15 12c0-.99-.602-1.765-1.324-2.246A4.539 4.539 0 0012 9.092V7.151c.391.127.68.312.843.416a1 1 0 101.114-1.662A4.535 4.535 0 0012.083 5.23V5a1 1 0 10-1.083 0zM11 9.092c-.378-.066-.71-.186-.983-.357A2.126 2.126 0 019.5 8c0-.332.193-.574.458-.75.27-.18.67-.32 1.042-.39V9.092zm1.06 1.968v2.09c.378.066.71.186.983.358.265.176.458.418.458.75 0 .332-.193.574-.458.75-.27.18-.67.32-1.042.39v-2.188c-1.35 1.35-1.35 3.538 0 4.888a3.46 3.46 0 004.889 0l.001-.001a3.46 3.46 0 000-4.888zm-3.829 0a3.46 3.46 0 004.89 0 3.46 3.46 0 000-4.889L3.109 4.11a1 1 0 00-1.414 1.415L3.89 7.726a4.5 4.5 0 00-1.39 3.024 1 1 0 002 .01c.015-1.092.793-2.022 1.83-2.28.378-.066.71-.186.983-.357A2.126 2.126 0 018 7.5a2 2 0 011.025-1.733l3.036-3.035z" clipRule="evenodd" />
-
-                                                </svg>
-                                                <span className="font-semibold text-sm">{user.rating}</span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* ══════════════════════════════════════════════════════════
+                        Right Column (1/3 width): CONTESTS (Box 2) & PROBLEMS (Box 3)
+                       ══════════════════════════════════════════════════════════ */}
+                    <div className="space-y-4">
+
+                        {/* ─── BOX 2: Contests ─── */}
+                        <div
+                            className="backdrop-blur-xl rounded-xl p-4"
+                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+                        >
+                            <div className="mb-3 flex items-center justify-between">
+                                <div>
+                                    <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Contests</h2>
+                                    <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Upcoming events and quick joins.</p>
+                                </div>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                                    3 upcoming
+                                </span>
+                            </div>
+
+                            <div className="space-y-2">
+                                {contests.map((contest) => (
+                                    <div
+                                        key={contest.id}
+                                        className="p-2.5 px-3 rounded-lg transition-all group flex items-center justify-between gap-3"
+                                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 mb-0.5">
+                                                <h3 className="font-medium text-xs truncate group-hover:text-blue-400 transition-colors" style={{ color: 'var(--text-primary)' }}>
+                                                    {contest.name}
+                                                </h3>
+                                                <span className="text-[10px] font-mono px-1 rounded flex-shrink-0" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>
+                                                    {contest.code}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                <span>Starts {contest.startsIn}</span>
+                                                <span>·</span>
+                                                <span>{contest.duration}</span>
+                                                <span>·</span>
+                                                <span>{contest.joined}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors hover:bg-brand-blue hover:text-white flex-shrink-0"
+                                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                                        >
+                                            Join
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ─── BOX 3: Problems (preview) ─── */}
+                        <div
+                            className="backdrop-blur-xl rounded-xl p-4"
+                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+                        >
+                            {/* Header */}
+                            <div className="mb-3">
+                                <div className="flex items-center justify-between mb-1">
+                                    <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                                        Problems (preview)
+                                    </h2>
+                                    <Link
+                                        to="/problems"
+                                        className="text-[11px] font-medium transition-colors hover:text-blue-400"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        View all →
+                                    </Link>
+                                </div>
+                                <p className="text-[11px] mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                                    Existing platform problems. Quick practice and solve.
+                                </p>
+
+                                {/* Search input */}
+                                <div className="relative">
+                                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        value={problemSearch}
+                                        onChange={(e) => setProblemSearch(e.target.value)}
+                                        placeholder="Filter: Two Sum, Array, CA 1..."
+                                        className="w-full pl-7 pr-2.5 py-1 rounded-md text-[11px] focus:outline-none focus:ring-1 focus:ring-brand-blue/50"
+                                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Problems List */}
+                            {loadingProblems ? (
+                                <div className="text-center py-6 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                                    Loading problems...
+                                </div>
+                            ) : filteredProblems.length === 0 ? (
+                                <div className="text-center py-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                                    No problems matched.
+                                </div>
+                            ) : (
+                                <div className="space-y-1.5">
+                                    {filteredProblems.map((problem) => {
+                                        const diff = formatDifficulty(problem.difficulty);
+                                        const diffStyle = getDifficultyStyle(diff);
+                                        const acceptance = formatAcceptance(problem.acceptanceRate ?? problem.acceptance);
+                                        const primaryTag = Array.isArray(problem.tags) && problem.tags.length > 0 ? problem.tags[0] : null;
+
+                                        return (
+                                            <div
+                                                key={problem.id}
+                                                className="p-2 px-3 rounded-lg transition-all group flex items-center justify-between gap-2.5"
+                                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                                        <span className="text-[10px] font-mono" style={{ color: 'var(--text-tertiary)' }}>
+                                                            #{problem.id}
+                                                        </span>
+                                                        <span className={`px-1.5 py-0.2 rounded border text-[9px] font-semibold ${diffStyle}`}>
+                                                            {diff}
+                                                        </span>
+                                                        <Link
+                                                            to={`/problems/${problem.id}`}
+                                                            className="font-medium text-xs truncate group-hover:text-blue-400 transition-colors"
+                                                            style={{ color: 'var(--text-primary)' }}
+                                                        >
+                                                            {problem.title}
+                                                        </Link>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                        <span>{acceptance}</span>
+                                                        {primaryTag && <span>· {primaryTag}</span>}
+                                                    </div>
+                                                </div>
+
+                                                <Link
+                                                    to={`/problems/${problem.id}`}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors hover:bg-brand-blue hover:text-white flex-shrink-0"
+                                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                                                >
+                                                    Open
+                                                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </Link>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* View all footer */}
+                            <div className="mt-3 pt-2 text-center border-t border-[var(--border-subtle)]">
+                                <Link
+                                    to="/problems"
+                                    className="text-[11px] transition-colors hover:text-blue-400"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    Browse all problems ({problems.length})
+                                </Link>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
