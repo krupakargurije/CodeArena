@@ -492,8 +492,8 @@ const ProblemDetail = ({ problemIdProp, roomId, roomData }) => {
                                         }`}>
                                         {problem.difficulty || 'Easy'}
                                     </span>
-                                    {problem.acceptanceRate !== undefined && (
-                                        <span style={{ color: 'var(--text-secondary)' }}>Acceptance: <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{problem.acceptanceRate}%</span></span>
+                                    {problem.acceptanceRate !== undefined && problem.acceptanceRate !== null && (
+                                        <span style={{ color: 'var(--text-secondary)' }}>Acceptance: <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{Math.round(problem.acceptanceRate)}%</span></span>
                                     )}
                                 </div>
 

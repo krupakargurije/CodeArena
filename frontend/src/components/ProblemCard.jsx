@@ -66,7 +66,7 @@ const ProblemCard = ({ problem, isSolved = false }) => {
                             <span className="text-xs text-green-500 font-medium">✓ Completed</span>
                         )}
                         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                            {(problem.acceptanceRate ?? 0).toFixed(1)}%
+                            {Math.round(problem.acceptanceRate ?? 0)}%
                         </span>
                     </div>
                 </div>

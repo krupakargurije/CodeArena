@@ -1,0 +1,28 @@
+package com.codearena.problems.dto;
+
+import com.codearena.problems.entity.Submission;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@AllArgsConstructor
+public class SubmissionResponse {
+    private Long id;
+    private String userId;
+    private String username;
+    private Long problemId;
+    private String problemTitle;
+    private String language;
+    private Submission.Status status;
+    private String errorMessage;
+    private Integer executionTime;
+    private Integer memoryUsed;
+    private Integer testCasesPassed;
+    private Integer totalTestCases;
+    private String failedTestCaseInput;
+    private String expectedOutput;
+    private String actualOutput;
+    private LocalDateTime submittedAt;
+}
