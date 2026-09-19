@@ -3,11 +3,9 @@ spring:
     name: codearena-backend
   
   datasource:
-    # Supabase Direct Connection (Session Mode) - Required for DDL/Migrations
-    # Using Port 5432 (Direct) to avoid 'Network unreachable' issues with Pooler on Render
-    # Renamed env vars to APP_DB_* to bypass potentially incorrect Render settings
-    url: ${APP_DB_URL:jdbc:postgresql://db.qlwrjoknqjwurgnoogjd.supabase.co:5432/postgres?sslmode=require}
-    username: ${APP_DB_USERNAME:postgres}
+    # Supabase Connection Pooler (Session Mode) - IPv4 & IPv6 compatible
+    url: ${APP_DB_URL:jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require}
+    username: ${APP_DB_USERNAME:postgres.qlwrjoknqjwurgnoogjd}
     password: ${APP_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -21,7 +19,6 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   
   servlet:

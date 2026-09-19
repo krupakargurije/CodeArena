@@ -14,8 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 
 import com.codearena.discuss.dto.CreateDiscussionRequest;
+import com.codearena.discuss.dto.CreateReplyRequest;
+import com.codearena.discuss.dto.ReplyResponse;
 import com.codearena.discuss.service.DiscussionService;
-
 
 // TODO: Implement DiscussionController
 // Endpoints:
@@ -35,27 +36,51 @@ public class DiscussionController {
     private final DiscussionService discussionService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getDiscussionById(@PathVariable Long id){
+    public ResponseEntity<?> getDiscussionById(@PathVariable Long id) {
         return ResponseEntity.ok(discussionService.getDiscussionById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllDiscussions(){
+    public ResponseEntity<?> getAllDiscussions() {
         return ResponseEntity.ok(discussionService.getAllDiscussions());
     }
 
+    // Create Discussion
     @PostMapping
     public ResponseEntity<?> createDiscussion(
-        @RequestParam String userId , 
-        @RequestParam String username , 
-        @RequestBody CreateDiscussionRequest request) {
-        
-        return ResponseEntity.ok(discussionService.createDiscussion(userId , username , request));
+            @RequestParam String userId,
+            @RequestParam String username,
+            @RequestBody CreateDiscussionRequest request) {
+
+        return ResponseEntity.ok(discussionService.createDiscussion(userId, username, request));
     }
 
+    // Delete Discussion By Id
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteDiscussion(@PathVariable Long id , @RequestParam String userId){
+    public ResponseEntity<Object> deleteDiscussion(@PathVariable Long id, @RequestParam String userId) {
         discussionService.deleteDiscussion(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Reply API
+    @PostMapping("/{id}/replies")
+    public ResponseEntity<ReplyResponse> addReply(
+            @PathVariable Long id,
+            @RequestParam String userId,
+            @RequestParam String username,
+            @RequestBody CreateReplyRequest request) {
+        ReplyResponse reply = discussionService.addReply(id, userId, username, request);
+        return ResponseEntity.ok(reply);
+    }
+
+    // Delete Discussion reply
+    @DeleteMapping("/{id}/replies/{replyId}")
+    public ResponseEntity<Object> deleteReply(
+            @PathVariable Long id,
+            @PathVariable Long replyId,
+            @RequestParam String userId) {
+
+        discussionService.deleteReply(id, replyId, userId);
         return ResponseEntity.ok().build();
     }
 }
