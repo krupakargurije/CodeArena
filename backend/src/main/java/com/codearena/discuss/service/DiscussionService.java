@@ -2,8 +2,6 @@ package com.codearena.discuss.service;
 
 import java.util.List;
 
-import javax.management.RuntimeErrorException;
-
 import org.springframework.stereotype.Service;
 
 import com.codearena.discuss.dto.CreateDiscussionRequest;
@@ -147,7 +145,7 @@ public class DiscussionService {
         } else {
             discussion.setReplyCount(0);
         }
-        
+
         discussionRepository.save(discussion);
     }
 }

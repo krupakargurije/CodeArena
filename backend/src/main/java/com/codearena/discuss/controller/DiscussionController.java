@@ -18,7 +18,6 @@ import com.codearena.discuss.dto.CreateReplyRequest;
 import com.codearena.discuss.dto.ReplyResponse;
 import com.codearena.discuss.service.DiscussionService;
 
-// TODO: Implement DiscussionController
 // Endpoints:
 //   GET    /api/discussions                                  â€” getAllDiscussions()
 //   GET    /api/discussions/{id}                             â€” getDiscussionById(id) â€” returns discussion + replies
