@@ -14,8 +14,13 @@ import java.util.Optional;
 @Repository
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
-    @Query("SELECT i FROM Incident i WHERE i.incidentKey = :key AND i.status IN ('OPEN', 'ACKNOWLEDGED')")
-    Optional<Incident> findActiveByIncidentKey(@Param("key") String key);
+    @Query("SELECT i FROM Incident i WHERE i.incidentKey = :key AND i.status IN ('OPEN', 'ACKNOWLEDGED') ORDER BY i.id DESC")
+    List<Incident> findAllActiveByIncidentKey(@Param("key") String key);
+
+    default Optional<Incident> findActiveByIncidentKey(String key) {
+        List<Incident> list = findAllActiveByIncidentKey(key);
+        return list == null || list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
 
     List<Incident> findByStatusInOrderByLastSeenAtDesc(List<Incident.Status> statuses);
 

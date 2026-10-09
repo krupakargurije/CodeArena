@@ -34,10 +34,19 @@ public class AdminService {
     private static final ParameterizedTypeReference<List<Map<String, Object>>> LIST_MAP_TYPE = new ParameterizedTypeReference<>() {
     };
 
-    public AdminService(AuditLogService auditLogService, UserService userService) {
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+    @org.springframework.beans.factory.annotation.Autowired
+    public AdminService(
+            AuditLogService auditLogService,
+            UserService userService,
+            @org.springframework.beans.factory.annotation.Qualifier("supabaseRestTemplate")
+            RestTemplate supabaseRestTemplate) {
+        this.restTemplate = supabaseRestTemplate != null ? supabaseRestTemplate : new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.auditLogService = auditLogService;
         this.userService = userService;
+    }
+
+    public AdminService(AuditLogService auditLogService, UserService userService) {
+        this(auditLogService, userService, null);
     }
 
     private HttpHeaders createHeaders() {
@@ -75,14 +84,16 @@ public class AdminService {
 
         HttpEntity<Map<String, Object>> updateEntity = new HttpEntity<>(updateData, createHeaders());
 
-        restTemplate.exchange(
+        ResponseEntity<List<Map<String, Object>>> patchResponse = restTemplate.exchange(
                 updateUrl,
                 HttpMethod.PATCH,
                 updateEntity,
-                Void.class);
+                LIST_MAP_TYPE);
 
-        // Fetch the updated user (after state)
-        Map<String, Object> afterUser = fetchUserByEmail(email);
+        List<Map<String, Object>> patchedList = patchResponse.getBody();
+        Map<String, Object> afterUser = (patchedList != null && !patchedList.isEmpty())
+                ? patchedList.get(0)
+                : fetchUserByEmail(email);
 
         String entityId = email;
         String username = null;
@@ -138,14 +149,16 @@ public class AdminService {
 
         HttpEntity<Map<String, Object>> updateEntity = new HttpEntity<>(updateData, createHeaders());
 
-        restTemplate.exchange(
+        ResponseEntity<List<Map<String, Object>>> patchResponse = restTemplate.exchange(
                 updateUrl,
                 HttpMethod.PATCH,
                 updateEntity,
-                Void.class);
+                LIST_MAP_TYPE);
 
-        // Fetch the updated user (after state)
-        Map<String, Object> afterUser = fetchUserByEmail(email);
+        List<Map<String, Object>> patchedList = patchResponse.getBody();
+        Map<String, Object> afterUser = (patchedList != null && !patchedList.isEmpty())
+                ? patchedList.get(0)
+                : fetchUserByEmail(email);
 
         String entityId = email;
         if (afterUser != null && afterUser.get("id") != null) {
@@ -188,7 +201,7 @@ public class AdminService {
 
     private Map<String, Object> fetchUserByEmail(String email) {
         try {
-            String fetchUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email + "&select=*";
+            String fetchUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email + "&select=id,username,email,is_admin,rating,problems_solved";
             HttpEntity<String> fetchEntity = new HttpEntity<>(createHeaders());
 
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(

@@ -63,6 +63,7 @@ public class ApiPerformanceDTO {
         private double avgDurationMs;
         private double maxLatencyMs;
         private double maxDurationMs;
+        private double p95LatencyMs;
         private double p95DurationMs;
         private long errorCount5xx;
     }

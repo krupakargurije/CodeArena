@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import {
+    Activity,
+    Cpu,
+    Search,
+    RefreshCw,
+    Clock,
+    Server,
+    Layers,
+    X,
+    AlertCircle,
+    ArrowUpRight
+} from 'lucide-react';
 import { getApiPerformance } from '../../../services/monitoringService';
 
 const ApiPerformanceView = ({ autoRefreshInterval }) => {
@@ -53,12 +65,8 @@ const ApiPerformanceView = ({ autoRefreshInterval }) => {
             <div className="space-y-6 animate-pulse">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="glass-panel p-5 h-28 rounded-2xl bg-white/5" />
+                        <div key={i} className="mac-card p-5 h-28" />
                     ))}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="glass-panel p-6 h-64 rounded-2xl bg-white/5" />
-                    <div className="glass-panel p-6 h-64 rounded-2xl bg-white/5 lg:col-span-2" />
                 </div>
             </div>
         );
@@ -66,19 +74,15 @@ const ApiPerformanceView = ({ autoRefreshInterval }) => {
 
     if (error && !performance) {
         return (
-            <div className="glass-panel p-8 rounded-2xl border border-red-500/20 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 className="text-lg font-bold text-white">Failed to Load API Performance Metrics</h3>
-                <p className="text-dark-text-secondary text-sm max-w-md mx-auto">{error}</p>
+            <div className="mac-card p-8 text-center space-y-3">
+                <AlertCircle size={32} className="text-red-500 mx-auto" />
+                <h3 className="text-sm font-bold text-[#1d1d1f] dark:text-white">Failed to Load API Performance</h3>
+                <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6] max-w-md mx-auto">{error}</p>
                 <button
                     onClick={fetchPerformance}
-                    className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/90 text-white rounded-xl text-sm font-semibold transition"
+                    className="mac-btn-primary text-xs"
                 >
-                    Retry Loading
+                    Retry
                 </button>
             </div>
         );
@@ -126,8 +130,6 @@ const ApiPerformanceView = ({ autoRefreshInterval }) => {
         ? Math.min(100, Math.round((usedBytes / maxBytes) * 100))
         : 0;
 
-    const actualMaxLatency = maxLatencyMs || p99LatencyMs || avgLatencyMs || 0;
-
     const filteredEndpoints = slowEndpoints.filter(ep => {
         const path = ep.path || ep.uriPattern || '';
         const method = ep.method || '';
@@ -136,211 +138,226 @@ const ApiPerformanceView = ({ autoRefreshInterval }) => {
     });
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
-                <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <span>API Gateway & Runtime Performance</span>
-                    </h2>
-                    <p className="text-xs text-dark-text-secondary mt-0.5">
-                        Latency percentiles, HTTP status code distributions, JVM heap usage, and endpoint profiles.
-                    </p>
+        <div className="space-y-6 animate-mac-fade">
+            {/* Header info strip */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                    Latency percentiles, HTTP status code distributions, JVM heap usage, and endpoint profiles.
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-dark-text-secondary">
-                        Uptime: <span className="text-white font-bold">{formatUptime(uptimeSeconds)}</span>
+                <div className="flex items-center gap-2">
+                    <span className="mac-badge bg-black/[0.04] dark:bg-white/[0.06] text-[#6e6e73] dark:text-[#a1a1a6] font-mono">
+                        Uptime: <strong className="text-[#1d1d1f] dark:text-white">{formatUptime(uptimeSeconds)}</strong>
                     </span>
-                    <span className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-dark-text-secondary">
-                        Threads: <span className="text-white font-bold">{actualThreads}</span>
+                    <span className="mac-badge bg-black/[0.04] dark:bg-white/[0.06] text-[#6e6e73] dark:text-[#a1a1a6] font-mono">
+                        Threads: <strong className="text-[#1d1d1f] dark:text-white">{actualThreads}</strong>
                     </span>
                 </div>
             </div>
 
             {/* Latency Percentile Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-panel p-5 rounded-2xl border border-white/5 relative overflow-hidden">
-                    <div className="text-xs font-semibold text-dark-text-tertiary uppercase tracking-wider mb-1">p50 Latency (Median)</div>
-                    <div className="text-3xl font-bold text-white font-mono">
-                        {p50LatencyMs.toFixed(1)} <span className="text-sm font-normal text-dark-text-tertiary">ms</span>
+                <div className="mac-card p-4 space-y-1">
+                    <div className="text-[11px] font-semibold text-[#86868b] dark:text-[#a1a1a6] uppercase tracking-wider">
+                        p50 Latency (Median)
                     </div>
-                    <div className="text-[11px] text-emerald-400 mt-1">Normal user experience</div>
+                    <div className="text-2xl font-bold text-[#1d1d1f] dark:text-white font-mono">
+                        {p50LatencyMs.toFixed(1)} <span className="text-xs font-normal text-[#86868b]">ms</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-600 dark:text-emerald-400">Normal median flow</div>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl border border-sky-500/10 relative overflow-hidden">
-                    <div className="text-xs font-semibold text-sky-400/90 uppercase tracking-wider mb-1">p95 Latency</div>
-                    <div className="text-3xl font-bold text-sky-400 font-mono">
-                        {p95LatencyMs.toFixed(1)} <span className="text-sm font-normal text-sky-300">ms</span>
+                <div className="mac-card p-4 space-y-1">
+                    <div className="text-[11px] font-semibold text-[#86868b] dark:text-[#a1a1a6] uppercase tracking-wider">
+                        p95 Latency
                     </div>
-                    <div className="text-[11px] text-sky-400/70 mt-1">95% of calls faster than this</div>
+                    <div className="text-2xl font-bold text-[#0071e3] dark:text-[#2997ff] font-mono">
+                        {p95LatencyMs.toFixed(1)} <span className="text-xs font-normal text-[#86868b]">ms</span>
+                    </div>
+                    <div className="text-[11px] text-[#0071e3] dark:text-[#2997ff]">95% faster than threshold</div>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl border border-amber-500/10 relative overflow-hidden">
-                    <div className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider mb-1">p99 Latency (Tail)</div>
-                    <div className="text-3xl font-bold text-amber-400 font-mono">
-                        {p99LatencyMs.toFixed(1)} <span className="text-sm font-normal text-amber-300">ms</span>
+                <div className="mac-card p-4 space-y-1">
+                    <div className="text-[11px] font-semibold text-[#86868b] dark:text-[#a1a1a6] uppercase tracking-wider">
+                        p99 Latency (Tail)
                     </div>
-                    <div className="text-[11px] text-amber-400/70 mt-1">Tail latency outlier bound</div>
+                    <div className="text-2xl font-bold text-[#ff9500] dark:text-[#ff9f0a] font-mono">
+                        {p99LatencyMs.toFixed(1)} <span className="text-xs font-normal text-[#86868b]">ms</span>
+                    </div>
+                    <div className="text-[11px] text-[#ff9500] dark:text-[#ff9f0a]">1% worst tail latency</div>
                 </div>
 
-                <div className="glass-panel p-5 rounded-2xl border border-red-500/10 relative overflow-hidden">
-                    <div className="text-xs font-semibold text-red-400/90 uppercase tracking-wider mb-1">Max Observed Latency</div>
-                    <div className="text-3xl font-bold text-red-400 font-mono">
-                        {actualMaxLatency.toFixed(1)} <span className="text-sm font-normal text-red-300">ms</span>
+                <div className="mac-card p-4 space-y-1">
+                    <div className="text-[11px] font-semibold text-[#86868b] dark:text-[#a1a1a6] uppercase tracking-wider">
+                        Average Latency
                     </div>
-                    <div className="text-[11px] text-red-400/70 mt-1">Peak execution duration</div>
+                    <div className="text-2xl font-bold text-[#af52de] dark:text-[#bf5af2] font-mono">
+                        {avgLatencyMs.toFixed(1)} <span className="text-xs font-normal text-[#86868b]">ms</span>
+                    </div>
+                    <div className="text-[11px] text-[#6e6e73] dark:text-[#a1a1a6]">Max: {maxLatencyMs.toFixed(1)} ms</div>
                 </div>
             </div>
 
-            {/* Runtime & HTTP Status Distribution */}
+            {/* Secondary Grid: Throughput, HTTP Status & JVM Memory */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* JVM Heap Utilization */}
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-base font-bold text-white">JVM Memory Utilization</h3>
-                        <span className="text-xs font-mono font-bold text-brand-orange">{heapUsedPct}%</span>
+                {/* HTTP Status Code Breakdown */}
+                <div className="mac-card p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                        <span className="font-bold text-xs text-[#1d1d1f] dark:text-white">HTTP Status Breakdown</span>
+                        <span className="text-[11px] font-mono text-[#86868b]">{totalRequests} total reqs</span>
                     </div>
 
-                    <div className="space-y-2">
-                        <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+                    <div className="space-y-3 text-xs">
+                        <div className="flex items-center justify-between">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">2xx Success</span>
+                            <span className="font-mono font-bold text-[#1d1d1f] dark:text-white">{actual2xx}</span>
+                        </div>
+                        <div className="w-full bg-black/[0.05] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-700 ${heapUsedPct > 85 ? 'bg-red-500' : heapUsedPct > 70 ? 'bg-amber-500' : 'bg-brand-orange'
-                                    }`}
-                                style={{ width: `${heapUsedPct}%` }}
+                                className="bg-emerald-500 h-full rounded-full transition-all"
+                                style={{ width: `${totalRequests > 0 ? (actual2xx / totalRequests) * 100 : 100}%` }}
                             />
                         </div>
-                        <div className="flex justify-between text-[11px] text-dark-text-secondary font-mono">
-                            <span>Used: {formatBytes(usedBytes)}</span>
-                            <span>Max: {formatBytes(maxBytes)}</span>
-                        </div>
-                    </div>
 
-                    <div className="pt-2 border-t border-white/5 space-y-2 text-xs">
-                        <div className="flex justify-between text-dark-text-secondary">
-                            <span>Committed Heap:</span>
-                            <span className="text-white font-mono">{formatBytes(committedBytes)}</span>
+                        <div className="flex items-center justify-between pt-1">
+                            <span className="text-[#ff9500] dark:text-[#ff9f0a] font-semibold font-mono">4xx Client Errors</span>
+                            <span className="font-mono font-bold text-[#1d1d1f] dark:text-white">{actual4xx}</span>
                         </div>
-                        <div className="flex justify-between text-dark-text-secondary">
-                            <span>Total HTTP Requests:</span>
-                            <span className="text-white font-mono">{totalRequests.toLocaleString()}</span>
+                        <div className="w-full bg-black/[0.05] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
+                            <div
+                                className="bg-[#ff9500] h-full rounded-full transition-all"
+                                style={{ width: `${totalRequests > 0 ? (actual4xx / totalRequests) * 100 : 0}%` }}
+                            />
                         </div>
-                        <div className="flex justify-between text-dark-text-secondary">
-                            <span>Throughput:</span>
-                            <span className="text-white font-mono">{actualRpm.toFixed(1)} req/min</span>
+
+                        <div className="flex items-center justify-between pt-1">
+                            <span className="text-red-600 dark:text-red-400 font-semibold font-mono">5xx Server Failures</span>
+                            <span className="font-mono font-bold text-[#1d1d1f] dark:text-white">{actual5xx}</span>
+                        </div>
+                        <div className="w-full bg-black/[0.05] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
+                            <div
+                                className="bg-red-500 h-full rounded-full transition-all"
+                                style={{ width: `${totalRequests > 0 ? (actual5xx / totalRequests) * 100 : 0}%` }}
+                            />
                         </div>
                     </div>
                 </div>
 
-                {/* HTTP Status Code Distribution */}
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 lg:col-span-2 space-y-4">
-                    <h3 className="text-base font-bold text-white">HTTP Status Code Distribution</h3>
-                    <p className="text-xs text-dark-text-secondary">Categorized HTTP response codes from the API gateway</p>
-
-                    <div className="grid grid-cols-3 gap-4 pt-2">
-                        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                            <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">2xx Success</div>
-                            <div className="text-2xl font-bold text-emerald-400 font-mono mt-1">
-                                {actual2xx.toLocaleString()}
-                            </div>
-                            <div className="text-[10px] text-emerald-400/70 mt-1">Healthy Responses</div>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                            <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider">4xx Client Error</div>
-                            <div className="text-2xl font-bold text-amber-400 font-mono mt-1">
-                                {actual4xx.toLocaleString()}
-                            </div>
-                            <div className="text-[10px] text-amber-400/70 mt-1">{errorRate4xx.toFixed(2)}% of requests</div>
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-                            <div className="text-xs font-semibold text-red-400 uppercase tracking-wider">5xx Server Error</div>
-                            <div className="text-2xl font-bold text-red-400 font-mono mt-1">
-                                {actual5xx.toLocaleString()}
-                            </div>
-                            <div className="text-[10px] text-red-400/70 mt-1">{actualErr5xx.toFixed(2)}% of requests</div>
-                        </div>
+                {/* JVM Heap Runtime */}
+                <div className="mac-card p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                        <span className="font-bold text-xs text-[#1d1d1f] dark:text-white">JVM Heap Memory</span>
+                        <span className="mac-badge mac-badge-blue font-mono">{heapUsedPct}% allocated</span>
                     </div>
 
-                    <div className="text-[11px] text-dark-text-tertiary pt-2 border-t border-white/5">
-                        * Note: High-cardinality URI paths (UUIDs and IDs) are normalized to <code className="text-brand-orange bg-black/40 px-1 py-0.5 rounded">&#123;id&#125;</code> to prevent unbounded memory usage.
+                    <div className="space-y-3 text-xs">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[#6e6e73] dark:text-[#a1a1a6]">Heap Used</span>
+                            <span className="font-mono font-bold text-[#1d1d1f] dark:text-white">{formatBytes(usedBytes)}</span>
+                        </div>
+                        <div className="w-full bg-black/[0.05] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all ${
+                                    heapUsedPct > 85 ? 'bg-red-500' :
+                                    heapUsedPct > 70 ? 'bg-[#ff9500]' :
+                                    'bg-[#0071e3]'
+                                }`}
+                                style={{ width: `${heapUsedPct}%` }}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-[#86868b] pt-1">
+                            <span>Committed: {formatBytes(committedBytes)}</span>
+                            <span>Max Heap: {formatBytes(maxBytes)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Throughput */}
+                <div className="mac-card p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                        <span className="font-bold text-xs text-[#1d1d1f] dark:text-white">Gateway Throughput</span>
+                        <span className="mac-badge mac-badge-green font-mono">Active</span>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                        <div>
+                            <div className="text-2xl font-bold font-mono text-[#1d1d1f] dark:text-white">
+                                {actualRpm.toFixed(0)} <span className="text-xs font-normal text-[#86868b]">req/min</span>
+                            </div>
+                            <div className="text-[11px] text-[#6e6e73] dark:text-[#a1a1a6] mt-0.5">
+                                Instantaneous: {(actualRpm / 60).toFixed(1)} req/sec
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between">
+                            <span className="text-[#6e6e73] dark:text-[#a1a1a6]">5xx Error Rate</span>
+                            <span className={`font-mono font-bold ${actualErr5xx > 1 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                {actualErr5xx.toFixed(2)}%
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Slow Endpoints Table */}
-            <div className="glass-panel p-6 rounded-2xl border border-white/5 space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h3 className="text-base font-bold text-white">Endpoint Performance Profiles</h3>
-                        <p className="text-xs text-dark-text-secondary">Monitored routes ranked by request volume and latency</p>
+            <div className="mac-card overflow-hidden">
+                <div className="p-4 border-b border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="font-bold text-xs text-[#1d1d1f] dark:text-white">
+                        Slow Endpoints Profile ({filteredEndpoints.length})
                     </div>
-                    <div className="w-full sm:w-64">
+                    <div className="relative w-full sm:w-64">
+                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#86868b]" />
                         <input
                             type="text"
-                            placeholder="Filter endpoints..."
+                            placeholder="Filter endpoint URI..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-dark-bg-secondary border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-dark-text-tertiary focus:outline-none focus:border-brand-orange transition"
+                            className="mac-input pl-7 text-xs"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-left text-xs border-collapse font-mono">
                         <thead>
-                            <tr className="border-b border-white/10 text-dark-text-tertiary uppercase font-semibold">
-                                <th className="py-3 px-3">Method</th>
-                                <th className="py-3 px-3">Endpoint Path</th>
-                                <th className="py-3 px-3 text-right">Total Calls</th>
-                                <th className="py-3 px-3 text-right">Avg Latency</th>
-                                <th className="py-3 px-3 text-right">Max Latency</th>
-                                <th className="py-3 px-3 text-right">5xx Errors</th>
+                            <tr className="border-b border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] text-[#6e6e73] dark:text-[#a1a1a6] font-semibold">
+                                <th className="py-2.5 px-4 w-20">Method</th>
+                                <th className="py-2.5 px-4 font-sans font-medium">Path / Route Pattern</th>
+                                <th className="py-2.5 px-4">Calls</th>
+                                <th className="py-2.5 px-4">Avg Latency</th>
+                                <th className="py-2.5 px-4">p95</th>
+                                <th className="py-2.5 px-4 text-right">Max</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 font-mono">
+                        <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
                             {filteredEndpoints.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-dark-text-tertiary">
-                                        No API endpoints recorded yet in current process uptime.
+                                    <td colSpan={6} className="py-8 text-center text-[#86868b] font-sans">
+                                        No endpoint metrics collected yet.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredEndpoints.map((ep, idx) => {
-                                    const path = ep.path || ep.uriPattern || '/';
-                                    const avgLatency = ep.avgLatencyMs ?? ep.avgDurationMs ?? 0;
-                                    const maxLatency = ep.maxLatencyMs ?? ep.maxDurationMs ?? 0;
-                                    const err5xx = ep.errorCount5xx ?? 0;
-
-                                    return (
-                                        <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="py-3 px-3">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ep.method === 'GET' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
-                                                    ep.method === 'POST' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                                        ep.method === 'DELETE' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                                                            'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                    }`}>
-                                                    {ep.method}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-3 font-semibold text-white truncate max-w-xs">{path}</td>
-                                            <td className="py-3 px-3 text-right text-dark-text-secondary">{(ep.requestCount || 0).toLocaleString()}</td>
-                                            <td className="py-3 px-3 text-right text-white">
-                                                {avgLatency.toFixed(1)} ms
-                                            </td>
-                                            <td className="py-3 px-3 text-right text-dark-text-secondary">
-                                                {maxLatency.toFixed(1)} ms
-                                            </td>
-                                            <td className="py-3 px-3 text-right">
-                                                {err5xx > 0 ? (
-                                                    <span className="text-red-400 font-bold">{err5xx}</span>
-                                                ) : (
-                                                    <span className="text-emerald-400/80">0</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                                filteredEndpoints.map((ep, idx) => (
+                                    <tr key={idx} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
+                                        <td className="py-2.5 px-4">
+                                            <span className={`mac-badge ${
+                                                ep.method === 'GET' ? 'mac-badge-blue' :
+                                                ep.method === 'POST' ? 'mac-badge-green' :
+                                                ep.method === 'DELETE' ? 'mac-badge-red' :
+                                                'mac-badge-amber'
+                                            }`}>
+                                                {ep.method}
+                                            </span>
+                                        </td>
+                                        <td className="py-2.5 px-4 font-sans text-[#1d1d1f] dark:text-white truncate max-w-xs">
+                                            {ep.path || ep.uriPattern}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-[#6e6e73] dark:text-[#a1a1a6]">{ep.requestCount || 0}</td>
+                                        <td className="py-2.5 px-4 text-[#1d1d1f] dark:text-white font-bold">{(ep.avgLatencyMs ?? ep.avgDurationMs ?? 0).toFixed(1)} ms</td>
+                                        <td className="py-2.5 px-4 text-[#0071e3] dark:text-[#2997ff]">{(ep.p95LatencyMs ?? ep.p95DurationMs ?? ep.avgLatencyMs ?? 0).toFixed(1)} ms</td>
+                                        <td className="py-2.5 px-4 text-right text-[#af52de] dark:text-[#bf5af2]">{(ep.maxLatencyMs ?? ep.maxDurationMs ?? 0).toFixed(1)} ms</td>
+                                    </tr>
+                                ))
                             )}
                         </tbody>
                     </table>

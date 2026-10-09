@@ -17,15 +17,16 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String id) {
-        User user = userRepository.findById(id)
-                .or(() -> userRepository.findByUsername(id)) // Fallback search by username if ID lookup fails
+        User user = userRepository.findByIdentifierWithRoles(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return toProfileResponse(user);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<UserProfileResponse> getLeaderboard() {
-        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "rating"))
+        return userRepository.findAllOrderByRatingDescWithRoles()
                 .stream()
                 .limit(100)
                 .map(this::toProfileResponse)
@@ -124,8 +125,9 @@ public class UserService {
         });
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<UserProfileResponse> getAllUsers() {
-        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+        return userRepository.findAllWithRoles()
                 .stream()
                 .map(this::toProfileResponse)
                 .collect(Collectors.toList());

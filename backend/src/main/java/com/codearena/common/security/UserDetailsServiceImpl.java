@@ -19,9 +19,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         @Override
         public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                User user = userRepository.findById(username)
-                                .or(() -> userRepository.findByUsername(username))
-                                .or(() -> userRepository.findByEmail(username))
+                User user = userRepository.findByIdentifierWithRoles(username)
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
                 org.slf4j.LoggerFactory.getLogger(UserDetailsServiceImpl.class)

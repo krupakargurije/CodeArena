@@ -17,15 +17,18 @@ public class ProblemService {
     private final ProblemRepository problemRepository;
     private final AuditLogService auditLogService;
 
+    @Transactional(readOnly = true)
     public List<Problem> getAllProblems() {
         return problemRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Problem getProblem(Long id) {
         return problemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Problem not found"));
     }
 
+    @Transactional(readOnly = true)
     public List<Problem> getProblemsByDifficulty(Problem.Difficulty difficulty) {
         return problemRepository.findByDifficulty(difficulty);
     }

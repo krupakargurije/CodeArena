@@ -1,4 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import {
+    Activity,
+    Server,
+    BarChart2,
+    Cpu,
+    Radio,
+    AlertTriangle,
+    RefreshCw,
+    ShieldAlert
+} from 'lucide-react';
 import OverviewCards from './OverviewCards';
 import ServiceHealthGrid from './ServiceHealthGrid';
 import Judge0Center from './Judge0Center';
@@ -9,11 +19,11 @@ import IncidentsManager from './IncidentsManager';
 import { getSystemOverview } from '../../../services/monitoringService';
 
 const SUB_TABS = [
-    { id: 'services', label: 'Services & Infrastructure', icon: 'server' },
-    { id: 'submissions', label: 'Submission Analytics', icon: 'chart' },
-    { id: 'performance', label: 'API & Runtime Performance', icon: 'cpu' },
-    { id: 'activity', label: 'Live Activity & STOMP', icon: 'pulse' },
-    { id: 'incidents', label: 'Alerts & Incidents', icon: 'alert' },
+    { id: 'services', label: 'Services & Infrastructure', icon: Server },
+    { id: 'submissions', label: 'Submissions', icon: BarChart2 },
+    { id: 'performance', label: 'API Performance', icon: Cpu },
+    { id: 'activity', label: 'Live STOMP', icon: Radio },
+    { id: 'incidents', label: 'Incidents & Alerts', icon: AlertTriangle },
 ];
 
 const AUTO_REFRESH_OPTIONS = [
@@ -25,7 +35,7 @@ const AUTO_REFRESH_OPTIONS = [
 
 const MonitoringDashboard = () => {
     const [subTab, setSubTab] = useState('services');
-    const [autoRefreshInterval, setAutoRefreshInterval] = useState(30000); // 30s default
+    const [autoRefreshInterval, setAutoRefreshInterval] = useState(30000);
     const [overviewData, setOverviewData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -59,46 +69,51 @@ const MonitoringDashboard = () => {
         fetchOverview();
     };
 
-    const overallStatus = overviewData?.overallStatus || 'UNKNOWN';
+    const overallStatus = overviewData?.overallStatus || 'UP';
     const activeIncidentsCount = overviewData?.activeIncidentsCount || 0;
 
     return (
-        <div className="space-y-8 animate-fade-in">
-            {/* Top Bar / Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-dark-bg-secondary/40 p-5 rounded-2xl border border-white/5 backdrop-blur-md">
+        <div className="space-y-6 animate-mac-fade">
+            {/* Header Toolbar */}
+            <div className="mac-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-black text-white tracking-tight">System Health & Observability</h1>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${overallStatus === 'UP' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                            overallStatus === 'DEGRADED' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
-                                overallStatus === 'DOWN' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
-                                    'bg-slate-500/10 text-slate-400 border-slate-500/30'
-                            }`}>
-                            <span className={`w-2 h-2 rounded-full ${overallStatus === 'UP' ? 'bg-emerald-400' :
-                                overallStatus === 'DEGRADED' ? 'bg-amber-400' :
-                                    overallStatus === 'DOWN' ? 'bg-red-400 animate-ping' :
-                                        'bg-slate-400'
-                                }`} />
+                    <div className="flex items-center gap-2.5">
+                        <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                            <Activity size={20} className="text-[#0071e3] dark:text-[#2997ff]" />
+                            <span>System Health & Observability</span>
+                        </h1>
+                        <span className={`mac-badge ${
+                            overallStatus === 'UP' ? 'mac-badge-green' :
+                            overallStatus === 'DEGRADED' ? 'mac-badge-amber' :
+                            'mac-badge-red'
+                        }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                overallStatus === 'UP' ? 'bg-emerald-500' :
+                                overallStatus === 'DEGRADED' ? 'bg-amber-500' :
+                                'bg-red-500 animate-ping'
+                            }`} />
                             {overallStatus}
                         </span>
                     </div>
-                    <p className="text-xs text-dark-text-secondary">
-                        Real-time telemetry, sandbox operations, database probes, and automated incident management.
+                    <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                        Real-time telemetry, sandbox isolation metrics, database connection pools, and incident evaluation.
                     </p>
                 </div>
 
                 {/* Refresh & Controls */}
                 <div className="flex items-center gap-3">
                     <div className="text-right hidden sm:block">
-                        <div className="text-[11px] text-dark-text-tertiary">Last sampled</div>
-                        <div className="text-xs font-mono font-medium text-white">{lastUpdated.toLocaleTimeString()}</div>
+                        <div className="text-[10px] text-[#86868b] dark:text-[#636366]">Last Sampled</div>
+                        <div className="text-xs font-mono font-medium text-[#1d1d1f] dark:text-white">
+                            {lastUpdated.toLocaleTimeString()}
+                        </div>
                     </div>
 
                     {/* Auto-Refresh Select */}
                     <select
                         value={autoRefreshInterval}
                         onChange={(e) => setAutoRefreshInterval(Number(e.target.value))}
-                        className="bg-dark-bg-primary border border-white/10 text-xs text-white rounded-xl px-3 py-2 focus:outline-none focus:border-brand-orange transition cursor-pointer"
+                        className="mac-input w-36 text-xs"
                     >
                         {AUTO_REFRESH_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>
@@ -111,22 +126,11 @@ const MonitoringDashboard = () => {
                     <button
                         onClick={handleManualRefresh}
                         disabled={refreshing}
-                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition disabled:opacity-50 flex items-center justify-center"
-                        title="Refresh all metrics"
+                        className="mac-btn-secondary"
+                        title="Refresh telemetry"
                     >
-                        <svg
-                            className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand-orange' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
+                        <RefreshCw size={13} className={refreshing ? 'animate-spin text-[#0071e3]' : ''} />
+                        <span>{refreshing ? 'Syncing...' : 'Sync'}</span>
                     </button>
                 </div>
             </div>
@@ -135,67 +139,40 @@ const MonitoringDashboard = () => {
             <OverviewCards
                 overviewData={overviewData}
                 loading={loading}
-                onRefresh={fetchOverview}
+                onNavigateTab={(tab) => setSubTab(tab)}
             />
 
-            {/* Monitoring Sub-Navigation Tabs */}
-            <div className="flex flex-wrap gap-2 border-b border-white/5 pb-2">
-                {SUB_TABS.map((tab) => {
-                    const isActive = subTab === tab.id;
-                    const isIncidents = tab.id === 'incidents';
+            {/* Monitoring Sub-Navigation Segmented Tabs */}
+            <div className="flex items-center justify-between overflow-x-auto pb-1">
+                <div className="mac-segmented-control shrink-0">
+                    {SUB_TABS.map((tab) => {
+                        const IconComponent = tab.icon;
+                        const isActive = subTab === tab.id;
+                        const isIncidents = tab.id === 'incidents';
 
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setSubTab(tab.id)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${isActive
-                                ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20 border border-brand-orange/30'
-                                : 'bg-dark-bg-secondary/60 text-dark-text-secondary hover:text-white border border-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            {/* Render Tab Icons */}
-                            {tab.icon === 'server' && (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                                </svg>
-                            )}
-                            {tab.icon === 'chart' && (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            )}
-                            {tab.icon === 'cpu' && (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                </svg>
-                            )}
-                            {tab.icon === 'pulse' && (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            )}
-                            {tab.icon === 'alert' && (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            )}
-
-                            <span>{tab.label}</span>
-
-                            {isIncidents && activeIncidentsCount > 0 && (
-                                <span className={`px-2 py-0.2 text-[10px] font-black rounded-full ${isActive ? 'bg-white text-brand-orange' : 'bg-red-500 text-white animate-pulse'}`}>
-                                    {activeIncidentsCount}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setSubTab(tab.id)}
+                                className={`mac-segmented-item flex items-center gap-1.5 ${isActive ? 'active' : ''}`}
+                            >
+                                <IconComponent size={13} />
+                                <span>{tab.label}</span>
+                                {isIncidents && activeIncidentsCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-red-500 text-white animate-pulse">
+                                        {activeIncidentsCount}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Sub-Tab Panels */}
             <div>
                 {subTab === 'services' && (
-                    <div className="space-y-8 animate-fade-in">
+                    <div className="space-y-6 animate-mac-fade">
                         <ServiceHealthGrid autoRefreshInterval={autoRefreshInterval} />
                         <Judge0Center autoRefreshInterval={autoRefreshInterval} />
                     </div>

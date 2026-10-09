@@ -1,680 +1,912 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import {
+    Plus,
+    Search,
+    SlidersHorizontal,
+    Code2,
+    Users,
+    Activity,
+    ShieldCheck,
+    Settings2,
+    ArrowUpDown,
+    MoreVertical,
+    Eye,
+    Sliders,
+    Trash2,
+    CheckCircle2,
+    AlertCircle,
+    UserPlus,
+    ShieldAlert,
+    ExternalLink,
+    Filter,
+    X,
+    Sparkles,
+    Check,
+    ChevronDown
+} from 'lucide-react';
+
+import '../styles/adminMacTheme.css';
+import AdminTitlebar from '../components/admin/layout/AdminTitlebar';
+import AdminSidebar from '../components/admin/layout/AdminSidebar';
+import AdminCommandPalette from '../components/admin/layout/AdminCommandPalette';
+import AdminOverviewView from '../components/admin/overview/AdminOverviewView';
+import AdminSettingsView from '../components/admin/settings/AdminSettingsView';
+
 import CreateProblemForm from '../components/CreateProblemForm';
 import TestCaseManager from '../components/admin/TestCaseManager';
 import AuditLogViewer from '../components/admin/AuditLogViewer';
 import MonitoringDashboard from '../components/admin/monitoring/MonitoringDashboard';
+import IncidentsManager from '../components/admin/monitoring/IncidentsManager';
+import ApiPerformanceView from '../components/admin/monitoring/ApiPerformanceView';
+import SubmissionAnalyticsView from '../components/admin/monitoring/SubmissionAnalyticsView';
+
 import { getProblems, deleteProblem } from '../services/problemService';
 import { getAllUsers, grantAdminPermission, revokeAdminPermission } from '../services/userService';
+import { getSystemOverview } from '../services/monitoringService';
+
+const TAB_LABELS = {
+    overview: 'Overview',
+    problems: 'Problems Catalog',
+    users: 'Users & Permissions',
+    monitoring: 'System Health',
+    incidents: 'Incidents & Alerts',
+    performance: 'API Performance',
+    submissions: 'Submissions Analytics',
+    audit: 'Audit Logs & Diffs',
+    settings: 'Console Settings'
+};
 
 const AdminDashboard = () => {
     const { isAdmin } = useSelector((state) => state.auth);
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('problems');
 
-    // Problems state
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [selectedProblemForTestCases, setSelectedProblemForTestCases] = useState(null);
+    // Core Shell State
+    const [activeTab, setActiveTab] = useState('overview');
+    const [theme, setTheme] = useState(() => {
+        return localStorage.getItem('codearena_admin_theme') || 'dark';
+    });
+    const [sidebarOpen, setSidebarOpen] = useState(false); // for mobile
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        return localStorage.getItem('codearena_sidebar_collapsed') === 'true';
+    });
+    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+    const [autoRefreshInterval, setAutoRefreshInterval] = useState(30000);
+
+    // Monitoring State
+    const [overviewData, setOverviewData] = useState(null);
+    const [monitoringLoading, setMonitoringLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
+
+    // Problems State
     const [problems, setProblems] = useState([]);
     const [problemsLoading, setProblemsLoading] = useState(true);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [selectedProblemForTestCases, setSelectedProblemForTestCases] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [activeActionMenuId, setActiveActionMenuId] = useState(null);
 
-    // Filter state
+    // Problems Filtering & Sorting
     const [searchQuery, setSearchQuery] = useState('');
     const [difficultyFilter, setDifficultyFilter] = useState('ALL');
-    const [sortBy, setSortBy] = useState('id'); // Changed default to 'id'
+    const [sortBy, setSortBy] = useState('id');
 
-    // Users state
+    // Users State
     const [users, setUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(true);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState('ALL');
     const [newAdminEmail, setNewAdminEmail] = useState('');
     const [processing, setProcessing] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [revokeConfirm, setRevokeConfirm] = useState(null); // email of user to revoke
+    const [userActionError, setUserActionError] = useState('');
+    const [userActionSuccess, setUserActionSuccess] = useState('');
+    const [revokeConfirm, setRevokeConfirm] = useState(null);
 
-    // Auth check
+    // Auth verification
     useEffect(() => {
-        if (isAdmin === false) { // explicitly false means we know they aren't admin, not just loading
+        if (isAdmin === false) {
             navigate('/problems');
         }
     }, [isAdmin, navigate]);
 
-    // Data fetching when tab changes
-    useEffect(() => {
-        if (!isAdmin) return; // wait until we know they are admin
+    // Theme handling
+    const toggleTheme = useCallback(() => {
+        setTheme((prev) => {
+            const next = prev === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('codearena_admin_theme', next);
+            return next;
+        });
+    }, []);
 
-        if (activeTab === 'problems') {
-            fetchProblems();
-        } else if (activeTab === 'users') {
-            fetchUsers();
-        }
-    }, [activeTab, isAdmin]);
+    const toggleSidebarCollapsed = useCallback((val) => {
+        setSidebarCollapsed((prev) => {
+            const next = typeof val === 'boolean' ? val : !prev;
+            localStorage.setItem('codearena_sidebar_collapsed', String(next));
+            return next;
+        });
+    }, []);
 
-    // Problems functions
-    const fetchProblems = async () => {
+    // Fetch telemetry overview
+    const fetchOverview = useCallback(async () => {
         try {
-            const response = await getProblems();
-            setProblems(response.data || []);
-        } catch (error) {
-            console.error('Failed to fetch problems:', error);
+            setRefreshing(true);
+            const data = await getSystemOverview();
+            setOverviewData(data);
+            setLastUpdated(new Date());
+        } catch (err) {
+            console.error('Failed to fetch telemetry overview:', err);
+        } finally {
+            setMonitoringLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    // Fetch problems
+    const fetchProblems = useCallback(async () => {
+        try {
+            setProblemsLoading(true);
+            const res = await getProblems();
+            setProblems(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch problems:', err);
         } finally {
             setProblemsLoading(false);
         }
-    };
+    }, []);
 
-    const handleCreateSuccess = () => {
-        setShowCreateForm(false);
-        fetchProblems();
-    };
-
-    const handleDelete = async (problemId) => {
+    // Fetch users
+    const fetchUsers = useCallback(async () => {
         try {
-            await deleteProblem(problemId);
-            setDeleteConfirm(null);
-            fetchProblems();
-        } catch (error) {
-            console.error('Failed to delete problem:', error);
-            alert(error.message || 'Failed to delete problem');
-        }
-    };
-
-    const getDifficultyColor = (difficulty) => {
-        const colors = {
-            CAKEWALK: 'text-green-400',
-            EASY: 'text-difficulty-easy',
-            MEDIUM: 'text-difficulty-medium',
-            HARD: 'text-difficulty-hard',
-        };
-        return colors[difficulty] || 'text-gray-400';
-    };
-
-    // Users functions
-    const fetchUsers = async () => {
-        try {
-            const response = await getAllUsers();
-            setUsers(response.data || []);
-        } catch (error) {
-            console.error('Failed to fetch users:', error);
-            setError('Failed to load users');
+            setUsersLoading(true);
+            const res = await getAllUsers();
+            setUsers(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch users:', err);
+            setUserActionError('Failed to load users');
         } finally {
             setUsersLoading(false);
         }
+    }, []);
+
+    // Initial data load
+    useEffect(() => {
+        if (isAdmin) {
+            fetchOverview();
+            fetchProblems();
+            fetchUsers();
+        }
+    }, [isAdmin, fetchOverview, fetchProblems, fetchUsers]);
+
+    // Polling interval for monitoring
+    useEffect(() => {
+        if (!autoRefreshInterval || autoRefreshInterval <= 0) return;
+        const intervalId = setInterval(fetchOverview, autoRefreshInterval);
+        return () => clearInterval(intervalId);
+    }, [autoRefreshInterval, fetchOverview]);
+
+    // Global keyboard shortcuts (⌘K for command palette, ⌘B for sidebar)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setCommandPaletteOpen((prev) => !prev);
+            } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                toggleSidebarCollapsed();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleSidebarCollapsed]);
+
+    // Problem operations
+    const handleDeleteProblem = async (id) => {
+        try {
+            await deleteProblem(id);
+            setDeleteConfirm(null);
+            fetchProblems();
+        } catch (err) {
+            console.error('Failed to delete problem:', err);
+            alert(err.message || 'Failed to delete problem');
+        }
     };
 
+    // User operations
     const handleGrantAdmin = async (e) => {
         e.preventDefault();
         setProcessing(true);
-        setError('');
-        setSuccess('');
+        setUserActionError('');
+        setUserActionSuccess('');
 
         try {
             await grantAdminPermission(newAdminEmail);
-            setSuccess(`Admin permission granted to ${newAdminEmail}`);
+            setUserActionSuccess(`Granted administrator permission to ${newAdminEmail}`);
             setNewAdminEmail('');
             fetchUsers();
         } catch (err) {
-            setError(err.message || 'Failed to grant admin permission');
+            setUserActionError(err.message || 'Failed to grant admin permission');
         } finally {
             setProcessing(false);
         }
-    };
-
-    const handleRevokeAdmin = async (userEmail) => {
-        console.log('handleRevokeAdmin called for:', userEmail);
-        // Show custom confirmation modal
-        setRevokeConfirm(userEmail);
     };
 
     const confirmRevokeAdmin = async () => {
-        const userEmail = revokeConfirm;
-        console.log('User confirmed, proceeding with revoke for:', userEmail);
+        const email = revokeConfirm;
         setRevokeConfirm(null);
         setProcessing(true);
-        setError('');
-        setSuccess('');
+        setUserActionError('');
+        setUserActionSuccess('');
 
         try {
-            await revokeAdminPermission(userEmail);
-            console.log('Revoke admin successful');
-            setSuccess(`Admin permission revoked from ${userEmail}`);
+            await revokeAdminPermission(email);
+            setUserActionSuccess(`Revoked administrator permissions from ${email}`);
             fetchUsers();
         } catch (err) {
-            console.error('Revoke admin error:', err);
-            setError(err.message || 'Failed to revoke admin permission');
+            setUserActionError(err.message || 'Failed to revoke admin permission');
         } finally {
             setProcessing(false);
         }
     };
 
-    const admins = users.filter(u => u.is_admin);
+    // Filtered problems
+    const filteredProblems = useMemo(() => {
+        return problems
+            .filter((p) => {
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    const matchTitle = p.title?.toLowerCase().includes(q);
+                    const matchId = p.id?.toString().includes(q);
+                    const matchTag = p.tags?.some((t) => t.toLowerCase().includes(q));
+                    if (!matchTitle && !matchId && !matchTag) return false;
+                }
+                if (difficultyFilter !== 'ALL' && p.difficulty !== difficultyFilter) {
+                    return false;
+                }
+                return true;
+            })
+            .sort((a, b) => {
+                switch (sortBy) {
+                    case 'id': return a.id - b.id;
+                    case 'newest': return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+                    case 'oldest': return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+                    case 'title': return (a.title || '').localeCompare(b.title || '');
+                    case 'difficulty': {
+                        const order = { CAKEWALK: 1, EASY: 2, MEDIUM: 3, HARD: 4 };
+                        return (order[a.difficulty] || 0) - (order[b.difficulty] || 0);
+                    }
+                    default: return 0;
+                }
+            });
+    }, [problems, searchQuery, difficultyFilter, sortBy]);
 
-    // Filtered and sorted problems
-    const filteredProblems = problems
-        .filter(p => {
-            if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !p.id.toString().includes(searchQuery)) return false;
-            if (difficultyFilter !== 'ALL' && p.difficulty !== difficultyFilter) return false;
-            return true;
-        })
-        .sort((a, b) => {
-            switch (sortBy) {
-                case 'id': return a.id - b.id; // added sorting by id number natively
-                case 'newest': return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-                case 'oldest': return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
-                case 'title': return (a.title || '').localeCompare(b.title || '');
-                case 'difficulty':
-                    const order = { 'CAKEWALK': 1, 'EASY': 2, 'MEDIUM': 3, 'HARD': 4 };
-                    return (order[a.difficulty] || 0) - (order[b.difficulty] || 0);
-                default: return 0;
+    // Filtered users
+    const filteredUsers = useMemo(() => {
+        return users.filter((u) => {
+            if (userSearchQuery) {
+                const q = userSearchQuery.toLowerCase();
+                const matchEmail = u.email?.toLowerCase().includes(q);
+                const matchUsername = u.username?.toLowerCase().includes(q);
+                if (!matchEmail && !matchUsername) return false;
             }
+            if (userRoleFilter === 'ADMIN' && !u.is_admin) return false;
+            if (userRoleFilter === 'USER' && u.is_admin) return false;
+            return true;
         });
+    }, [users, userSearchQuery, userRoleFilter]);
 
-    if (problemsLoading && activeTab === 'problems') {
-        return (
-            <div className="min-h-screen bg-dark-bg-primary flex items-center justify-center">
-                <div className="text-brand-orange text-xl font-medium animate-pulse">Loading Dashboard...</div>
-            </div>
-        );
-    }
+    const activeIncidentsCount = overviewData?.activeIncidentsCount || 0;
 
     return (
-        <div className="min-h-screen bg-dark-bg-primary text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Header */}
-                <div className="mb-10">
-                    <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-                        Admin Dashboard
-                    </h1>
-                    <p className="text-dark-text-secondary">
-                        Manage problems, users, and platform settings
-                    </p>
-                </div>
+        <div className={`macos-admin-root ${theme === 'dark' ? 'dark' : ''} fixed inset-0 h-screen w-screen flex flex-col overflow-hidden bg-[#f5f5f7] dark:bg-[#121214] text-[#1d1d1f] dark:text-[#f5f5f7] transition-colors duration-150 select-none z-30`}>
+            {/* Top Toolbar / Window Chrome */}
+            <AdminTitlebar
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                sidebarCollapsed={sidebarCollapsed}
+                toggleSidebarCollapsed={toggleSidebarCollapsed}
+                activeSection={activeTab}
+                activeSectionLabel={TAB_LABELS[activeTab] || 'Console'}
+                onNavigateSection={(tab) => setActiveTab(tab)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+                onRefreshTelemetry={fetchOverview}
+            />
 
-                {/* Tabs */}
-                <div className="flex gap-2 mb-8 border-b border-white/5">
-                    <button
-                        onClick={() => setActiveTab('problems')}
-                        className={`px-6 py-3 font-medium transition-colors border-b-2 ${activeTab === 'problems'
-                            ? 'text-brand-orange border-brand-orange'
-                            : 'text-dark-text-tertiary border-transparent hover:text-white'
-                            }`}
-                    >
-                        Problems
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('users')}
-                        className={`px-6 py-3 font-medium transition-colors border-b-2 ${activeTab === 'users'
-                            ? 'text-brand-orange border-brand-orange'
-                            : 'text-dark-text-tertiary border-transparent hover:text-white'
-                            }`}
-                    >
-                        Users & Admins
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('audit')}
-                        className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'audit'
-                            ? 'text-brand-orange border-brand-orange'
-                            : 'text-dark-text-tertiary border-transparent hover:text-white'
-                            }`}
-                    >
-                        <span>Audit Logs</span>
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-brand-orange/20 text-brand-orange border border-brand-orange/30">
-                            Diffs
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('monitoring')}
-                        className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'monitoring'
-                            ? 'text-brand-orange border-brand-orange'
-                            : 'text-dark-text-tertiary border-transparent hover:text-white'
-                            }`}
-                    >
-                        <span>System Health & Monitoring</span>
-                        <span className="flex h-2 w-2 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                    </button>
-                    <button
-                        disabled
-                        className="px-6 py-3 font-medium text-dark-text-tertiary cursor-not-allowed opacity-50 border-b-2 border-transparent"
-                    >
-                        Settings (Coming Soon)
-                    </button>
-                </div>
+            {/* Application Body: Sidebar + Main Content Region */}
+            <div className="flex-1 flex overflow-hidden min-h-0 w-full relative">
+                {/* macOS Sequoia Navigation Sidebar */}
+                <AdminSidebar
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
+                    sidebarCollapsed={sidebarCollapsed}
+                    setSidebarCollapsed={toggleSidebarCollapsed}
+                    incidentsCount={activeIncidentsCount}
+                    problemsCount={problems.length}
+                    usersCount={users.length}
+                />
 
-                {/* Problems Tab */}
-                {activeTab === 'problems' && (
-                    <div className="animate-fade-in">
-                        {/* Action Button */}
-                        <div className="flex justify-end mb-6">
-                            <button
-                                onClick={() => setShowCreateForm(true)}
-                                className="btn-primary flex items-center gap-2"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Create Problem
-                            </button>
-                        </div>
+                {/* Main Scrollable Canvas */}
+                <main className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 lg:p-8 overscroll-contain">
+                    <div className="max-w-7xl mx-auto space-y-6">
 
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-                            <div className="glass-panel text-center">
-                                <div className="text-dark-text-tertiary text-xs font-semibold uppercase tracking-wider mb-2">Total Problems</div>
-                                <div className="text-3xl font-bold text-white">{problems.length}</div>
-                            </div>
-                            <div className="glass-panel text-center">
-                                <div className="text-dark-text-tertiary text-xs font-semibold uppercase tracking-wider mb-2">Cakewalk</div>
-                                <div className="text-3xl font-bold text-green-400">
-                                    {problems.filter(p => p.difficulty === 'CAKEWALK').length}
-                                </div>
-                            </div>
-                            <div className="glass-panel text-center">
-                                <div className="text-dark-text-tertiary text-xs font-semibold uppercase tracking-wider mb-2">Easy</div>
-                                <div className="text-3xl font-bold text-difficulty-easy">
-                                    {problems.filter(p => p.difficulty === 'EASY').length}
-                                </div>
-                            </div>
-                            <div className="glass-panel text-center">
-                                <div className="text-dark-text-tertiary text-xs font-semibold uppercase tracking-wider mb-2">Medium</div>
-                                <div className="text-3xl font-bold text-difficulty-medium">
-                                    {problems.filter(p => p.difficulty === 'MEDIUM').length}
-                                </div>
-                            </div>
-                            <div className="glass-panel text-center">
-                                <div className="text-dark-text-tertiary text-xs font-semibold uppercase tracking-wider mb-2">Hard</div>
-                                <div className="text-3xl font-bold text-difficulty-hard">
-                                    {problems.filter(p => p.difficulty === 'HARD').length}
-                                </div>
-                            </div>
-                        </div>
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 1. OVERVIEW VIEW ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'overview' && (
+                            <AdminOverviewView
+                                overviewData={overviewData}
+                                problems={problems}
+                                users={users}
+                                loading={monitoringLoading}
+                                refreshing={refreshing}
+                                onRefresh={fetchOverview}
+                                onNavigateTab={setActiveTab}
+                                onCreateProblem={() => setShowCreateForm(true)}
+                                lastUpdated={lastUpdated}
+                            />
+                        )}
 
-                        {/* Filter Bar */}
-                        <div className="glass-panel rounded-xl p-4 mb-6">
-                            <div className="flex flex-wrap gap-4 items-center">
-                                {/* Search */}
-                                <div className="flex-1 min-w-[200px]">
-                                    <div className="relative">
-                                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 2. PROBLEMS CATALOG ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'problems' && (
+                            <div className="space-y-5 animate-mac-fade">
+                                {/* Section Header */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                            <Code2 size={20} className="text-[#0071e3] dark:text-[#2997ff]" />
+                                            <span>Problems Catalog</span>
+                                        </h1>
+                                        <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                            Manage problem statements, execution limits, tags, and evaluation test suites.
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setShowCreateForm(true)}
+                                        className="mac-btn-primary self-start sm:self-auto shadow-sm"
+                                    >
+                                        <Plus size={15} strokeWidth={2.5} />
+                                        <span>Create Problem</span>
+                                    </button>
+                                </div>
+
+                                {/* Filter, Search & Segmented Controls Bar */}
+                                <div className="mac-card p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                                    {/* Search input */}
+                                    <div className="relative flex-1 min-w-[200px]">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]" />
                                         <input
                                             type="text"
-                                            placeholder="Search problems..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="input w-full pl-10 bg-dark-bg-tertiary/50 border-white/5 focus:border-brand-blue/50"
+                                            placeholder="Search by title, ID (#4), or tag..."
+                                            className="mac-input pl-8"
                                         />
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white"
+                                            >
+                                                <X size={13} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Segmented Difficulty Control */}
+                                    <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+                                        <div className="mac-segmented-control shrink-0">
+                                            {['ALL', 'CAKEWALK', 'EASY', 'MEDIUM', 'HARD'].map((diff) => (
+                                                <button
+                                                    key={diff}
+                                                    onClick={() => setDifficultyFilter(diff)}
+                                                    className={`mac-segmented-item ${difficultyFilter === diff ? 'active' : ''}`}
+                                                >
+                                                    {diff === 'ALL' ? 'All' : diff.charAt(0) + diff.slice(1).toLowerCase()}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Sort dropdown */}
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value)}
+                                            className="mac-input w-36 text-xs shrink-0"
+                                        >
+                                            <option value="id">Sort: ID (1-N)</option>
+                                            <option value="newest">Newest First</option>
+                                            <option value="oldest">Oldest First</option>
+                                            <option value="title">Title (A-Z)</option>
+                                            <option value="difficulty">Difficulty</option>
+                                        </select>
                                     </div>
                                 </div>
 
-                                {/* Filters */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-dark-text-tertiary text-sm">Difficulty:</span>
-                                    <select
-                                        value={difficultyFilter}
-                                        onChange={(e) => setDifficultyFilter(e.target.value)}
-                                        className="py-2 px-3 bg-dark-bg-tertiary/50 border border-white/5 rounded-lg text-white text-sm focus:outline-none focus:border-brand-blue/50 appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7em] bg-[position:calc(100%-0.6em)_center] bg-no-repeat"
-                                    >
-                                        <option value="ALL">All</option>
-                                        <option value="CAKEWALK">Cakewalk</option>
-                                        <option value="EASY">Easy</option>
-                                        <option value="MEDIUM">Medium</option>
-                                        <option value="HARD">Hard</option>
-                                    </select>
+                                {/* Problems Table */}
+                                <div className="mac-card overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] text-[#6e6e73] dark:text-[#a1a1a6] select-none font-semibold">
+                                                    <th className="py-3 px-4 font-mono w-16">ID</th>
+                                                    <th className="py-3 px-4">Title</th>
+                                                    <th className="py-3 px-4 w-28">Difficulty</th>
+                                                    <th className="py-3 px-4">Tags</th>
+                                                    <th className="py-3 px-4 w-28">Acceptance</th>
+                                                    <th className="py-3 px-4 text-right w-24">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                                                {problemsLoading ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="py-12 text-center text-[#86868b]">
+                                                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#0071e3] mb-2" />
+                                                            <div>Loading catalog...</div>
+                                                        </td>
+                                                    </tr>
+                                                ) : filteredProblems.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="py-12 text-center text-[#86868b]">
+                                                            No problems matching your filter criteria.
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    filteredProblems.map((problem) => {
+                                                        const diff = problem.difficulty || 'MEDIUM';
+                                                        const badgeClass =
+                                                            diff === 'CAKEWALK' ? 'mac-badge-green' :
+                                                            diff === 'EASY' ? 'mac-badge-blue' :
+                                                            diff === 'MEDIUM' ? 'mac-badge-amber' :
+                                                            'mac-badge-red';
+
+                                                        return (
+                                                            <tr
+                                                                key={problem.id}
+                                                                className="hover:bg-black/[0.025] dark:hover:bg-white/[0.035] transition-colors group"
+                                                            >
+                                                                <td className="py-3 px-4 font-mono text-[#86868b] dark:text-[#636366]">
+                                                                    #{problem.id}
+                                                                </td>
+                                                                <td className="py-3 px-4 font-medium text-[#1d1d1f] dark:text-white">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="truncate">{problem.title}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-4">
+                                                                    <span className={`mac-badge ${badgeClass}`}>
+                                                                        {diff}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-3 px-4">
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {problem.tags?.slice(0, 3).map((tag, idx) => (
+                                                                            <span
+                                                                                key={idx}
+                                                                                className="px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-[10px] text-[#6e6e73] dark:text-[#a1a1a6]"
+                                                                            >
+                                                                                {tag}
+                                                                            </span>
+                                                                        ))}
+                                                                        {problem.tags?.length > 3 && (
+                                                                            <span className="text-[10px] text-[#86868b] self-center">
+                                                                                +{problem.tags.length - 3}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-4 font-mono text-[#6e6e73] dark:text-[#a1a1a6]">
+                                                                    {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}%` : '0%'}
+                                                                </td>
+                                                                <td className="py-3 px-4 text-right">
+                                                                    <div className="flex items-center justify-end gap-1">
+                                                                        <button
+                                                                            onClick={() => setSelectedProblemForTestCases(problem)}
+                                                                            className="p-1.5 rounded-lg text-[#6e6e73] hover:text-[#0071e3] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
+                                                                            title="Manage Test Cases"
+                                                                        >
+                                                                            <Sliders size={14} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => navigate(`/problems/${problem.id}`)}
+                                                                            className="p-1.5 rounded-lg text-[#6e6e73] hover:text-[#0071e3] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
+                                                                            title="View in Arena"
+                                                                        >
+                                                                            <Eye size={14} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setDeleteConfirm(problem.id)}
+                                                                            className="p-1.5 rounded-lg text-[#6e6e73] hover:text-red-500 hover:bg-red-500/10 transition"
+                                                                            title="Delete Problem"
+                                                                        >
+                                                                            <Trash2 size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Table Footer */}
+                                    <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.06] bg-black/[0.015] dark:bg-white/[0.015] flex items-center justify-between text-[11px] text-[#86868b] dark:text-[#636366]">
+                                        <span>Showing {filteredProblems.length} of {problems.length} problems</span>
+                                        <span>Click slider icon to manage test cases</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 3. USERS & ADMINS ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'users' && (
+                            <div className="space-y-6 animate-mac-fade">
+                                {/* Section Header */}
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                        <Users size={20} className="text-[#0071e3] dark:text-[#2997ff]" />
+                                        <span>Users & Access Control</span>
+                                    </h1>
+                                    <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                        Govern user privileges, grant administrator roles, and inspect membership directory.
+                                    </p>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <span className="text-dark-text-tertiary text-sm">Sort:</span>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="py-2 px-3 bg-dark-bg-tertiary/50 border border-white/5 rounded-lg text-white text-sm focus:outline-none focus:border-brand-blue/50 appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7em] bg-[position:calc(100%-0.6em)_center] bg-no-repeat"
-                                    >
-                                        <option value="id">ID (1-N)</option>
-                                        <option value="newest">Newest First</option>
-                                        <option value="oldest">Oldest First</option>
-                                        <option value="title">Title (A-Z)</option>
-                                        <option value="difficulty">Difficulty</option>
-                                    </select>
-                                </div>
+                                {/* Grant Admin Section Card */}
+                                <div className="mac-card p-5 space-y-3">
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-[#1d1d1f] dark:text-white">
+                                        <UserPlus size={15} className="text-[#0071e3] dark:text-[#2997ff]" />
+                                        <span>Grant Administrator Role</span>
+                                    </div>
 
-                                {(searchQuery || difficultyFilter !== 'ALL' || sortBy !== 'id') && (
-                                    <button
-                                        onClick={() => {
-                                            setSearchQuery('');
-                                            setDifficultyFilter('ALL');
-                                            setSortBy('id');
-                                        }}
-                                        className="text-brand-orange hover:text-brand-orange/80 text-sm flex items-center gap-1 font-medium"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
-                            <div className="text-dark-text-tertiary text-sm mt-3 border-t border-white/5 pt-3">
-                                Showing <span className="text-white font-medium">{filteredProblems.length}</span> of {problems.length} problems
-                            </div>
-                        </div>
-
-                        {/* Problems Table */}
-                        <div className="glass-panel overflow-hidden rounded-xl">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-white/5 border-b border-white/5">
-                                            <th className="text-left py-4 px-6 text-dark-text-secondary font-medium text-sm text-nowrap">ID</th>
-                                            <th className="text-left py-4 px-6 text-dark-text-secondary font-medium text-sm">Title</th>
-                                            <th className="text-left py-4 px-6 text-dark-text-secondary font-medium text-sm text-nowrap">Difficulty</th>
-                                            <th className="text-left py-4 px-6 text-dark-text-secondary font-medium text-sm">Tags</th>
-                                            <th className="text-left py-4 px-6 text-dark-text-secondary font-medium text-sm text-nowrap">Acceptance</th>
-                                            <th className="text-right py-4 px-6 text-dark-text-secondary font-medium text-sm">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {filteredProblems.map((problem) => (
-                                            <tr key={problem.id} className="hover:bg-white/5 transition-colors">
-                                                <td className="py-4 px-6 text-dark-text-tertiary font-mono text-sm">#{problem.id}</td>
-                                                <td className="py-4 px-6 text-white font-medium">{problem.id}. {problem.title}</td>
-                                                <td className="py-4 px-6">
-                                                    <span className={`text-xs font-bold px-2 py-1 rounded-md border ${problem.difficulty === 'HARD' ? 'bg-difficulty-hard/10 text-difficulty-hard border-difficulty-hard/20' :
-                                                        problem.difficulty === 'MEDIUM' ? 'bg-difficulty-medium/10 text-difficulty-medium border-difficulty-medium/20' :
-                                                            'bg-difficulty-easy/10 text-difficulty-easy border-difficulty-easy/20'
-                                                        }`}>
-                                                        {problem.difficulty}
-                                                    </span>
-                                                </td>
-                                                <td className="py-4 px-6">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {problem.tags?.slice(0, 2).map((tag, idx) => (
-                                                            <span key={idx} className="px-2 py-0.5 bg-white/5 text-dark-text-secondary text-xs rounded border border-white/5">
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                        {problem.tags?.length > 2 && (
-                                                            <span className="text-xs text-dark-text-tertiary ml-1">+{problem.tags.length - 2}</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6 text-dark-text-secondary font-mono text-sm">
-                                                    {problem.acceptanceRate ? `${problem.acceptanceRate.toFixed(1)}%` : '0%'}
-                                                </td>
-                                                <td className="py-4 px-6">
-                                                    <div className="flex items-center justify-end">
-                                                        <div className="relative group">
-                                                            <button className="text-secondary hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
-                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                                                </svg>
-                                                            </button>
-
-                                                            {/* Dropdown Menu */}
-                                                            <div className="absolute right-0 mt-2 w-48 bg-dark-bg-secondary border border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-                                                                <div className="p-1">
-                                                                    <button
-                                                                        onClick={() => navigate(`/problems/${problem.id}`)}
-                                                                        className="w-full text-left px-4 py-2 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                                                    >
-                                                                        <svg className="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                        </svg>
-                                                                        View Problem
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setSelectedProblemForTestCases(problem)}
-                                                                        className="w-full text-left px-4 py-2 text-sm text-dark-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                                                    >
-                                                                        <svg className="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                                                        </svg>
-                                                                        Manage Test Cases
-                                                                    </button>
-                                                                    <div className="h-px bg-white/10 my-1 mx-2"></div>
-                                                                    <button
-                                                                        onClick={() => setDeleteConfirm(problem.id)}
-                                                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors flex items-center gap-2"
-                                                                    >
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                        </svg>
-                                                                        Delete
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Users Tab */}
-                {activeTab === 'users' && (
-                    <div className="animate-fade-in">
-                        {usersLoading ? (
-                            <div className="glass-panel rounded-xl p-8 mb-8 text-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto mb-4"></div>
-                                <p className="text-white font-medium">Loading users...</p>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Grant Admin Form */}
-                                <div className="glass-panel rounded-xl p-6 mb-8 border border-white/5">
-                                    <h2 className="text-xl font-bold text-white mb-4">Grant Admin Permission</h2>
-                                    <form onSubmit={handleGrantAdmin} className="flex gap-4">
+                                    <form onSubmit={handleGrantAdmin} className="flex flex-col sm:flex-row gap-2.5">
                                         <input
                                             type="email"
                                             value={newAdminEmail}
                                             onChange={(e) => setNewAdminEmail(e.target.value)}
-                                            placeholder="Enter user email address"
-                                            className="input flex-1 bg-dark-bg-tertiary/50 focus:bg-dark-bg-tertiary transition-colors"
+                                            placeholder="Enter user email (e.g. engineer@codearena.com)"
+                                            className="mac-input flex-1"
                                             required
                                         />
                                         <button
                                             type="submit"
-                                            disabled={processing}
-                                            className="btn-primary w-48"
+                                            disabled={processing || !newAdminEmail.trim()}
+                                            className="mac-btn-primary shrink-0"
                                         >
-                                            {processing ? 'Processing...' : 'Grant Admin'}
+                                            {processing ? 'Authorizing...' : 'Grant Access'}
                                         </button>
                                     </form>
 
-                                    {/* Messages */}
-                                    {error && (
-                                        <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            {error}
+                                    {/* Action Feedback Messages */}
+                                    {userActionError && (
+                                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2 animate-in fade-in">
+                                            <AlertCircle size={14} className="shrink-0" />
+                                            <span>{userActionError}</span>
                                         </div>
                                     )}
-                                    {success && (
-                                        <div className="mt-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                            {success}
+                                    {userActionSuccess && (
+                                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
+                                            <CheckCircle2 size={14} className="shrink-0" />
+                                            <span>{userActionSuccess}</span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Current Admins */}
-                                <div className="glass-panel rounded-xl p-6 mb-8 border border-white/5">
-                                    <h2 className="text-xl font-bold text-white mb-6">
-                                        Current Admins ({admins.length})
-                                    </h2>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="bg-white/5 border-b border-white/5">
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Username</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Email</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Role</th>
-                                                    <th className="text-right py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {admins.map((user) => (
-                                                    <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                                                        <td className="py-3 px-4 text-white font-medium">{user.username || 'N/A'}</td>
-                                                        <td className="py-3 px-4 text-dark-text-secondary">{user.email}</td>
-                                                        <td className="py-3 px-4">
-                                                            {user.email === 'krupakargurija177@gmail.com' ? (
-                                                                <span className="px-2 py-1 bg-brand-orange/20 text-brand-orange text-xs font-bold rounded border border-brand-orange/20 uppercase">Super Admin</span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 bg-brand-blue/20 text-brand-blue text-xs font-bold rounded border border-brand-blue/20 uppercase">Admin</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="py-3 px-4 text-right">
-                                                            {user.email !== 'krupakargurija177@gmail.com' && (
-                                                                <button
-                                                                    onClick={() => handleRevokeAdmin(user.email)}
-                                                                    disabled={processing}
-                                                                    className="text-red-400 hover:text-red-300 text-sm font-medium hover:underline"
-                                                                >
-                                                                    Revoke
-                                                                </button>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                {/* Users Directory Card */}
+                                <div className="mac-card p-4 space-y-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="relative flex-1 max-w-sm">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]" />
+                                            <input
+                                                type="text"
+                                                value={userSearchQuery}
+                                                onChange={(e) => setUserSearchQuery(e.target.value)}
+                                                placeholder="Search user or email..."
+                                                className="mac-input pl-8"
+                                            />
+                                        </div>
 
-                                {/* All Users */}
-                                <div className="glass-panel rounded-xl p-6 border border-white/5">
-                                    <h2 className="text-xl font-bold text-white mb-6">
-                                        All Users ({users.length})
-                                    </h2>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
+                                        {/* Role Filter Segmented Control */}
+                                        <div className="mac-segmented-control self-start sm:self-auto">
+                                            <button
+                                                onClick={() => setUserRoleFilter('ALL')}
+                                                className={`mac-segmented-item ${userRoleFilter === 'ALL' ? 'active' : ''}`}
+                                            >
+                                                All ({users.length})
+                                            </button>
+                                            <button
+                                                onClick={() => setUserRoleFilter('ADMIN')}
+                                                className={`mac-segmented-item ${userRoleFilter === 'ADMIN' ? 'active' : ''}`}
+                                            >
+                                                Admins ({users.filter(u => u.is_admin).length})
+                                            </button>
+                                            <button
+                                                onClick={() => setUserRoleFilter('USER')}
+                                                className={`mac-segmented-item ${userRoleFilter === 'USER' ? 'active' : ''}`}
+                                            >
+                                                Members ({users.filter(u => !u.is_admin).length})
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Users Table */}
+                                    <div className="overflow-x-auto rounded-xl border border-black/[0.06] dark:border-white/[0.06]">
+                                        <table className="w-full text-left text-xs border-collapse">
                                             <thead>
-                                                <tr className="bg-white/5 border-b border-white/5">
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">User</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Email</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Rating</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Solved</th>
-                                                    <th className="text-left py-3 px-4 text-dark-text-tertiary text-sm font-medium uppercase tracking-wider">Status</th>
+                                                <tr className="border-b border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] text-[#6e6e73] dark:text-[#a1a1a6] font-semibold select-none">
+                                                    <th className="py-3 px-4">User</th>
+                                                    <th className="py-3 px-4">Email</th>
+                                                    <th className="py-3 px-4">Role</th>
+                                                    <th className="py-3 px-4 font-mono">Rating</th>
+                                                    <th className="py-3 px-4 font-mono">Solved</th>
+                                                    <th className="py-3 px-4 text-right">Action</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {users.map((user) => (
-                                                    <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                                                        <td className="py-3 px-4 text-white font-medium flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-dark-bg-tertiary flex items-center justify-center text-xs font-bold text-dark-text-secondary border border-white/5">
-                                                                {(user.username || user.email || '?')[0].toUpperCase()}
-                                                            </div>
-                                                            {user.username || 'N/A'}
-                                                        </td>
-                                                        <td className="py-3 px-4 text-dark-text-secondary">{user.email}</td>
-                                                        <td className="py-3 px-4 text-dark-text-secondary font-mono">{user.rating || 1200}</td>
-                                                        <td className="py-3 px-4 text-dark-text-secondary font-mono">{user.problemsSolved || 0}</td>
-                                                        <td className="py-3 px-4">
-                                                            {user.is_admin ? (
-                                                                <span className="text-brand-orange text-xs font-bold uppercase">Admin</span>
-                                                            ) : (
-                                                                <span className="text-dark-text-tertiary text-xs font-medium uppercase">User</span>
-                                                            )}
+                                            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                                                {usersLoading ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="py-12 text-center text-[#86868b]">
+                                                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#0071e3] mb-2" />
+                                                            <div>Loading users...</div>
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                ) : filteredUsers.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="py-10 text-center text-[#86868b]">
+                                                            No users found matching query.
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    filteredUsers.map((user) => {
+                                                        const name = user.username || user.email?.split('@')[0] || 'User';
+                                                        const initial = (name[0] || 'U').toUpperCase();
+
+                                                        return (
+                                                            <tr key={user.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors">
+                                                                <td className="py-3 px-4 font-medium text-[#1d1d1f] dark:text-white">
+                                                                    <div className="flex items-center gap-2.5">
+                                                                        <div className="w-6 h-6 rounded-full bg-linear-to-br from-[#0071e3] to-[#5856d6] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs shrink-0">
+                                                                            {initial}
+                                                                        </div>
+                                                                        <span className="truncate">{name}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-4 text-[#6e6e73] dark:text-[#a1a1a6]">
+                                                                    {user.email}
+                                                                </td>
+                                                                <td className="py-3 px-4">
+                                                                    {user.is_admin ? (
+                                                                        <span className="mac-badge mac-badge-purple">
+                                                                            <ShieldCheck size={11} /> Admin
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="mac-badge bg-black/[0.05] dark:bg-white/[0.08] text-[#86868b] dark:text-[#a1a1a6]">
+                                                                            Member
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="py-3 px-4 font-mono text-[#6e6e73] dark:text-[#a1a1a6]">
+                                                                    {user.rating || 1200}
+                                                                </td>
+                                                                <td className="py-3 px-4 font-mono text-[#6e6e73] dark:text-[#a1a1a6]">
+                                                                    {user.problemsSolved || 0}
+                                                                </td>
+                                                                <td className="py-3 px-4 text-right">
+                                                                    {user.is_admin && user.email !== 'krupakargurija177@gmail.com' ? (
+                                                                        <button
+                                                                            onClick={() => setRevokeConfirm(user.email)}
+                                                                            disabled={processing}
+                                                                            className="text-red-500 hover:text-red-600 dark:hover:text-red-400 font-medium text-xs hover:underline"
+                                                                        >
+                                                                            Revoke
+                                                                        </button>
+                                                                    ) : (
+                                                                        <span className="text-[#86868b] dark:text-[#636366] text-[11px]">—</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
-                            </>
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 4. SYSTEM HEALTH & MONITORING ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'monitoring' && (
+                            <MonitoringDashboard />
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 5. DIRECT INCIDENTS TAB ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'incidents' && (
+                            <div className="space-y-6 animate-mac-fade">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                            <ShieldAlert size={20} className="text-[#ff3b30]" />
+                                            <span>Incident Management & Automated Alerts</span>
+                                        </h1>
+                                        <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                            Real-time failure lifecycle, root-cause diagnostics, and MTTR tracking.
+                                        </p>
+                                    </div>
+                                </div>
+                                <IncidentsManager autoRefreshInterval={autoRefreshInterval} />
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 6. DIRECT PERFORMANCE TAB ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'performance' && (
+                            <div className="space-y-6 animate-mac-fade">
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                        <Activity size={20} className="text-[#af52de] dark:text-[#bf5af2]" />
+                                        <span>API Latency & Runtime Performance</span>
+                                    </h1>
+                                    <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                        Percentile distributions (p50, p95, p99), HTTP status breakdown, and JVM memory.
+                                    </p>
+                                </div>
+                                <ApiPerformanceView autoRefreshInterval={autoRefreshInterval} />
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 7. DIRECT SUBMISSIONS TAB ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'submissions' && (
+                            <div className="space-y-6 animate-mac-fade">
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                        <Code2 size={20} className="text-[#0071e3] dark:text-[#2997ff]" />
+                                        <span>Submission Analytics & Sandbox Health</span>
+                                    </h1>
+                                    <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                        Judge0 verdict distribution, language breakdown, and evaluation queue metrics.
+                                    </p>
+                                </div>
+                                <SubmissionAnalyticsView autoRefreshInterval={autoRefreshInterval} />
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 8. AUDIT LOGS & DIFFS ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'audit' && (
+                            <div className="space-y-6 animate-mac-fade">
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                        <ShieldCheck size={20} className="text-[#34c759] dark:text-[#30d158]" />
+                                        <span>Audit Logs & State Diffs</span>
+                                    </h1>
+                                    <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+                                        Tamper-evident audit trail with automated before/after JSON diffs for all admin operations.
+                                    </p>
+                                </div>
+                                <AuditLogViewer />
+                            </div>
+                        )}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━ 9. CONSOLE SETTINGS ━━━━━━━━━━━━━━━━━━━━ */}
+                        {activeTab === 'settings' && (
+                            <AdminSettingsView
+                                theme={theme}
+                                toggleTheme={toggleTheme}
+                                autoRefreshInterval={autoRefreshInterval}
+                                setAutoRefreshInterval={setAutoRefreshInterval}
+                            />
                         )}
                     </div>
-                )}
-
-                {/* Audit Logs Tab */}
-                {activeTab === 'audit' && (
-                    <AuditLogViewer />
-                )}
-
-                {/* System Monitoring Tab */}
-                {activeTab === 'monitoring' && (
-                    <MonitoringDashboard />
-                )}
-
-                {/* Create Problem Modal */}
-                {showCreateForm && (
-                    <CreateProblemForm
-                        onSuccess={handleCreateSuccess}
-                        onCancel={() => setShowCreateForm(false)}
-                    />
-                )}
-
-                {/* Delete Confirmation Modal */}
-                {deleteConfirm && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                        <div className="glass-panel p-8 max-w-md w-full border border-red-500/20 rounded-2xl relative shadow-2xl shadow-red-500/10">
-                            <h3 className="text-2xl font-bold text-white mb-2">Delete Problem?</h3>
-                            <p className="text-dark-text-secondary mb-8">
-                                Are you sure you want to delete this problem? This action cannot be undone.
-                            </p>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="flex-1 py-3 px-4 rounded-xl font-medium text-white bg-white/5 hover:bg-white/10 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(deleteConfirm)}
-                                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Revoke Admin Confirmation Modal */}
-                {revokeConfirm && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                        <div className="glass-panel p-8 max-w-md w-full border border-red-500/20 rounded-2xl relative shadow-2xl shadow-red-500/10">
-                            <h3 className="text-2xl font-bold text-white mb-2">Revoke Admin Access?</h3>
-                            <p className="text-dark-text-secondary mb-8">
-                                Are you sure you want to remove admin privileges from <span className="text-white font-semibold">{revokeConfirm}</span>?
-                            </p>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => setRevokeConfirm(null)}
-                                    className="flex-1 py-3 px-4 rounded-xl font-medium text-white bg-white/5 hover:bg-white/10 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmRevokeAdmin}
-                                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all"
-                                >
-                                    Revoke
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Test Case Manager Modal */}
-                {selectedProblemForTestCases && (
-                    <TestCaseManager
-                        problem={selectedProblemForTestCases}
-                        onClose={() => setSelectedProblemForTestCases(null)}
-                    />
-                )}
+                </main>
             </div>
+
+            {/* ━━━━━━━━━━━━━━━━━━━━ MODALS & SHEETS ━━━━━━━━━━━━━━━━━━━━ */}
+
+            {/* Command Palette Modal (⌘K) */}
+            <AdminCommandPalette
+                isOpen={commandPaletteOpen}
+                onClose={() => setCommandPaletteOpen(false)}
+                onNavigate={(tab) => {
+                    setActiveTab(tab);
+                    setCommandPaletteOpen(false);
+                }}
+                onCreateProblem={() => {
+                    setActiveTab('problems');
+                    setShowCreateForm(true);
+                }}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                problems={problems}
+            />
+
+            {/* Create Problem Modal Sheet */}
+            {showCreateForm && (
+                <CreateProblemForm
+                    onSuccess={() => {
+                        setShowCreateForm(false);
+                        fetchProblems();
+                    }}
+                    onCancel={() => setShowCreateForm(false)}
+                />
+            )}
+
+            {/* Manage Test Cases Modal */}
+            {selectedProblemForTestCases && (
+                <TestCaseManager
+                    problem={selectedProblemForTestCases}
+                    onClose={() => setSelectedProblemForTestCases(null)}
+                />
+            )}
+
+            {/* Delete Confirmation Sheet (macOS Modal) */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="mac-card max-w-sm w-full p-6 shadow-2xl border-black/[0.1] dark:border-white/[0.1] animate-mac-scale space-y-4">
+                        <div className="flex items-center gap-3 text-red-500">
+                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                                <Trash2 size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-[#1d1d1f] dark:text-white">Delete Problem #{deleteConfirm}?</h3>
+                                <p className="text-xs text-[#86868b] dark:text-[#636366]">This action cannot be undone.</p>
+                            </div>
+                        </div>
+                        <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6] leading-relaxed">
+                            Deleting this problem will permanently remove it along with all associated test cases and submissions.
+                        </p>
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="mac-btn-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDeleteProblem(deleteConfirm)}
+                                className="mac-btn-danger"
+                            >
+                                Delete Problem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Revoke Admin Confirmation Sheet */}
+            {revokeConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="mac-card max-w-sm w-full p-6 shadow-2xl border-black/[0.1] dark:border-white/[0.1] animate-mac-scale space-y-4">
+                        <div className="flex items-center gap-3 text-red-500">
+                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                                <ShieldAlert size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-[#1d1d1f] dark:text-white">Revoke Admin Access?</h3>
+                                <p className="text-xs text-[#86868b] dark:text-[#636366]">Role modification</p>
+                            </div>
+                        </div>
+                        <p className="text-xs text-[#6e6e73] dark:text-[#a1a1a6] leading-relaxed">
+                            Are you sure you want to remove administrator privileges from <strong className="text-[#1d1d1f] dark:text-white">{revokeConfirm}</strong>?
+                        </p>
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                            <button
+                                onClick={() => setRevokeConfirm(null)}
+                                className="mac-btn-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmRevokeAdmin}
+                                className="mac-btn-danger"
+                            >
+                                Revoke Permission
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

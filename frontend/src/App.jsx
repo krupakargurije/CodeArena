@@ -25,8 +25,10 @@ function AppContent() {
     const dispatch = useDispatch();
     const location = useLocation();
 
-    // Hide navbar on coding environment pages (LeetCode-style)
+    // Hide navbar on coding environment pages and dedicated admin console
+    const isAdminPage = location.pathname.startsWith('/admin');
     const isCodingEnv = /^\/problems\/\d+/.test(location.pathname) || /^\/rooms\/[^/]+\/problem/.test(location.pathname);
+    const hideNavbar = isCodingEnv || isAdminPage;
 
     useEffect(() => {
         // Initial load from local storage
@@ -141,7 +143,7 @@ function AppContent() {
             )}
 
             <div className="relative z-10">
-                {!isCodingEnv && <Navbar />}
+                {!hideNavbar && <Navbar />}
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />

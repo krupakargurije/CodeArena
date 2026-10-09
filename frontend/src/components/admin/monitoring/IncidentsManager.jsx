@@ -1,31 +1,69 @@
 import React, { useState, useEffect } from 'react';
+import {
+    AlertTriangle,
+    ShieldAlert,
+    CheckCircle2,
+    Clock,
+    RefreshCw,
+    X,
+    Filter,
+    MessageSquare,
+    Activity,
+    Check,
+    ChevronRight,
+    CheckCheck,
+    Database,
+    Cpu,
+    Server
+} from 'lucide-react';
 import { getIncidents, acknowledgeIncident, resolveIncident } from '../../../services/monitoringService';
 
 const SEVERITY_CONFIG = {
     CRITICAL: {
-        badge: 'bg-red-500/10 text-red-400 border-red-500/30',
+        badgeClass: 'mac-badge-red',
         dot: 'bg-red-500',
-        glow: 'shadow-red-500/20 border-red-500/40',
         label: 'CRITICAL',
     },
     WARNING: {
-        badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+        badgeClass: 'mac-badge-amber',
         dot: 'bg-amber-500',
-        glow: 'shadow-amber-500/20 border-amber-500/40',
         label: 'WARNING',
     },
     INFO: {
-        badge: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-        dot: 'bg-sky-500',
-        glow: 'shadow-sky-500/20 border-sky-500/40',
+        badgeClass: 'mac-badge-blue',
+        dot: 'bg-blue-500',
         label: 'INFO',
     },
 };
 
-const STATUS_BADGES = {
-    OPEN: 'bg-red-500/20 text-red-300 border-red-500/30',
-    ACKNOWLEDGED: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    RESOLVED: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+const STATUS_CONFIG = {
+    OPEN: { badgeClass: 'mac-badge-red', label: 'OPEN' },
+    ACKNOWLEDGED: { badgeClass: 'mac-badge-amber', label: 'ACKNOWLEDGED' },
+    RESOLVED: { badgeClass: 'mac-badge-green', label: 'RESOLVED' },
+};
+
+const getIncidentFriendlyDetails = (incident) => {
+    const key = incident.incidentKey || '';
+    let fallbackTitle = incident.title;
+    let fallbackDesc = incident.description;
+
+    if (!fallbackTitle) {
+        if (key === 'DATABASE_UNAVAILABLE') fallbackTitle = 'PostgreSQL Database Connectivity Failure';
+        else if (key === 'ELEVATED_API_LATENCY') fallbackTitle = 'Elevated API Response Latency';
+        else if (key === 'JUDGE0_DOWN') fallbackTitle = 'Judge0 Sandbox Engine Unreachable';
+        else if (key === 'HIGH_5XX_ERROR_RATE') fallbackTitle = 'High 5xx HTTP Server Error Rate';
+        else fallbackTitle = key.replace(/_/g, ' ');
+    }
+
+    if (!fallbackDesc) {
+        if (key === 'DATABASE_UNAVAILABLE') fallbackDesc = 'Validation probe to Supabase PostgreSQL cluster failed or timed out.';
+        else if (key === 'ELEVATED_API_LATENCY') fallbackDesc = 'API request response time exceeded the p95 latency threshold of 2,000 ms.';
+        else if (key === 'JUDGE0_DOWN') fallbackDesc = 'Code evaluation sandbox worker is offline or failing health probes.';
+        else if (key === 'HIGH_5XX_ERROR_RATE') fallbackDesc = 'Server returned 5xx status codes on more than 5% of incoming API requests.';
+        else fallbackDesc = 'Operational anomaly flagged by system background health monitors.';
+    }
+
+    return { title: fallbackTitle, description: fallbackDesc };
 };
 
 const IncidentsManager = ({ autoRefreshInterval }) => {
@@ -41,6 +79,7 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
     const [resolveTarget, setResolveTarget] = useState(null);
     const [resolveNote, setResolveNote] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [resolvingAll, setResolvingAll] = useState(false);
 
     const fetchIncidents = async () => {
         try {
@@ -66,14 +105,19 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
         return () => clearInterval(intervalId);
     }, [autoRefreshInterval, statusFilter]);
 
-    const handleAcknowledge = async () => {
+    const handleAcknowledge = async (e) => {
+        e.preventDefault();
         if (!ackTarget) return;
+        setActionLoading(true);
         try {
-            setActionLoading(true);
             await acknowledgeIncident(ackTarget.id, ackNote);
             setAckTarget(null);
             setAckNote('');
-            await fetchIncidents();
+            // Optimistic update
+            setIncidents((prev) =>
+                prev.map((i) => (i.id === ackTarget.id ? { ...i, status: 'ACKNOWLEDGED' } : i))
+            );
+            fetchIncidents();
         } catch (err) {
             console.error('Failed to acknowledge incident:', err);
             alert(err.message || 'Failed to acknowledge incident');
@@ -82,14 +126,23 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
         }
     };
 
-    const handleResolve = async () => {
+    const handleResolve = async (e) => {
+        e.preventDefault();
         if (!resolveTarget) return;
+        setActionLoading(true);
         try {
-            setActionLoading(true);
             await resolveIncident(resolveTarget.id, resolveNote);
             setResolveTarget(null);
             setResolveNote('');
-            await fetchIncidents();
+            // Optimistic update
+            setIncidents((prev) =>
+                prev.map((i) =>
+                    i.id === resolveTarget.id
+                        ? { ...i, status: 'RESOLVED', resolvedAt: new Date().toISOString() }
+                        : i
+                )
+            );
+            fetchIncidents();
         } catch (err) {
             console.error('Failed to resolve incident:', err);
             alert(err.message || 'Failed to resolve incident');
@@ -98,72 +151,63 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
         }
     };
 
-    const filteredIncidents = incidents.filter(inc => {
+    const handleResolveAllActive = async () => {
+        const activeIncidents = incidents.filter((i) => i.status !== 'RESOLVED');
+        if (activeIncidents.length === 0) return;
+        if (!confirm(`Resolve all ${activeIncidents.length} active incidents?`)) return;
+
+        setResolvingAll(true);
+        try {
+            await Promise.all(
+                activeIncidents.map((i) =>
+                    resolveIncident(i.id, 'Resolved via Administrator Console bulk action')
+                )
+            );
+            // Optimistically mark all as resolved
+            setIncidents((prev) =>
+                prev.map((i) => ({
+                    ...i,
+                    status: 'RESOLVED',
+                    resolvedAt: new Date().toISOString()
+                }))
+            );
+            fetchIncidents();
+        } catch (err) {
+            console.error('Failed to resolve all incidents:', err);
+            alert(err.message || 'Failed to resolve all incidents');
+        } finally {
+            setResolvingAll(false);
+        }
+    };
+
+    const filteredIncidents = incidents.filter((inc) => {
         if (severityFilter !== 'ALL' && inc.severity !== severityFilter) return false;
         return true;
     });
 
-    const formatTimestamp = (ts) => {
-        if (!ts) return '—';
-        return new Date(ts).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    };
+    const activeCount = incidents.filter((i) => i.status !== 'RESOLVED').length;
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            {/* Header & Filter Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
-                <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <span>Incident Management & Alert Lifecycle</span>
-                    </h2>
-                    <p className="text-xs text-dark-text-secondary mt-0.5">
-                        Automated failure detection, deduplicated incidents, and operator response center.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* Status filter tabs */}
-                    <div className="flex bg-dark-bg-secondary p-1 rounded-xl border border-white/5 text-xs font-semibold">
-                        <button
-                            onClick={() => setStatusFilter('ACTIVE')}
-                            className={`px-3 py-1.5 rounded-lg transition ${statusFilter === 'ACTIVE'
-                                ? 'bg-brand-orange text-white shadow-md shadow-brand-orange/20'
-                                : 'text-dark-text-secondary hover:text-white'
-                                }`}
-                        >
-                            Active ({incidents.filter(i => i.status !== 'RESOLVED').length})
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter('RESOLVED')}
-                            className={`px-3 py-1.5 rounded-lg transition ${statusFilter === 'RESOLVED'
-                                ? 'bg-brand-orange text-white shadow-md shadow-brand-orange/20'
-                                : 'text-dark-text-secondary hover:text-white'
-                                }`}
-                        >
-                            Resolved
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter('ALL')}
-                            className={`px-3 py-1.5 rounded-lg transition ${statusFilter === 'ALL'
-                                ? 'bg-brand-orange text-white shadow-md shadow-brand-orange/20'
-                                : 'text-dark-text-secondary hover:text-white'
-                                }`}
-                        >
-                            All History
-                        </button>
+        <div className="space-y-6 animate-mac-fade">
+            {/* Filter Controls & Bulk Action Bar */}
+            <div className="mac-card p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
+                    <div className="mac-segmented-control shrink-0">
+                        {['ACTIVE', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'ALL'].map((st) => (
+                            <button
+                                key={st}
+                                onClick={() => setStatusFilter(st)}
+                                className={`mac-segmented-item ${statusFilter === st ? 'active' : ''}`}
+                            >
+                                {st.charAt(0) + st.slice(1).toLowerCase()}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Severity dropdown */}
                     <select
                         value={severityFilter}
                         onChange={(e) => setSeverityFilter(e.target.value)}
-                        className="bg-dark-bg-secondary border border-white/10 text-xs text-white rounded-xl px-3 py-2 focus:outline-none focus:border-brand-orange"
+                        className="mac-input w-36 text-xs shrink-0"
                     >
                         <option value="ALL">All Severities</option>
                         <option value="CRITICAL">Critical Only</option>
@@ -171,141 +215,145 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
                         <option value="INFO">Info Only</option>
                     </select>
                 </div>
-            </div>
 
-            {/* Incidents Table / Cards List */}
-            {loading ? (
-                <div className="space-y-3">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="glass-panel p-6 rounded-2xl h-32 bg-white/5 animate-pulse" />
-                    ))}
-                </div>
-            ) : error ? (
-                <div className="glass-panel p-8 rounded-2xl border border-red-500/20 text-center space-y-4">
-                    <h3 className="text-lg font-bold text-white">Failed to load incidents</h3>
-                    <p className="text-dark-text-secondary text-sm">{error}</p>
+                <div className="flex items-center gap-2">
+                    {activeCount > 0 && (
+                        <button
+                            onClick={handleResolveAllActive}
+                            disabled={resolvingAll}
+                            className="mac-btn-secondary text-xs text-emerald-600 dark:text-emerald-400 font-semibold"
+                            title="Resolve all active incidents"
+                        >
+                            <CheckCheck size={13} className={resolvingAll ? 'animate-spin' : ''} />
+                            <span>{resolvingAll ? 'Resolving...' : `Resolve All (${activeCount})`}</span>
+                        </button>
+                    )}
+
                     <button
                         onClick={fetchIncidents}
-                        className="px-4 py-2 bg-brand-orange text-white rounded-xl text-sm font-semibold"
+                        disabled={loading}
+                        className="mac-btn-secondary text-xs"
                     >
-                        Retry
+                        <RefreshCw size={13} className={loading ? 'animate-spin text-[#0071e3]' : ''} />
+                        <span>Refresh</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+                    <AlertTriangle size={14} />
+                    <span>{error}</span>
+                </div>
+            )}
+
+            {/* Incidents List */}
+            {loading ? (
+                <div className="mac-card p-12 text-center text-xs text-[#86868b]">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#0071e3] mb-2" />
+                    <div>Querying active incidents...</div>
+                </div>
             ) : filteredIncidents.length === 0 ? (
-                <div className="glass-panel p-12 rounded-2xl border border-dashed border-white/10 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                <div className="mac-card p-12 text-center text-xs text-[#86868b] space-y-2">
+                    <CheckCircle2 size={32} className="text-emerald-500 mx-auto" />
+                    <div className="font-bold text-sm text-[#1d1d1f] dark:text-white">All Systems Nominal</div>
+                    <div className="text-[11px] text-[#86868b] dark:text-[#636366]">
+                        No operational incidents matching the selected filter.
                     </div>
-                    <h3 className="text-base font-bold text-white">No Incidents Found</h3>
-                    <p className="text-xs text-dark-text-secondary max-w-sm mx-auto">
-                        {statusFilter === 'ACTIVE'
-                            ? 'All monitored components and automated health checks are operating normally without active alerts.'
-                            : 'No incident records match the current status and severity filters.'}
-                    </p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {filteredIncidents.map((incident) => {
-                        const sevConfig = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.INFO;
-                        const isOpen = incident.status === 'OPEN';
-                        const isAck = incident.status === 'ACKNOWLEDGED';
-                        const isResolved = incident.status === 'RESOLVED';
+                        const sev = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.INFO;
+                        const st = STATUS_CONFIG[incident.status] || STATUS_CONFIG.OPEN;
+                        const details = getIncidentFriendlyDetails(incident);
 
                         return (
                             <div
                                 key={incident.id}
-                                className={`glass-panel p-6 rounded-2xl border transition-all ${incident.severity === 'CRITICAL' && !isResolved
-                                    ? 'border-red-500/30 bg-red-500/[0.02]'
-                                    : 'border-white/5'
-                                    }`}
+                                className="mac-card p-5 space-y-3"
                             >
-                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                                    {/* Left summary */}
-                                    <div className="space-y-2 flex-1">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {/* Severity Badge */}
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${sevConfig.badge}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${sevConfig.dot} ${incident.severity === 'CRITICAL' && !isResolved ? 'animate-ping' : ''}`} />
-                                                {sevConfig.label}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                        <span className={`mac-badge ${sev.badgeClass}`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${sev.dot}`} />
+                                            {incident.severity}
+                                        </span>
+                                        <span className={`mac-badge ${st.badgeClass}`}>
+                                            {incident.status}
+                                        </span>
+                                        <span className="font-mono text-xs font-semibold text-[#1d1d1f] dark:text-white">
+                                            {incident.incidentKey || `INCIDENT-${incident.id}`}
+                                        </span>
+                                        {incident.occurrenceCount > 1 && (
+                                            <span className="mac-badge bg-black/[0.05] dark:bg-white/[0.08] text-[#86868b]">
+                                                {incident.occurrenceCount}x occurred
                                             </span>
-
-                                            {/* Status Badge */}
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${STATUS_BADGES[incident.status] || STATUS_BADGES.OPEN}`}>
-                                                {incident.status}
-                                            </span>
-
-                                            {/* Component Tag */}
-                                            <span className="px-2 py-0.5 rounded-md bg-white/5 text-dark-text-secondary text-[11px] font-mono border border-white/10">
-                                                {incident.component}
-                                            </span>
-
-                                            {/* Deduplication Count */}
-                                            {incident.occurrenceCount > 1 && (
-                                                <span className="px-2 py-0.5 rounded-md bg-brand-orange/10 text-brand-orange text-[11px] font-mono font-bold border border-brand-orange/20">
-                                                    Occurred {incident.occurrenceCount}x
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <h3 className="text-base font-bold text-white">{incident.title}</h3>
-                                        <p className="text-xs text-dark-text-secondary leading-relaxed max-w-3xl">
-                                            {incident.description}
-                                        </p>
-
-                                        {/* Resolution Notes or Ack info */}
-                                        {isResolved && incident.resolutionNote && (
-                                            <div className="mt-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                                                <span className="font-bold text-emerald-400">Resolution Note: </span>
-                                                <span className="text-emerald-300">{incident.resolutionNote}</span>
-                                            </div>
                                         )}
                                     </div>
 
-                                    {/* Right Timestamps and Actions */}
-                                    <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end justify-between gap-3 min-w-[220px]">
-                                        <div className="text-[11px] text-dark-text-tertiary space-y-0.5 text-left lg:text-right font-mono">
-                                            <div>First seen: <span className="text-white">{formatTimestamp(incident.firstSeenAt)}</span></div>
-                                            <div>Last seen: <span className="text-white">{formatTimestamp(incident.lastSeenAt)}</span></div>
-                                            {incident.acknowledgedBy && (
-                                                <div className="text-amber-400/90">
-                                                    Ack: {incident.acknowledgedBy}
-                                                </div>
-                                            )}
-                                            {incident.resolvedBy && (
-                                                <div className="text-emerald-400/90">
-                                                    Resolved: {incident.resolvedBy}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Actions */}
-                                        {!isResolved && (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                {isOpen && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setAckTarget(incident);
-                                                            setAckNote('');
-                                                        }}
-                                                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition"
-                                                    >
-                                                        Acknowledge
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => {
-                                                        setResolveTarget(incident);
-                                                        setResolveNote('');
-                                                    }}
-                                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition"
-                                                >
-                                                    Resolve
-                                                </button>
-                                            </div>
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-2">
+                                        {incident.status === 'OPEN' && (
+                                            <button
+                                                onClick={() => setAckTarget(incident)}
+                                                className="mac-btn-secondary text-xs py-1 px-2.5"
+                                            >
+                                                Acknowledge
+                                            </button>
+                                        )}
+                                        {incident.status !== 'RESOLVED' && (
+                                            <button
+                                                onClick={() => setResolveTarget(incident)}
+                                                className="mac-btn-primary text-xs py-1 px-2.5"
+                                            >
+                                                Resolve
+                                            </button>
                                         )}
                                     </div>
+                                </div>
+
+                                {/* Incident Title & Descriptive Diagnostic Text */}
+                                <div className="space-y-1">
+                                    <div className="text-sm font-bold text-[#1d1d1f] dark:text-white">
+                                        {details.title}
+                                    </div>
+                                    <div className="text-xs text-[#6e6e73] dark:text-[#a1a1a6] leading-relaxed">
+                                        {details.description}
+                                    </div>
+                                </div>
+
+                                {/* Timestamps and Diagnostic Strip */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#86868b] dark:text-[#636366] pt-1 font-mono">
+                                    <div>
+                                        <span>First seen: </span>
+                                        <span className="text-[#1d1d1f] dark:text-white">
+                                            {incident.firstSeenAt ? new Date(incident.firstSeenAt).toLocaleTimeString() : 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span>Last seen: </span>
+                                        <span className="text-[#1d1d1f] dark:text-white">
+                                            {incident.lastSeenAt ? new Date(incident.lastSeenAt).toLocaleTimeString() : 'N/A'}
+                                        </span>
+                                    </div>
+                                    {incident.resolvedAt && (
+                                        <div>
+                                            <span>Resolved: </span>
+                                            <span className="text-emerald-600 dark:text-emerald-400">
+                                                {new Date(incident.resolvedAt).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {incident.resolvedBy && (
+                                        <div>
+                                            <span>Resolver: </span>
+                                            <span className="text-[#1d1d1f] dark:text-white">
+                                                {incident.resolvedBy}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -313,82 +361,90 @@ const IncidentsManager = ({ autoRefreshInterval }) => {
                 </div>
             )}
 
-            {/* Acknowledge Modal */}
+            {/* Acknowledge Incident Modal Sheet */}
             {ackTarget && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="glass-panel p-6 max-w-md w-full border border-amber-500/30 rounded-2xl space-y-4 shadow-2xl">
-                        <h3 className="text-lg font-bold text-white">Acknowledge Incident</h3>
-                        <p className="text-xs text-dark-text-secondary">
-                            Marking this incident as acknowledged notifies other administrators that the issue is being investigated.
-                        </p>
-                        <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs font-semibold text-white">
-                            {ackTarget.title}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in select-none">
+                    <div className="mac-card max-w-md w-full p-6 shadow-2xl border-black/[0.1] dark:border-white/[0.1] animate-mac-scale space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                <ShieldAlert size={16} className="text-[#ff9500]" />
+                                <span>Acknowledge Incident #{ackTarget.id}</span>
+                            </h3>
+                            <button onClick={() => setAckTarget(null)} className="text-[#86868b] hover:text-[#1d1d1f]">
+                                <X size={15} />
+                            </button>
                         </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-dark-text-secondary mb-1">Investigation Note (Optional)</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Investigating high load on sandbox cluster..."
+                        <form onSubmit={handleAcknowledge} className="space-y-3 text-xs">
+                            <p className="text-[#6e6e73] dark:text-[#a1a1a6]">
+                                Acknowledging indicates the incident is being investigated and silences recurring notifications.
+                            </p>
+                            <textarea
                                 value={ackNote}
                                 onChange={(e) => setAckNote(e.target.value)}
-                                className="w-full bg-dark-bg-secondary border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-dark-text-tertiary focus:outline-none focus:border-amber-400"
+                                placeholder="Optional investigation note..."
+                                className="mac-input min-h-[80px]"
                             />
-                        </div>
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                onClick={() => setAckTarget(null)}
-                                className="flex-1 py-2 px-3 rounded-xl text-xs font-medium text-white bg-white/5 hover:bg-white/10"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleAcknowledge}
-                                disabled={actionLoading}
-                                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20 transition disabled:opacity-50"
-                            >
-                                {actionLoading ? 'Saving...' : 'Confirm Acknowledge'}
-                            </button>
-                        </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAckTarget(null)}
+                                    className="mac-btn-secondary"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={actionLoading}
+                                    className="mac-btn-primary"
+                                >
+                                    {actionLoading ? 'Saving...' : 'Confirm Acknowledge'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
 
-            {/* Resolve Modal */}
+            {/* Resolve Incident Modal Sheet */}
             {resolveTarget && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="glass-panel p-6 max-w-md w-full border border-emerald-500/30 rounded-2xl space-y-4 shadow-2xl">
-                        <h3 className="text-lg font-bold text-white">Resolve Incident</h3>
-                        <p className="text-xs text-dark-text-secondary">
-                            Document what was done to fix the root cause and restore normal operation.
-                        </p>
-                        <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs font-semibold text-white">
-                            {resolveTarget.title}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in select-none">
+                    <div className="mac-card max-w-md w-full p-6 shadow-2xl border-black/[0.1] dark:border-white/[0.1] animate-mac-scale space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                <CheckCircle2 size={16} className="text-emerald-500" />
+                                <span>Resolve Incident #{resolveTarget.id}</span>
+                            </h3>
+                            <button onClick={() => setResolveTarget(null)} className="text-[#86868b] hover:text-[#1d1d1f]">
+                                <X size={15} />
+                            </button>
                         </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-dark-text-secondary mb-1">Resolution Note</label>
+                        <form onSubmit={handleResolve} className="space-y-3 text-xs">
+                            <p className="text-[#6e6e73] dark:text-[#a1a1a6]">
+                                Mark this operational failure as mitigated and resolved.
+                            </p>
                             <textarea
-                                rows={3}
-                                placeholder="e.g. Restarted Judge0 worker service and cleared stuck queue items."
                                 value={resolveNote}
                                 onChange={(e) => setResolveNote(e.target.value)}
-                                className="w-full bg-dark-bg-secondary border border-white/10 rounded-xl p-3 text-xs text-white placeholder-dark-text-tertiary focus:outline-none focus:border-emerald-400"
+                                placeholder="Optional root-cause or resolution summary..."
+                                className="mac-input min-h-[80px]"
                             />
-                        </div>
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                onClick={() => setResolveTarget(null)}
-                                className="flex-1 py-2 px-3 rounded-xl text-xs font-medium text-white bg-white/5 hover:bg-white/10"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleResolve}
-                                disabled={actionLoading}
-                                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
-                            >
-                                {actionLoading ? 'Resolving...' : 'Confirm Resolve'}
-                            </button>
-                        </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setResolveTarget(null)}
+                                    className="mac-btn-secondary"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={actionLoading}
+                                    className="mac-btn-primary"
+                                >
+                                    {actionLoading ? 'Saving...' : 'Resolve Incident'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

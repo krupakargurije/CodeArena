@@ -34,7 +34,7 @@ public class IncidentService {
      * Evaluates live health and performance metrics to generate or auto-resolve incidents.
      */
     @Transactional
-    public void evaluateAlertConditions(List<ServiceHealthDTO> serviceHealths, double errorRate5xx, double p95Latency) {
+    public void evaluateAlertConditions(List<ServiceHealthDTO> serviceHealths, double errorRate5xx, double p95Latency, long totalRequests) {
         // 1. Check Database Health
         Optional<ServiceHealthDTO> dbHealth = serviceHealths.stream()
                 .filter(s -> "DATABASE".equals(s.getComponent()))
@@ -73,31 +73,40 @@ public class IncidentService {
             }
         }
 
-        // 3. Check 5xx Error Rate
-        if (errorRate5xx >= 5.0) {
-            raiseOrUpdateIncident(
-                    "HIGH_5XX_ERROR_RATE",
-                    "Elevated HTTP 5xx Error Rate",
-                    String.format("Server error rate has reached %.2f%% of total traffic.", errorRate5xx),
-                    "BACKEND_API",
-                    Incident.Severity.WARNING
-            );
-        } else if (errorRate5xx < 1.0) {
-            autoResolveIncident("HIGH_5XX_ERROR_RATE", "HTTP 5xx error rate normalized below threshold.");
+        // 3. Check 5xx Error Rate (Requires minimum sample of 10 requests to avoid false positive alerts on cold boot)
+        if (totalRequests >= 10) {
+            if (errorRate5xx >= 5.0) {
+                raiseOrUpdateIncident(
+                        "HIGH_5XX_ERROR_RATE",
+                        "Elevated HTTP 5xx Error Rate",
+                        String.format("Server error rate has reached %.2f%% of total traffic.", errorRate5xx),
+                        "BACKEND_API",
+                        Incident.Severity.WARNING
+                );
+            } else if (errorRate5xx < 1.0) {
+                autoResolveIncident("HIGH_5XX_ERROR_RATE", "HTTP 5xx error rate normalized below threshold.");
+            }
         }
 
-        // 4. Check Latency
-        if (p95Latency >= 2000.0) {
-            raiseOrUpdateIncident(
-                    "ELEVATED_API_LATENCY",
-                    "Elevated API Response Latency",
-                    String.format("p95 request latency has exceeded 2000ms (measured %.1fms).", p95Latency),
-                    "BACKEND_API",
-                    Incident.Severity.WARNING
-            );
-        } else if (p95Latency < 1000.0 && p95Latency > 0.0) {
-            autoResolveIncident("ELEVATED_API_LATENCY", "API response latencies returned to normal operating range.");
+        // 4. Check Latency (Requires minimum sample of 10 requests to compute statistically valid p95)
+        if (totalRequests >= 10) {
+            if (p95Latency >= 2000.0) {
+                raiseOrUpdateIncident(
+                        "ELEVATED_API_LATENCY",
+                        "Elevated API Response Latency",
+                        String.format("p95 request latency has exceeded 2000ms (measured %.1fms).", p95Latency),
+                        "BACKEND_API",
+                        Incident.Severity.WARNING
+                );
+            } else if (p95Latency < 1800.0 && p95Latency > 0.0) {
+                autoResolveIncident("ELEVATED_API_LATENCY", "API response latencies returned to normal operating range.");
+            }
         }
+    }
+
+    @Transactional
+    public void evaluateAlertConditions(List<ServiceHealthDTO> serviceHealths, double errorRate5xx, double p95Latency) {
+        evaluateAlertConditions(serviceHealths, errorRate5xx, p95Latency, 100);
     }
 
     private final ConcurrentHashMap<String, Object> keyLocks = new ConcurrentHashMap<>();
@@ -108,14 +117,26 @@ public class IncidentService {
         Object lock = keyLocks.computeIfAbsent(incidentKey, k -> new Object());
         synchronized (lock) {
             Instant now = Instant.now();
-            Optional<Incident> existingOpt = incidentRepository.findActiveByIncidentKey(incidentKey);
+            List<Incident> activeList = incidentRepository.findAllActiveByIncidentKey(incidentKey);
 
-            if (existingOpt.isPresent()) {
-                Incident existing = existingOpt.get();
+            if (activeList != null && !activeList.isEmpty()) {
+                Incident existing = activeList.get(0);
                 existing.setLastSeenAt(now);
                 existing.setOccurrenceCount(existing.getOccurrenceCount() + 1);
+                existing.setTitle(title);
                 existing.setDescription(description);
                 log.debug("Deduplicated active incident: key={}, count={}", incidentKey, existing.getOccurrenceCount());
+
+                // Auto-resolve any legacy duplicates that occurred before locking
+                for (int i = 1; i < activeList.size(); i++) {
+                    Incident dup = activeList.get(i);
+                    dup.setStatus(Incident.Status.RESOLVED);
+                    dup.setResolvedAt(now);
+                    dup.setResolvedBy("SYSTEM (Deduplication)");
+                    dup.setResolutionNote("Auto-merged into primary incident #" + existing.getId());
+                    incidentRepository.save(dup);
+                }
+
                 return incidentRepository.save(existing);
             }
 
@@ -140,14 +161,17 @@ public class IncidentService {
 
     @Transactional
     public void autoResolveIncident(String incidentKey, String note) {
-        incidentRepository.findActiveByIncidentKey(incidentKey).ifPresent(incident -> {
-            incident.setStatus(Incident.Status.RESOLVED);
-            incident.setResolvedAt(Instant.now());
-            incident.setResolvedBy("SYSTEM (Auto-recovered)");
-            incident.setResolutionNote(note);
-            incidentRepository.save(incident);
-            log.info("Incident auto-resolved: id={}, key={}", incident.getId(), incidentKey);
-        });
+        List<Incident> activeList = incidentRepository.findAllActiveByIncidentKey(incidentKey);
+        if (activeList != null) {
+            for (Incident incident : activeList) {
+                incident.setStatus(Incident.Status.RESOLVED);
+                incident.setResolvedAt(Instant.now());
+                incident.setResolvedBy("SYSTEM (Auto-recovered)");
+                incident.setResolutionNote(note);
+                incidentRepository.save(incident);
+                log.info("Incident auto-resolved: id={}, key={}", incident.getId(), incidentKey);
+            }
+        }
     }
 
     @Transactional

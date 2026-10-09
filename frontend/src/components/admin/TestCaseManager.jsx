@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
+import {
+    X,
+    FolderArchive,
+    Upload,
+    Plus,
+    Trash2,
+    CheckCircle2,
+    AlertCircle,
+    FileCode,
+    Sparkles,
+    Check
+} from 'lucide-react';
 import { updateProblem } from '../../services/problemService';
 import { formatInputType } from '../../utils/testCaseFormatter';
 import { supabase } from '../../services/supabaseClient';
 import JSZip from 'jszip';
 
 const TestCaseManager = ({ problem, onClose }) => {
-    const [testCases, setTestCases] = useState([]); // In-memory list from ZIP
+    const [testCases, setTestCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [adding, setAdding] = useState(false);
     const [syncingZip, setSyncingZip] = useState(false);
@@ -35,7 +47,6 @@ const TestCaseManager = ({ problem, onClose }) => {
                 return;
             }
 
-            // Download the existing ZIP
             const response = await fetch(problem.testCasesUrl);
             if (!response.ok) {
                 setTestCases([]);
@@ -45,10 +56,8 @@ const TestCaseManager = ({ problem, onClose }) => {
             const blob = await response.blob();
             const zip = await JSZip.loadAsync(blob);
 
-            // Extract .in/.out pairs
             const inputs = {};
             const outputs = {};
-
             const sampleFlags = {};
 
             for (const [filename, file] of Object.entries(zip.files)) {
@@ -57,7 +66,6 @@ const TestCaseManager = ({ problem, onClose }) => {
                 if (name.includes('/')) name = name.substring(name.lastIndexOf('/') + 1);
 
                 const content = await file.async('string');
-                // Detect sample_ prefix
                 const isSample = name.startsWith('sample_');
                 const cleanName = isSample ? name.replace('sample_', '') : name;
 
@@ -71,7 +79,6 @@ const TestCaseManager = ({ problem, onClose }) => {
                 }
             }
 
-            // Build test case list
             const cases = Object.keys(inputs)
                 .sort((a, b) => parseInt(a) - parseInt(b))
                 .map(key => ({
@@ -90,7 +97,6 @@ const TestCaseManager = ({ problem, onClose }) => {
         }
     };
 
-    // Upload the current test cases list as a ZIP
     const uploadZip = async (cases) => {
         setSyncingZip(true);
         setSuccessMessage('');
@@ -98,42 +104,31 @@ const TestCaseManager = ({ problem, onClose }) => {
             const zip = new JSZip();
             cases.forEach((tc, index) => {
                 const num = index + 1;
-                const prefix = tc.isSample ? 'sample_' : '';
-                zip.file(`${prefix}${num}.in`, tc.input || '');
-                zip.file(`${prefix}${num}.out`, tc.expectedOutput || '');
+                const prefix = tc.isSample ? `sample_${num}` : `${num}`;
+                zip.file(`${prefix}.in`, tc.input);
+                zip.file(`${prefix}.out`, tc.expectedOutput);
             });
 
-            const blob = await zip.generateAsync({ type: 'blob' });
-
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
             const { error: uploadError } = await supabase.storage
                 .from('problem-test-cases')
-                .upload(ZIP_PATH, blob, {
-                    cacheControl: '0',
-                    upsert: true,
-                    contentType: 'application/zip'
+                .upload(ZIP_PATH, zipBlob, {
+                    contentType: 'application/zip',
+                    upsert: true
                 });
 
             if (uploadError) throw uploadError;
 
-            // Get public URL and update problem
-            const { data: { publicUrl } } = supabase.storage
+            const { data: urlData } = supabase.storage
                 .from('problem-test-cases')
                 .getPublicUrl(ZIP_PATH);
 
-            // Find sample test cases to update problem's sample fields
-            const sampleCase = cases.find(tc => tc.isSample);
-
-            await updateProblem(problem.id, {
-                ...problem,
-                testCasesUrl: publicUrl,
-                sampleInput: sampleCase ? sampleCase.input : problem.sampleInput,
-                sampleOutput: sampleCase ? sampleCase.expectedOutput : problem.sampleOutput
-            });
-
-            setSuccessMessage(`✅ ZIP synced — ${cases.length} test case(s)`);
+            const testCasesUrl = urlData.publicUrl;
+            await updateProblem(problem.id, { ...problem, testCasesUrl });
+            setSuccessMessage(`Test cases synchronized (${cases.length} files in ZIP)`);
         } catch (err) {
-            console.error('ZIP sync error:', err);
-            setError('Failed to sync ZIP: ' + (err.message || err));
+            console.error('Failed to upload test case ZIP:', err);
+            setError(err.message || 'Failed to sync test cases');
         } finally {
             setSyncingZip(false);
         }
@@ -149,14 +144,23 @@ const TestCaseManager = ({ problem, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setAdding(true);
         setError('');
+        setSuccessMessage('');
 
+        if (!formData.input.trim() || !formData.expectedOutput.trim()) {
+            setError('Both input and expected output are required');
+            return;
+        }
+
+        setAdding(true);
         try {
+            const formattedInput = formatInputType(formData.input, formData.inputType);
+            const formattedOutput = formatInputType(formData.expectedOutput, formData.outputType);
+
             const newCase = {
                 id: String(testCases.length + 1),
-                input: formatInputType(formData.input, formData.inputType),
-                expectedOutput: formatInputType(formData.expectedOutput, formData.outputType),
+                input: formattedInput,
+                expectedOutput: formattedOutput,
                 isSample: formData.isSample
             };
 
@@ -164,7 +168,13 @@ const TestCaseManager = ({ problem, onClose }) => {
             setTestCases(updatedCases);
             await uploadZip(updatedCases);
 
-            setFormData({ inputType: 'raw', outputType: 'raw', input: '', expectedOutput: '', isSample: false });
+            setFormData({
+                inputType: 'raw',
+                outputType: 'raw',
+                input: '',
+                expectedOutput: '',
+                isSample: false
+            });
         } catch (err) {
             setError(err.message || 'Failed to add test case');
         } finally {
@@ -173,19 +183,18 @@ const TestCaseManager = ({ problem, onClose }) => {
     };
 
     const handleDelete = async (caseId) => {
-        if (!window.confirm('Are you sure you want to delete this test case?')) return;
-
+        if (!confirm('Are you sure you want to delete this test case?')) return;
         setError('');
+        setSuccessMessage('');
+
         try {
             const updatedCases = testCases.filter(tc => tc.id !== caseId);
-            // Re-index
             const reindexed = updatedCases.map((tc, i) => ({ ...tc, id: String(i + 1) }));
             setTestCases(reindexed);
 
             if (reindexed.length > 0) {
                 await uploadZip(reindexed);
             } else {
-                // No test cases left — remove ZIP
                 await supabase.storage.from('problem-test-cases').remove([ZIP_PATH]);
                 await updateProblem(problem.id, { ...problem, testCasesUrl: null });
                 setSuccessMessage('All test cases removed. ZIP deleted.');
@@ -196,188 +205,227 @@ const TestCaseManager = ({ problem, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="glass rounded-2xl flex flex-col max-w-5xl w-full h-[90vh] border border-primary-500/20 shadow-2xl overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between px-8 py-6 border-b dark:border-dark-border-primary border-light-border-primary bg-dark-bg-secondary/50">
-                    <div>
-                        <h2 className="text-2xl font-bold gradient-text">Manage Test Cases</h2>
-                        <p className="text-secondary mt-1">
-                            Problem: <span className="text-primary font-medium">{problem.title}</span>
-                        </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in select-none">
+            {/* Backdrop click to dismiss */}
+            <div className="fixed inset-0" onClick={onClose} />
+
+            {/* macOS Modal Sheet Window */}
+            <div className="relative w-full max-w-5xl h-[85vh] flex flex-col mac-card shadow-2xl overflow-hidden animate-mac-scale bg-white/95 dark:bg-[#1c1c20]/95 backdrop-blur-2xl">
+                {/* Header with macOS Traffic Lights */}
+                <div className="px-6 py-4 border-b border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 pr-2">
+                            <span onClick={onClose} className="mac-traffic-dot mac-traffic-close cursor-pointer" title="Close" />
+                            <span className="mac-traffic-dot mac-traffic-minimize" />
+                            <span className="mac-traffic-dot mac-traffic-zoom" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-[#1d1d1f] dark:text-white">
+                                    Test Case Suite
+                                </span>
+                                <span className="mac-badge mac-badge-blue">
+                                    Problem #{problem.id}
+                                </span>
+                            </div>
+                            <div className="text-xs text-[#86868b] dark:text-[#a1a1a6] truncate max-w-md mt-0.5">
+                                {problem.title}
+                            </div>
+                        </div>
                     </div>
+
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-white/5"
+                        className="p-1.5 rounded-lg text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
+                        aria-label="Close test case manager"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <X size={16} />
                     </button>
                 </div>
 
+                {/* Two-Pane Body */}
                 <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                    {/* Left Pane - Add Test Case Form */}
-                    <div className="w-full md:w-1/2 p-8 border-b md:border-b-0 md:border-r dark:border-dark-border-primary border-light-border-primary overflow-y-auto bg-dark-bg-primary/50">
-                        {/* Info */}
-                        <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm">
-                            <div className="flex items-start gap-3">
-                                <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <h4 className="text-blue-400 font-semibold mb-1">Auto-Sync to ZIP</h4>
-                                    <p className="text-secondary">Test cases are stored directly in a ZIP file on Supabase Storage. No database table used. Add or remove test cases below.</p>
+                    {/* Left Form Pane: Add Test Case */}
+                    <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-black/[0.08] dark:border-white/[0.08] overflow-y-auto space-y-4">
+                        {/* Auto-Sync Banner */}
+                        <div className="p-3.5 rounded-xl bg-[#0071e3]/10 dark:bg-[#2997ff]/15 border border-[#0071e3]/20 text-xs flex items-start gap-2.5">
+                            <FolderArchive size={16} className="text-[#0071e3] dark:text-[#2997ff] shrink-0 mt-0.5" />
+                            <div className="text-[#1d1d1f] dark:text-white">
+                                <div className="font-semibold text-xs text-[#0071e3] dark:text-[#2997ff]">Supabase Storage ZIP</div>
+                                <div className="text-[11px] text-[#6e6e73] dark:text-[#a1a1a6] mt-0.5 leading-relaxed">
+                                    Test cases are automatically archived and synced to Judge0 cloud storage upon submission.
                                 </div>
                             </div>
                         </div>
 
-                        {/* Status Messages */}
+                        {/* Sync Messages */}
                         {syncingZip && (
-                            <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2">
-                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                                Syncing to ZIP...
+                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-2">
+                                <div className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                                <span>Syncing to ZIP archive...</span>
                             </div>
                         )}
                         {successMessage && (
-                            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs">
-                                {successMessage}
+                            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
+                                <CheckCircle2 size={14} className="shrink-0" />
+                                <span>{successMessage}</span>
                             </div>
                         )}
-                        {testCases.length > 0 && !syncingZip && (
-                            <div className="mb-4 text-xs bg-green-500/10 text-green-400 p-2 rounded flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                                ZIP active — {testCases.length} test case{testCases.length !== 1 ? 's' : ''}
+                        {error && (
+                            <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+                                <AlertCircle size={14} className="shrink-0" />
+                                <span>{error}</span>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-primary">Input</label>
+                        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                            {/* Input */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-[#1d1d1f] dark:text-white">Input</label>
                                     <select
                                         name="inputType"
                                         value={formData.inputType}
                                         onChange={handleChange}
-                                        className="text-xs bg-dark-bg-tertiary border border-white/10 rounded-lg px-2 py-1 text-secondary focus:ring-1 focus:ring-brand-blue/50"
+                                        className="mac-input py-1 px-2 text-[11px] w-44"
                                     >
                                         <option value="raw">Raw Text / Numbers</option>
-                                        <option value="array_space">Array [1,2] -{'>'} Space Separated</option>
-                                        <option value="array_newline">Array [1,2] -{'>'} Newline Separated</option>
-                                        <option value="string">String "hello" -{'>'} hello</option>
+                                        <option value="array_space">Array [1,2] → Space</option>
+                                        <option value="array_newline">Array [1,2] → Newline</option>
+                                        <option value="string">String &quot;hello&quot; → hello</option>
                                     </select>
                                 </div>
                                 <textarea
                                     name="input"
                                     value={formData.input}
                                     onChange={handleChange}
-                                    placeholder={formData.inputType.startsWith('array') ? "e.g. [1, 2, 3, 4, 5]" : formData.inputType === 'string' ? 'e.g. "hello world"' : "e.g. 5\n1 2 3 4 5"}
-                                    className="input font-mono min-h-[150px] resize-y"
+                                    placeholder={formData.inputType.startsWith('array') ? "[1, 2, 3, 4, 5]" : "e.g. 5\n1 2 3 4 5"}
+                                    className="mac-input font-mono min-h-[110px] resize-y text-xs"
                                     required
                                 />
                             </div>
 
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-primary">Expected Output</label>
+                            {/* Expected Output */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-[#1d1d1f] dark:text-white">Expected Output</label>
                                     <select
                                         name="outputType"
                                         value={formData.outputType}
                                         onChange={handleChange}
-                                        className="text-xs bg-dark-bg-tertiary border border-white/10 rounded-lg px-2 py-1 text-secondary focus:ring-1 focus:ring-brand-blue/50"
+                                        className="mac-input py-1 px-2 text-[11px] w-44"
                                     >
                                         <option value="raw">Raw Text / Numbers</option>
-                                        <option value="array_space">Array [1,2] -{'>'} Space Separated</option>
-                                        <option value="array_newline">Array [1,2] -{'>'} Newline Separated</option>
-                                        <option value="string">String "hello" -{'>'} hello</option>
+                                        <option value="array_space">Array [1,2] → Space</option>
+                                        <option value="array_newline">Array [1,2] → Newline</option>
+                                        <option value="string">String &quot;hello&quot; → hello</option>
                                     </select>
                                 </div>
                                 <textarea
                                     name="expectedOutput"
                                     value={formData.expectedOutput}
                                     onChange={handleChange}
-                                    placeholder={formData.outputType.startsWith('array') ? "e.g. [1, 2, 3, 4, 5]" : formData.outputType === 'string' ? 'e.g. "hello world"' : "e.g. 15"}
-                                    className="input font-mono min-h-[150px] resize-y"
+                                    placeholder="e.g. 15"
+                                    className="mac-input font-mono min-h-[110px] resize-y text-xs"
                                     required
                                 />
                             </div>
 
-                            <label className="flex items-center gap-3 p-3 rounded-lg border dark:border-dark-border-primary border-light-border-primary bg-dark-bg-secondary/30 cursor-pointer hover:bg-dark-bg-secondary/50 transition-colors">
+                            {/* Sample Flag Switch */}
+                            <label className="flex items-center justify-between p-3 rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] cursor-pointer">
+                                <div>
+                                    <div className="font-semibold text-[#1d1d1f] dark:text-white">Mark as Sample Test Case</div>
+                                    <div className="text-[11px] text-[#86868b] dark:text-[#636366]">Visible in problem statement & example runner</div>
+                                </div>
                                 <input
                                     type="checkbox"
                                     name="isSample"
                                     checked={formData.isSample}
                                     onChange={handleChange}
-                                    className="w-5 h-5 rounded border-gray-600 text-brand-orange focus:ring-brand-orange bg-dark-bg-primary"
+                                    className="w-4 h-4 rounded text-[#0071e3] focus:ring-[#0071e3] border-gray-400"
                                 />
-                                <span className="text-primary font-medium select-none">Mark as Sample Test Case</span>
                             </label>
-
-                            {error && (
-                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                                    {error}
-                                </div>
-                            )}
 
                             <button
                                 type="submit"
                                 disabled={adding || syncingZip}
-                                className="w-full btn-primary disabled:opacity-50"
+                                className="w-full mac-btn-primary"
                             >
-                                {adding ? 'Adding...' : syncingZip ? 'Syncing ZIP...' : 'Add Test Case'}
+                                <Plus size={14} />
+                                <span>{adding ? 'Adding...' : syncingZip ? 'Syncing ZIP...' : 'Add Test Case'}</span>
                             </button>
                         </form>
                     </div>
 
-                    {/* Right Pane - Test Cases List */}
-                    <div className="w-full md:w-1/2 p-8 overflow-y-auto">
-                        <h3 className="text-lg font-bold text-primary mb-6 flex items-center justify-between">
-                            <span>Test Cases (from ZIP)</span>
-                            <span className="text-sm font-normal px-2.5 py-1 rounded-full bg-dark-bg-secondary border dark:border-dark-border-primary border-light-border-primary text-secondary">
-                                Total: {testCases.length}
-                            </span>
-                        </h3>
+                    {/* Right Pane: Test Cases List */}
+                    <div className="w-full md:w-1/2 p-6 overflow-y-auto space-y-4">
+                        <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+                            <h3 className="font-bold text-xs text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                                <FileCode size={15} className="text-[#0071e3] dark:text-[#2997ff]" />
+                                <span>Test Cases in Archive ({testCases.length})</span>
+                            </h3>
+                            {testCases.length > 0 && (
+                                <span className="mac-badge mac-badge-green">
+                                    ZIP Active
+                                </span>
+                            )}
+                        </div>
 
                         {loading ? (
-                            <div className="text-center text-secondary py-8">Loading from ZIP...</div>
+                            <div className="text-center text-[#86868b] py-12 text-xs">
+                                <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-[#0071e3] mb-2" />
+                                <div>Reading ZIP files...</div>
+                            </div>
                         ) : testCases.length === 0 ? (
-                            <div className="text-center py-12 rounded-xl border border-dashed dark:border-dark-border-primary border-light-border-primary bg-dark-bg-secondary/30">
-                                <p className="text-secondary">No test cases yet.</p>
-                                <p className="text-sm text-gray-500 mt-2">Add your first test case using the form.</p>
+                            <div className="text-center py-12 rounded-2xl border border-dashed border-black/[0.1] dark:border-white/[0.1] text-xs text-[#86868b]">
+                                <div>No test cases found in ZIP.</div>
+                                <div className="text-[11px] text-[#6e6e73] dark:text-[#a1a1a6] mt-1">
+                                    Add your first test case using the form on the left.
+                                </div>
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {testCases.map((tc, index) => (
-                                    <div key={tc.id} className="p-5 rounded-xl border dark:border-dark-border-primary border-light-border-primary bg-dark-bg-secondary/30 hover:bg-dark-bg-secondary/50 transition-colors relative group">
-                                        <div className="absolute top-4 right-4 flex items-center gap-3">
-                                            {tc.isSample && (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-brand-orange/20 text-brand-orange font-medium">
-                                                    Sample
+                                    <div
+                                        key={tc.id}
+                                        className="p-3.5 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.02] relative space-y-2.5"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-xs font-mono text-[#1d1d1f] dark:text-white">
+                                                    Case #{index + 1}
                                                 </span>
-                                            )}
+                                                {tc.isSample && (
+                                                    <span className="mac-badge mac-badge-purple text-[10px]">
+                                                        Sample Case
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             <button
                                                 onClick={() => handleDelete(tc.id)}
-                                                className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                                                className="p-1 rounded text-[#86868b] hover:text-red-500 hover:bg-red-500/10 transition"
                                                 title="Delete Test Case"
                                             >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
+                                                <Trash2 size={13} />
                                             </button>
                                         </div>
 
-                                        <h4 className="text-primary font-medium mb-3">Test Case #{index + 1}</h4>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <div className="text-xs text-secondary mb-1">Input:</div>
-                                                <pre className="text-sm font-mono p-3 rounded bg-dark-bg-primary border dark:border-dark-border-primary border-light-border-primary text-gray-300 overflow-x-auto whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                            <div className="p-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.04]">
+                                                <div className="text-[10px] text-[#86868b] uppercase tracking-wider mb-1">
+                                                    Input:
+                                                </div>
+                                                <pre className="font-mono text-[11px] text-[#1d1d1f] dark:text-[#f5f5f7] whitespace-pre-wrap max-h-24 overflow-y-auto">
                                                     {tc.input}
                                                 </pre>
                                             </div>
-                                            <div>
-                                                <div className="text-xs text-secondary mb-1">Expected Output:</div>
-                                                <pre className="text-sm font-mono p-3 rounded bg-dark-bg-primary border dark:border-dark-border-primary border-light-border-primary text-gray-300 overflow-x-auto whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+
+                                            <div className="p-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.04]">
+                                                <div className="text-[10px] text-[#86868b] uppercase tracking-wider mb-1">
+                                                    Output:
+                                                </div>
+                                                <pre className="font-mono text-[11px] text-[#1d1d1f] dark:text-[#f5f5f7] whitespace-pre-wrap max-h-24 overflow-y-auto">
                                                     {tc.expectedOutput}
                                                 </pre>
                                             </div>
@@ -387,6 +435,19 @@ const TestCaseManager = ({ problem, onClose }) => {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 border-t border-black/[0.08] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.015] flex items-center justify-between">
+                    <span className="text-[11px] text-[#86868b] dark:text-[#636366]">
+                        {testCases.length} total test case{testCases.length !== 1 ? 's' : ''} stored in ZIP
+                    </span>
+                    <button
+                        onClick={onClose}
+                        className="mac-btn-secondary text-xs"
+                    >
+                        Close
+                    </button>
                 </div>
             </div>
         </div>

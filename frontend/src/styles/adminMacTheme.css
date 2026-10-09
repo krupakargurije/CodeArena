@@ -1,0 +1,436 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   macOS Sequoia / Apple HIG Design Tokens for CodeArena Admin
+   Strictly scoped to .macos-admin-root to protect public pages.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.macos-admin-root {
+  --mac-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  --mac-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  font-family: var(--mac-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Light Mode Tokens */
+.macos-admin-root {
+  --mac-canvas: #f5f5f7;
+  --mac-sidebar-bg: rgba(238, 238, 241, 0.75);
+  --mac-titlebar-bg: rgba(246, 246, 248, 0.82);
+  --mac-surface: rgba(255, 255, 255, 0.85);
+  --mac-surface-solid: #ffffff;
+  --mac-surface-hover: rgba(0, 0, 0, 0.035);
+  --mac-surface-active: rgba(0, 0, 0, 0.06);
+  --mac-surface-selected: #0071e3;
+  --mac-surface-selected-text: #ffffff;
+  
+  --mac-text-primary: #1d1d1f;
+  --mac-text-secondary: #6e6e73;
+  --mac-text-tertiary: #86868b;
+  --mac-text-quaternary: #aeaeb2;
+
+  --mac-border: rgba(0, 0, 0, 0.08);
+  --mac-border-subtle: rgba(0, 0, 0, 0.04);
+  --mac-border-highlight: rgba(255, 255, 255, 0.6);
+
+  --mac-accent: #0071e3;
+  --mac-accent-hover: #0077ed;
+  --mac-accent-subtle: rgba(0, 113, 227, 0.1);
+  --mac-accent-border: rgba(0, 113, 227, 0.2);
+
+  --mac-success: #34c759;
+  --mac-success-subtle: rgba(52, 199, 89, 0.12);
+  --mac-warning: #ff9500;
+  --mac-warning-subtle: rgba(255, 149, 0, 0.12);
+  --mac-danger: #ff3b30;
+  --mac-danger-subtle: rgba(255, 59, 48, 0.12);
+  --mac-purple: #af52de;
+  --mac-purple-subtle: rgba(175, 82, 222, 0.12);
+
+  --mac-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --mac-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --mac-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.09), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --mac-shadow-popover: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark Mode Tokens */
+.macos-admin-root.dark {
+  --mac-canvas: #121214;
+  --mac-sidebar-bg: rgba(24, 24, 28, 0.78);
+  --mac-titlebar-bg: rgba(28, 28, 32, 0.84);
+  --mac-surface: rgba(36, 36, 42, 0.7);
+  --mac-surface-solid: #222226;
+  --mac-surface-hover: rgba(255, 255, 255, 0.05);
+  --mac-surface-active: rgba(255, 255, 255, 0.08);
+  --mac-surface-selected: #2997ff;
+  --mac-surface-selected-text: #ffffff;
+  
+  --mac-text-primary: #f5f5f7;
+  --mac-text-secondary: #a1a1a6;
+  --mac-text-tertiary: #636366;
+  --mac-text-quaternary: #48484a;
+
+  --mac-border: rgba(255, 255, 255, 0.08);
+  --mac-border-subtle: rgba(255, 255, 255, 0.04);
+  --mac-border-highlight: rgba(255, 255, 255, 0.12);
+
+  --mac-accent: #2997ff;
+  --mac-accent-hover: #47a6ff;
+  --mac-accent-subtle: rgba(41, 151, 255, 0.15);
+  --mac-accent-border: rgba(41, 151, 255, 0.3);
+
+  --mac-success: #30d158;
+  --mac-success-subtle: rgba(48, 209, 88, 0.15);
+  --mac-warning: #ff9f0a;
+  --mac-warning-subtle: rgba(255, 159, 10, 0.15);
+  --mac-danger: #ff453a;
+  --mac-danger-subtle: rgba(255, 69, 58, 0.15);
+  --mac-purple: #bf5af2;
+  --mac-purple-subtle: rgba(191, 90, 242, 0.15);
+
+  --mac-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --mac-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --mac-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --mac-shadow-popover: 0 24px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Glassmorphism & Liquid Surfaces */
+.mac-card {
+  background-color: var(--mac-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--mac-border);
+  box-shadow: var(--mac-shadow-sm);
+  border-radius: 14px;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.18s ease;
+}
+
+.mac-card-interactive:hover {
+  border-color: var(--mac-border-highlight);
+  box-shadow: var(--mac-shadow-md);
+}
+
+/* macOS Segmented Control */
+.mac-segmented-control {
+  display: inline-flex;
+  padding: 3px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 9px;
+  border: 1px solid var(--mac-border-subtle);
+}
+
+.dark .mac-segmented-control {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.mac-segmented-item {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mac-text-secondary);
+  border-radius: 6px;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.mac-segmented-item.active {
+  background-color: var(--mac-surface-solid);
+  color: var(--mac-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 0.5px var(--mac-border);
+}
+
+.dark .mac-segmented-item.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* Native Traffic Light Controls */
+.mac-traffic-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.mac-traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+.mac-traffic-dot:focus-visible {
+  box-shadow: 0 0 0 2px var(--mac-accent);
+}
+
+.mac-traffic-close {
+  background-color: #ff5f56;
+  border: 0.5px solid #e0443e;
+  color: #4d0000;
+}
+.mac-traffic-minimize {
+  background-color: #ffbd2e;
+  border: 0.5px solid #dea123;
+  color: #5c3b00;
+}
+.mac-traffic-zoom {
+  background-color: #27c93f;
+  border: 0.5px solid #1aab29;
+  color: #004d00;
+}
+
+.mac-traffic-icon {
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  user-select: none;
+}
+.mac-traffic-group:hover .mac-traffic-icon {
+  opacity: 0.8;
+}
+.mac-traffic-dot:active {
+  filter: brightness(0.85);
+}
+
+/* Custom Scrollbar for macOS Admin */
+.macos-admin-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.macos-admin-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.macos-admin-root ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+}
+.macos-admin-root.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+.macos-admin-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+.macos-admin-root.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* macOS Buttons */
+.macos-admin-root .mac-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background-color: var(--mac-accent);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 113, 227, 0.25);
+  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  user-select: none;
+}
+.macos-admin-root .mac-btn-primary:hover:not(:disabled) {
+  background-color: var(--mac-accent-hover);
+  box-shadow: 0 2px 6px rgba(0, 113, 227, 0.35);
+  transform: translateY(-0.5px);
+}
+.macos-admin-root .mac-btn-primary:active:not(:disabled) {
+  transform: translateY(0.5px);
+  filter: brightness(0.95);
+}
+.macos-admin-root .mac-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.macos-admin-root .mac-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background-color: var(--mac-surface-solid);
+  color: var(--mac-text-primary);
+  border: 1px solid var(--mac-border);
+  box-shadow: var(--mac-shadow-sm);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.macos-admin-root .mac-btn-secondary:hover:not(:disabled) {
+  background-color: var(--mac-surface-hover);
+  border-color: var(--mac-border-highlight);
+}
+.macos-admin-root .mac-btn-secondary:active:not(:disabled) {
+  background-color: var(--mac-surface-active);
+}
+.macos-admin-root .mac-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.macos-admin-root .mac-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background-color: var(--mac-danger);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(255, 59, 48, 0.25);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.macos-admin-root .mac-btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.35);
+}
+.macos-admin-root .mac-btn-danger:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.macos-admin-root .mac-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 6px;
+  color: var(--mac-text-secondary);
+  transition: all 0.15s ease;
+}
+.macos-admin-root .mac-btn-ghost:hover {
+  color: var(--mac-text-primary);
+  background-color: var(--mac-surface-hover);
+}
+
+/* macOS Inputs */
+.macos-admin-root .mac-input {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+  border-radius: 8px;
+  background-color: var(--mac-surface-solid);
+  color: var(--mac-text-primary);
+  border: 1px solid var(--mac-border);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.macos-admin-root .mac-input:focus {
+  outline: none;
+  border-color: var(--mac-accent);
+  box-shadow: 0 0 0 3px var(--mac-accent-subtle);
+}
+.macos-admin-root .mac-input::placeholder {
+  color: var(--mac-text-tertiary);
+}
+
+/* macOS Switch Toggle */
+.macos-admin-root .mac-switch {
+  position: relative;
+  display: inline-flex;
+  height: 22px;
+  width: 38px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  transition: background-color 0.2s ease-in-out;
+  background-color: rgba(120, 120, 128, 0.2);
+}
+.macos-admin-root .mac-switch.active {
+  background-color: var(--mac-accent);
+}
+.macos-admin-root .mac-switch-thumb {
+  pointer-events: none;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: translateX(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.macos-admin-root .mac-switch.active .mac-switch-thumb {
+  transform: translateX(16px);
+}
+
+/* macOS Status Badges */
+.macos-admin-root .mac-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.macos-admin-root .mac-badge-blue {
+  background-color: var(--mac-accent-subtle);
+  color: var(--mac-accent);
+  border-color: var(--mac-accent-border);
+}
+.macos-admin-root .mac-badge-green {
+  background-color: var(--mac-success-subtle);
+  color: var(--mac-success);
+  border-color: rgba(52, 199, 89, 0.25);
+}
+.macos-admin-root .mac-badge-amber {
+  background-color: var(--mac-warning-subtle);
+  color: var(--mac-warning);
+  border-color: rgba(255, 149, 0, 0.25);
+}
+.macos-admin-root .mac-badge-red {
+  background-color: var(--mac-danger-subtle);
+  color: var(--mac-danger);
+  border-color: rgba(255, 59, 48, 0.25);
+}
+.macos-admin-root .mac-badge-purple {
+  background-color: var(--mac-purple-subtle);
+  color: var(--mac-purple);
+  border-color: rgba(175, 82, 222, 0.25);
+}
+
+/* Animation utilities */
+@keyframes macFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes macScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.macos-admin-root .animate-mac-fade {
+  animation: macFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.macos-admin-root .animate-mac-scale {
+  animation: macScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

@@ -247,6 +247,7 @@ public class ApiMetricsService {
                     .avgDurationMs(Math.round(avgMs * 10.0) / 10.0)
                     .maxLatencyMs(Math.round(maxMs * 10.0) / 10.0)
                     .maxDurationMs(Math.round(maxMs * 10.0) / 10.0)
+                    .p95LatencyMs(Math.round(p95 * 10.0) / 10.0)
                     .p95DurationMs(Math.round(p95 * 10.0) / 10.0)
                     .errorCount5xx(errorCount5xx.get())
                     .build();

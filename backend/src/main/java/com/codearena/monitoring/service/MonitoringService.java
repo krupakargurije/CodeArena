@@ -46,7 +46,7 @@ public class MonitoringService {
         try {
             List<ServiceHealthDTO> services = healthCheckService.getAllServiceHealth();
             ApiPerformanceDTO perf = apiMetricsService.getPerformanceMetrics();
-            incidentService.evaluateAlertConditions(services, perf.getErrorRate5xxPercent(), perf.getP95LatencyMs());
+            incidentService.evaluateAlertConditions(services, perf.getErrorRate5xxPercent(), perf.getP95LatencyMs(), perf.getTotalRequests());
         } catch (Exception e) {
             log.warn("Periodic alert evaluation failed: {}", e.getMessage());
         } finally {
@@ -62,8 +62,8 @@ public class MonitoringService {
         ApiPerformanceDTO perf = apiMetricsService.getPerformanceMetrics();
         SubmissionAnalyticsDTO subs = submissionAnalyticsService.getAnalytics("24h");
 
-        // Run alert condition evaluation
-        incidentService.evaluateAlertConditions(services, perf.getErrorRate5xxPercent(), perf.getP95LatencyMs());
+        // Run alert condition evaluation with sample volume awareness
+        incidentService.evaluateAlertConditions(services, perf.getErrorRate5xxPercent(), perf.getP95LatencyMs(), perf.getTotalRequests());
 
         int activeIncidents = incidentService.countActiveIncidents();
         int activeWsSessions = webSocketActivityTracker.getActiveSessionCount();

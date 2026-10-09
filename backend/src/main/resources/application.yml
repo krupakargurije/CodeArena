@@ -9,8 +9,13 @@ spring:
     password: ${APP_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      connection-timeout: 60000     # Wait 60s for connection
-      maximum-pool-size: 10         # Safe size for Direct Connection
+      connection-timeout: 30000     # Wait up to 30s for connection
+      maximum-pool-size: 10         # Safe pool size for Supabase Session/Direct Pooler
+      minimum-idle: 5               # Keep 5 warm standby connections to avoid cold TLS handshakes
+      idle-timeout: 300000          # 5 minutes
+      max-lifetime: 900000          # 15 minutes (graceful retirement before Supabase timeout)
+      keepalive-time: 30000         # 30s heartbeat to prevent WAN NAT/Supabase drops
+      leak-detection-threshold: 20000
   
   jpa:
     open-in-view: false             # Disable to silence warning and improve performance

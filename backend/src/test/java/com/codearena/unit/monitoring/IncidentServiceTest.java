@@ -35,7 +35,7 @@ public class IncidentServiceTest {
     @Test
     @DisplayName("raiseOrUpdateIncident creates a new incident when none active")
     void raiseOrUpdateIncident_whenNoneActive_shouldCreateNew() {
-        when(incidentRepository.findActiveByIncidentKey("JUDGE0_DOWN")).thenReturn(Optional.empty());
+        when(incidentRepository.findAllActiveByIncidentKey("JUDGE0_DOWN")).thenReturn(java.util.Collections.emptyList());
         when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> {
             Incident inc = i.getArgument(0);
             inc.setId(1L);
@@ -63,7 +63,7 @@ public class IncidentServiceTest {
         existing.setOccurrenceCount(3);
         existing.setLastSeenAt(Instant.now().minusSeconds(60));
 
-        when(incidentRepository.findActiveByIncidentKey("DATABASE_UNAVAILABLE")).thenReturn(Optional.of(existing));
+        when(incidentRepository.findAllActiveByIncidentKey("DATABASE_UNAVAILABLE")).thenReturn(java.util.List.of(existing));
         when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
 
         Incident updated = incidentService.raiseOrUpdateIncident(
@@ -83,7 +83,7 @@ public class IncidentServiceTest {
         existing.setIncidentKey("JUDGE0_DOWN");
         existing.setStatus(Incident.Status.OPEN);
 
-        when(incidentRepository.findActiveByIncidentKey("JUDGE0_DOWN")).thenReturn(Optional.of(existing));
+        when(incidentRepository.findAllActiveByIncidentKey("JUDGE0_DOWN")).thenReturn(java.util.List.of(existing));
         when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
 
         incidentService.autoResolveIncident("JUDGE0_DOWN", "Judge0 back online");
@@ -114,4 +114,49 @@ public class IncidentServiceTest {
         assertThat(dto.getAcknowledgedBy()).isEqualTo("admin_user");
         assertThat(dto.getAcknowledgedAt()).isNotNull();
     }
+
+    @Test
+    @DisplayName("evaluateAlertConditions ignores high latency when sample count is below 10")
+    void evaluateAlertConditions_lowSample_shouldNotRaiseLatencyAlert() {
+        incidentService.evaluateAlertConditions(java.util.List.of(), 0.0, 5000.0, 5);
+
+        verify(incidentRepository, never()).save(any(Incident.class));
+    }
+
+    @Test
+    @DisplayName("evaluateAlertConditions raises latency alert when sample count >= 10 and p95 >= 2000ms")
+    void evaluateAlertConditions_highLatency_shouldRaiseAlert() {
+        lenient().when(incidentRepository.findAllActiveByIncidentKey("HIGH_5XX_ERROR_RATE")).thenReturn(java.util.Collections.emptyList());
+        lenient().when(incidentRepository.findAllActiveByIncidentKey("ELEVATED_API_LATENCY")).thenReturn(java.util.Collections.emptyList());
+        when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
+
+        incidentService.evaluateAlertConditions(java.util.List.of(), 0.0, 2500.0, 15);
+
+        verify(incidentRepository).save(argThat(inc ->
+                "ELEVATED_API_LATENCY".equals(inc.getIncidentKey()) &&
+                inc.getStatus() == Incident.Status.OPEN &&
+                inc.getDescription().contains("2500.0ms")
+        ));
+    }
+
+    @Test
+    @DisplayName("evaluateAlertConditions auto-resolves latency alert when p95 drops below 1800ms")
+    void evaluateAlertConditions_normalizedLatency_shouldAutoResolve() {
+        Incident existing = new Incident();
+        existing.setId(20L);
+        existing.setIncidentKey("ELEVATED_API_LATENCY");
+        existing.setStatus(Incident.Status.OPEN);
+
+        lenient().when(incidentRepository.findAllActiveByIncidentKey("HIGH_5XX_ERROR_RATE")).thenReturn(java.util.Collections.emptyList());
+        lenient().when(incidentRepository.findAllActiveByIncidentKey("ELEVATED_API_LATENCY")).thenReturn(java.util.List.of(existing));
+        when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
+
+        incidentService.evaluateAlertConditions(java.util.List.of(), 0.0, 800.0, 20);
+
+        verify(incidentRepository).save(argThat(inc ->
+                "ELEVATED_API_LATENCY".equals(inc.getIncidentKey()) &&
+                inc.getStatus() == Incident.Status.RESOLVED
+        ));
+    }
 }
+
