@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/leaderboard/**").permitAll()
                         .requestMatchers("/api/stats/**").permitAll() // Global stats
                         .requestMatchers("/api/health").permitAll() // Health check for keep-alive
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

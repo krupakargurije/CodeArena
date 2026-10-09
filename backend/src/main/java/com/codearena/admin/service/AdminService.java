@@ -1,10 +1,16 @@
 package com.codearena.admin.service;
 
+import com.codearena.admin.dto.GrantAdminRequest;
+import com.codearena.audit.service.AuditLogService;
+import com.codearena.profile.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -14,19 +20,24 @@ import java.util.Map;
 @Service
 public class AdminService {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminService.class);
+
     @Value("${supabase.url}")
     private String supabaseUrl;
 
     @Value("${supabase.key}")
     private String supabaseKey;
 
-    // Use HttpComponentsClientHttpRequestFactory to support PATCH method
     private final RestTemplate restTemplate;
-    private static final ParameterizedTypeReference<List<Map<String, Object>>> LIST_MAP_TYPE =
-            new ParameterizedTypeReference<>() {};
+    private final AuditLogService auditLogService;
+    private final UserService userService;
+    private static final ParameterizedTypeReference<List<Map<String, Object>>> LIST_MAP_TYPE = new ParameterizedTypeReference<>() {
+    };
 
-    public AdminService() {
+    public AdminService(AuditLogService auditLogService, UserService userService) {
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+        this.auditLogService = auditLogService;
+        this.userService = userService;
     }
 
     private HttpHeaders createHeaders() {
@@ -52,10 +63,13 @@ public class AdminService {
         return response.getBody();
     }
 
+    @Transactional
     public Map<String, Object> grantAdminPermission(String email) {
-        // First, update the user
-        String updateUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email;
+        // Fetch before state
+        Map<String, Object> beforeUser = fetchUserByEmail(email);
 
+        // Update the user in Supabase
+        String updateUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email;
         Map<String, Object> updateData = new HashMap<>();
         updateData.put("is_admin", true);
 
@@ -67,29 +81,58 @@ public class AdminService {
                 updateEntity,
                 Void.class);
 
-        // Then fetch the updated user
-        String fetchUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email + "&select=*";
-        HttpEntity<String> fetchEntity = new HttpEntity<>(createHeaders());
+        // Fetch the updated user (after state)
+        Map<String, Object> afterUser = fetchUserByEmail(email);
 
-        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                fetchUrl,
-                HttpMethod.GET,
-                fetchEntity,
-                LIST_MAP_TYPE);
+        String entityId = email;
+        String username = null;
+        if (afterUser != null) {
+            if (afterUser.get("id") != null)
+                entityId = String.valueOf(afterUser.get("id"));
+            if (afterUser.get("username") != null)
+                username = String.valueOf(afterUser.get("username"));
+        } else if (beforeUser != null) {
+            if (beforeUser.get("id") != null)
+                entityId = String.valueOf(beforeUser.get("id"));
+            if (beforeUser.get("username") != null)
+                username = String.valueOf(beforeUser.get("username"));
+        }
 
-        List<Map<String, Object>> users = response.getBody();
-        return users != null && !users.isEmpty() ? users.get(0) : null;
+        // Sync local PostgreSQL database
+        try {
+            GrantAdminRequest req = new GrantAdminRequest();
+            req.setUserId(entityId);
+            req.setEmail(email);
+            req.setUsername(username);
+            userService.grantAdmin(req);
+        } catch (Exception e) {
+            log.warn("Local user sync for grantAdmin skipped: {}", e.getMessage());
+        }
+
+        // Record audit event
+        auditLogService.recordEvent(
+                "GRANT_ADMIN",
+                "USER",
+                entityId,
+                auditLogService.snapshotMap(beforeUser),
+                auditLogService.snapshotMap(afterUser),
+                "Granted admin privileges to " + email);
+
+        return afterUser;
     }
 
+    @Transactional
     public Map<String, Object> revokeAdminPermission(String email) {
         // Prevent revoking super admin
         if ("krupakargurija177@gmail.com".equals(email)) {
             throw new RuntimeException("Cannot revoke super admin permissions");
         }
 
-        // Update the user
-        String updateUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email;
+        // Fetch before state
+        Map<String, Object> beforeUser = fetchUserByEmail(email);
 
+        // Update the user in Supabase
+        String updateUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email;
         Map<String, Object> updateData = new HashMap<>();
         updateData.put("is_admin", false);
 
@@ -101,18 +144,33 @@ public class AdminService {
                 updateEntity,
                 Void.class);
 
-        // Fetch the updated user
-        String fetchUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email + "&select=*";
-        HttpEntity<String> fetchEntity = new HttpEntity<>(createHeaders());
+        // Fetch the updated user (after state)
+        Map<String, Object> afterUser = fetchUserByEmail(email);
 
-        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                fetchUrl,
-                HttpMethod.GET,
-                fetchEntity,
-                LIST_MAP_TYPE);
+        String entityId = email;
+        if (afterUser != null && afterUser.get("id") != null) {
+            entityId = String.valueOf(afterUser.get("id"));
+        } else if (beforeUser != null && beforeUser.get("id") != null) {
+            entityId = String.valueOf(beforeUser.get("id"));
+        }
 
-        List<Map<String, Object>> users = response.getBody();
-        return users != null && !users.isEmpty() ? users.get(0) : null;
+        // Sync local PostgreSQL database
+        try {
+            userService.revokeAdmin(email);
+        } catch (Exception e) {
+            log.warn("Local user sync for revokeAdmin skipped: {}", e.getMessage());
+        }
+
+        // Record audit event
+        auditLogService.recordEvent(
+                "REVOKE_ADMIN",
+                "USER",
+                entityId,
+                auditLogService.snapshotMap(beforeUser),
+                auditLogService.snapshotMap(afterUser),
+                "Revoked admin privileges from " + email);
+
+        return afterUser;
     }
 
     public List<Map<String, Object>> getAllAdmins() {
@@ -126,5 +184,23 @@ public class AdminService {
                 LIST_MAP_TYPE);
 
         return response.getBody();
+    }
+
+    private Map<String, Object> fetchUserByEmail(String email) {
+        try {
+            String fetchUrl = supabaseUrl + "/rest/v1/profiles?email=eq." + email + "&select=*";
+            HttpEntity<String> fetchEntity = new HttpEntity<>(createHeaders());
+
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                    fetchUrl,
+                    HttpMethod.GET,
+                    fetchEntity,
+                    LIST_MAP_TYPE);
+
+            List<Map<String, Object>> users = response.getBody();
+            return (users != null && !users.isEmpty()) ? users.get(0) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

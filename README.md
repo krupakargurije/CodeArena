@@ -81,7 +81,8 @@ To achieve these "Excellent" results on PostgreSQL rather than a simple in-memor
 - **Automated Judging System**: Submissions are parsed and graded against hidden and sample test cases using the top-tier **Judge0** sandbox service.
 - **Timed Contests**: Participate in competitive coding contests, track progress via live leaderboards, and see rankings in real-time.
 - **User Accounts & Profiles**: Extensive tracking of progress, submissions history, user achievements, and personalized metrics.
-- **Admin Dashboard**: Manage platform problems, test cases, and administrative functions securely with role-based restrictions.
+- **Admin Dashboard & Audit Logs**: Manage problems, test cases, permissions, and inspect granular before/after diff audit logs.
+- **System Health & Observability**: Real-time telemetry, p50/p95/p99 latency percentiles, component health probes (PostgreSQL, Judge0, STOMP), submission analytics, and automated incident management. See [SYSTEM_HEALTH_MONITORING.md](SYSTEM_HEALTH_MONITORING.md).
 - **Advanced Authentication & Security**: Complete end-to-end security architecture utilizing JWTs and Row Level Security.
 
 ---

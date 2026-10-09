@@ -56,3 +56,16 @@ code-execution:
 supabase:
   url: https://qlwrjoknqjwurgnoogjd.supabase.co
   key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsd3Jqb2tucWp3dXJnbm9vZ2pkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUwNzg5OSwiZXhwIjoyMDgwMDgzODk5fQ.VDwp7I70sZFYH2ubslzCBI6nv0JJq41bmK4TPV0erKU
+
+# Actuator & Observability
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ROLE_ADMIN
+

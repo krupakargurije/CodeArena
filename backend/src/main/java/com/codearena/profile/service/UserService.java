@@ -80,26 +80,28 @@ public class UserService {
 
     @org.springframework.transaction.annotation.Transactional
     public void grantAdmin(GrantAdminRequest request) {
+        if (request == null) return;
+
         // Try to find user by ID first, then email
         User user = null;
-        if (request.getUserId() != null) {
+        if (request.getUserId() != null && !request.getUserId().isBlank()) {
             user = userRepository.findById(request.getUserId()).orElse(null);
         }
 
-        if (user == null && request.getEmail() != null) {
+        if (user == null && request.getEmail() != null && !request.getEmail().isBlank()) {
             user = userRepository.findByEmail(request.getEmail()).orElse(null);
         }
 
-        // If still null, we need to provision the user (JIT via Admin)
+        // If still null, provision user locally
         if (user == null) {
-            if (request.getUserId() == null || request.getEmail() == null) {
-                throw new RuntimeException("User not found and insufficient details to provision (need ID and Email)");
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                return;
             }
 
             user = new User();
-            user.setId(request.getUserId());
+            user.setId(request.getUserId() != null && !request.getUserId().isBlank() ? request.getUserId() : java.util.UUID.randomUUID().toString());
             user.setEmail(request.getEmail());
-            user.setUsername(request.getUsername() != null ? request.getUsername() : request.getEmail().split("@")[0]);
+            user.setUsername(request.getUsername() != null && !request.getUsername().isBlank() ? request.getUsername() : request.getEmail().split("@")[0]);
             user.setPassword("");
             user.setRating(1200);
             user.setProblemsSolved(0);
@@ -115,11 +117,11 @@ public class UserService {
 
     @org.springframework.transaction.annotation.Transactional
     public void revokeAdmin(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-        user.getRoles().remove("ROLE_ADMIN");
-        userRepository.save(user);
+        if (email == null || email.isBlank()) return;
+        userRepository.findByEmail(email).ifPresent(user -> {
+            user.getRoles().remove("ROLE_ADMIN");
+            userRepository.save(user);
+        });
     }
 
     public List<UserProfileResponse> getAllUsers() {

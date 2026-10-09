@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import CreateProblemForm from '../components/CreateProblemForm';
 import TestCaseManager from '../components/admin/TestCaseManager';
+import AuditLogViewer from '../components/admin/AuditLogViewer';
+import MonitoringDashboard from '../components/admin/monitoring/MonitoringDashboard';
 import { getProblems, deleteProblem } from '../services/problemService';
 import { getAllUsers, grantAdminPermission, revokeAdminPermission } from '../services/userService';
 
@@ -208,6 +210,31 @@ const AdminDashboard = () => {
                             }`}
                     >
                         Users & Admins
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('audit')}
+                        className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'audit'
+                            ? 'text-brand-orange border-brand-orange'
+                            : 'text-dark-text-tertiary border-transparent hover:text-white'
+                            }`}
+                    >
+                        <span>Audit Logs</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-brand-orange/20 text-brand-orange border border-brand-orange/30">
+                            Diffs
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('monitoring')}
+                        className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'monitoring'
+                            ? 'text-brand-orange border-brand-orange'
+                            : 'text-dark-text-tertiary border-transparent hover:text-white'
+                            }`}
+                    >
+                        <span>System Health & Monitoring</span>
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
                     </button>
                     <button
                         disabled
@@ -568,6 +595,16 @@ const AdminDashboard = () => {
                             </>
                         )}
                     </div>
+                )}
+
+                {/* Audit Logs Tab */}
+                {activeTab === 'audit' && (
+                    <AuditLogViewer />
+                )}
+
+                {/* System Monitoring Tab */}
+                {activeTab === 'monitoring' && (
+                    <MonitoringDashboard />
                 )}
 
                 {/* Create Problem Modal */}
